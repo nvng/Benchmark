@@ -25,15 +25,15 @@
 
 #include <rapidjson/document.h>
 
-#include "nvngLib.h"
-#include "ServerList.hpp"
-#include "GlobalDef.hpp"
-
+// 有些 pb 会在库中使用。
 #include "Proto/msg_client_type.pb.h"
 #include "Proto/msg_client.pb.h"
 #include "Proto/msg_internal_type.pb.h"
 #include "Proto/msg_internal.pb.h"
-#include "Proto/msg_rank.pb.h"
+
+#include "nvngLib.h"
+#include "ServerList.hpp"
+#include "GlobalDef.hpp"
 
 #include "Share/GlobalDef.h"
 

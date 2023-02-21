@@ -37,7 +37,7 @@ void ClientGateSession::OnConnect()
 	if (UINT64_MAX == _playerGuid)
 		_playerGuid = Player::GenPlayerGuid();
 	msg.set_player_guid(_playerGuid);
-	SendPB(&msg, E_MCMT_Client, E_MCCST_Login);
+	SendPB(&msg, E_MCMT_ClientCommon, E_MCCCST_Login);
 
 	if (0 != RandInRange(0, 10))
 	{

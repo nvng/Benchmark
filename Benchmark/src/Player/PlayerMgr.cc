@@ -28,7 +28,7 @@ bool PlayerMgr::Init()
         return true;
 }
 
-NET_MSG_HANDLE(ClientGateSession, E_MCMT_Client, E_MCCST_Login, MsgClientLoginRet)
+NET_MSG_HANDLE(ClientGateSession, E_MCMT_Client, E_MCCCST_Login, MsgClientLoginRet)
 {
 	// LOG_INFO("玩家登录成功返回!!!");
         
@@ -37,7 +37,7 @@ NET_MSG_HANDLE(ClientGateSession, E_MCMT_Client, E_MCCST_Login, MsgClientLoginRe
         {
                 p->_ses = shared_from_this();
                 _player = p;
-                p->SendPush(nullptr, E_MCMT_Client, E_MCCST_Login, msg);
+                p->SendPush(nullptr, E_MCMT_Client, E_MCCCST_Login, msg);
                 p->Start();
         }
 }

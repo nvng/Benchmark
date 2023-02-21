@@ -7,12 +7,12 @@
 Player::Player(uint64_t guid, const std::string& nickName)
 	: SuperType(guid, nickName)
 {
-        LOG_INFO("Player::Player() 构造!!!");
+        DLOG_INFO("Player::Player() 构造!!!");
 }
 
 Player::~Player()
 {
-        LOG_INFO("Player::~Player() 析构!!!");
+        DLOG_INFO("Player::~Player() 析构!!!");
 }
 
 bool Player::Init()
@@ -33,7 +33,7 @@ void Player::Online()
         // Note: 第一个返回的消息必须是 E_MCMT_Client, E_MCST_Login
         auto msg = std::make_shared<MsgClientLoginRet>();
         Pack2Client(*(msg->mutable_player_info()));
-        Send2Client(E_MCMT_Client, E_MCCST_Login, msg);
+        Send2Client(E_MCMT_ClientCommon, E_MCCCST_Login, msg);
 }
 
 ACTOR_MAIL_HANDLE(Player, E_MCMT_Client, E_MCCST_GM, MsgLobbyGM)

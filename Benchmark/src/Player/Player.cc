@@ -30,8 +30,6 @@ uint64_t Player::GenPlayerGuid()
 void Player::UnPack(const MsgPlayerInfo& msg)
 {
 	_msgPlayerInfo.CopyFrom(msg);
-        for (auto& info : _msgPlayerInfo.goods_list())
-                _goodsList[info.id()] = info.num();
 }
 
 void Player::SendPB(uint16_t mainType, uint16_t subType, google::protobuf::MessageLite* pb/*=nullptr*/)
@@ -54,24 +52,24 @@ void Player::DealPlayerChange(const MsgPlayerChange& msg)
         }
 }
 
-ACTOR_MAIL_HANDLE(Player, E_MCMT_Client, E_MCCST_Login, MsgClientLoginRet)
+ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClientLoginRet)
 {
         UnPack(msg->player_info());
         return nullptr;
 }
 
-ACTOR_MAIL_HANDLE(Player, E_MCMT_Client, E_MCCST_Kickout, MsgClientKickout)
+ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_Kickout, MsgClientKickout)
 {
         return nullptr;
 }
 
-ACTOR_MAIL_HANDLE(Player, E_MCMT_Client, E_MCCST_DayChange)
+ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_DayChange)
 {
 	// LOG_INFO("玩家收到 day change 消息!!!");
         return nullptr;
 }
 
-ACTOR_MAIL_HANDLE(Player, E_MCMT_Client, E_MCCST_DataResetNoneZero)
+ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_DataResetNoneZero)
 {
 	LOG_INFO("玩家收到 data reset 消息!!!");
         return nullptr;

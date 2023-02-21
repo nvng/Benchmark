@@ -48,17 +48,20 @@ enum EMsgClientInternalSubType
   E_MCIST_Terminate = 0x8;
 }
 
+enum EMsgClientClientCommonSubType
+{
+  E_MCCCST_Login = 0x0; // 登录
+  E_MCCCST_Reconnect = 0x1; // 玩家重连。
+  E_MCCCST_Logout = 0x2; // 登出
+  E_MCCCST_Kickout = 0x3; // 踢人。
+  E_MCCCST_DayChange = 0x4; // 跨天。
+  E_MCCCST_DataResetNoneZero = 0x5; // 非零点数据重置。
+  E_MCCCST_Result = 0x6; // 通用返回。
+}
+
 enum EMsgClientClientSubType
 {
-  E_MCCST_Login = 0x0; // 登录
-  E_MCCST_Reconnect = 0x1; // 玩家重连。
-  E_MCCST_Logout = 0x2; // 登出
-  E_MCCST_Kickout = 0x3; // 踢人。
-  E_MCCST_DayChange = 0x4; // 跨天。
-  E_MCCST_DataResetNoneZero = 0x5; // 非零点数据重置。
-  E_MCCST_Result = 0x6; // 通用返回。
-
-  E_MCCST_GM = 0x1f;
+  E_MCCST_GM = 0x0;
 }
 
 enum EMsgClientGameCommonSubType
