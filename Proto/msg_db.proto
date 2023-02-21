@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// import "msg_common.proto";
+import "msg_internal_common.proto";
+
+enum EMsgInternalDBSubType
+{
+  E_MIDBST_PlayerVersion = 0x0;
+  E_MIDBST_SavePlayerData = 0x1;
+  E_MIDBST_LoadPlayerData = 0x3;
+}
+
+// 约定：凡是DB结构，每个字段初始序号间隔10，方便后面插入。
+// 要兼容，不能修改原有字段序号。
+message DBPlayerInfo
+{
+  sint64 version = 10;
+  sint64 player_guid = 20;
+  string nick_name = 30;
+  repeated sint64 attr_list = 40;
+}
+
+message MsgPlayerVersion
+{
+  EInternalErrorType error_type = 1;
+  sint64 player_guid = 2;
+  sint64 version = 3;
+}
+
+message MsgPlayerData
+{
+  EInternalErrorType error_type = 1;
+  sint64 player_guid = 2;
+  sint64 version = 3;
+  bytes player_data = 5;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

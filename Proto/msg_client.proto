@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// package PokerProto;
+
+import "msg_common.proto";
+
+message MsgClientHeartBeat
+{
+  sint64 server_time = 1;
+}
+
+message MsgClientLogin
+{
+  sint32 player_guid = 1;
+  string nick_name = 2;
+}
+
+message MsgPlayerInfo
+{
+  sint64 player_guid = 1;
+  string nick_name = 2;
+
+  repeated sint64 attr_list = 3;
+}
+
+message MsgDataResetNoneZero
+{
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgClientLoginRet
+{
+  EClientErrorType error_type = 1;
+  MsgPlayerInfo player_info = 2;
+}
+
+message MsgClientKickout
+{
+  EClientErrorType error_type = 1;
+}
+
+message MsgSwitchRegion
+{
+  ERegionType region_type = 1;
+  ERegionType old_region_type = 2;
+}
+
+message MsgLoadFinish
+{
+  ERegionType region_type = 1;
+}
+
+message MsgReqEnterRegion
+{
+  EClientErrorType error_type = 1;
+  ERegionType region_type = 2;
+  sint64 region_guid = 3;
+  sint64 param = 4;
+}
+
+message MsgResult
+{
+  EClientErrorType error_type = 1;
+}
+
+message MsgGameGM
+{
+  string cmd = 1;
+}
+
+message MsgLobbyGM
+{
+  string cmd = 1;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

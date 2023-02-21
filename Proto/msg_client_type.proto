@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// package PokerProto;
+
+// 约定，req和ack消息ID一致。
+// 约定，mainType 0为内部消息，subType 0为心跳。
+
+enum EMsgClientMainType
+{
+  E_MCMT_Internal = 0x0;
+  E_MCMT_Login = 0x1; // 登录相关。
+  E_MCMT_ClientCommon = 0x2; // 大厅通用。
+  E_MCMT_Client = 0x3; // 大厅。
+
+  E_MCMT_GameCommon = 0xfc; // 场景基本操作。
+  E_MCMT_Game = 0xfd; // 场景相关。
+  E_MCMT_MatchCommon = 0xfe; // 比赛基本操作。
+  E_MCMT_Match = 0xff; // 比赛相关。
+}
+
+enum EMsgClientInternalSubType
+{
+  E_MCIST_HeartBeat = 0x0; // 心跳
+  E_MCIST_ServerInit = 0x1;
+
+  E_MCIST_Login = 0x2;
+  E_MCIST_Logout = 0x3;
+  E_MCIST_Kickout = 0x4;
+  E_MCIST_Disconnect = 0x5;
+  E_MCIST_DayChange = 0x6;
+  E_MCIST_DataResetNoneZero = 0x7;
+  E_MCIST_Terminate = 0x8;
+}
+
+enum EMsgClientClientSubType
+{
+  E_MCCST_Login = 0x0; // 登录
+  E_MCCST_Reconnect = 0x1; // 玩家重连。
+  E_MCCST_Logout = 0x2; // 登出
+  E_MCCST_Kickout = 0x3; // 踢人。
+  E_MCCST_DayChange = 0x4; // 跨天。
+  E_MCCST_DataResetNoneZero = 0x5; // 非零点数据重置。
+  E_MCCST_Result = 0x6; // 通用返回。
+
+  E_MCCST_GM = 0x1f;
+}
+
+enum EMsgClientGameCommonSubType
+{
+  E_MCGCST_ReqEnterRegion = 0x0; // 请求进入场景。
+  E_MCGCST_SwitchRegion = 0x1; // 通知玩家切场景。
+  E_MCGCST_LoadFinish = 0x2;
+  E_MCGCST_OnFighterEnter = 0x3; // 有玩家进入场景。
+  E_MCGCST_OnFighterExit = 0x4; // 有玩家退出场景。
+  E_MCGCST_ReqQueue = 0x5; // 请求排队!!!
+  E_MCGCST_ExitQueue = 0x6; // 退出排队!!!
+  E_MCGCST_UpdateRegionStateInfo = 0x7; // 更新场景状态信息。
+  E_MCGCST_RegionInfo = 0x8; // 同步场景信息给玩家。
+
+  E_MCGCST_TestRegionInfo = 0x12;
+  E_MCGCST_TestSelectTarget = 0x14; // 测试技能范围选取。
+}
+
+// vim: fenc=utf8:expandtab:ts=8

@@ -1,0 +1,515 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// package PokerProto;
+
+enum ERegionType
+{
+  E_RT_MainCity = 0;
+  E_RT_PVE = 101;
+  E_RT_PVP = 102;
+  E_RT_MaxLimit = 1000; // 最大限制，有地方将其作为ID。
+}
+
+enum EClientErrorType
+{
+  E_CET_Success = 0x0;
+  E_CET_Fail = 0x2;
+  E_CET_StateError = 0x3; // 状态错误。
+
+  E_CET_LoginFail = 0x4;
+  E_CET_InLogin = 0x5;
+  E_CET_ForeignLogin = 0x6;
+
+  E_CET_AlreadyInQueue = 0x10; // 已经在队列中。
+  E_CET_QueueError = 0x11; // 排除出现错误。
+
+  E_CET_SoldierNotFound = 0x20;
+  E_CET_InvalidPos = 0x21;
+  E_CET_RecuritFull = 0x22;
+  E_CET_EnergyNotEnough = 0x23;
+  E_CET_CfgNotFound = 0x24;
+  E_CET_SynthesisFail = 0x25;
+  E_CET_SoldierIsLocked = 0x26;
+  E_CET_GoodsNotEnough = 0x27;
+  E_CET_ForbiddenOpt = 0x28;
+  E_CET_CoinsNotEnough = 0x29;
+  E_CET_SkillNotLearn = 0x2b;
+  E_CET_ShopNotOpen = 0x2c;
+  E_CET_DropError = 0x2d;
+  E_CET_ShopSubTypeNotFound = 0x2e;
+  E_CET_GoodsNotInTime = 0x2f;
+  E_CET_DiamondsNotEnough = 0x30;
+  E_CET_FenChenNotEnough = 0x31;
+  E_CET_ShopGoodsInLimit = 0x32;
+  E_CET_SpoilsPosNotEnough = 0x34;
+  E_CET_RankTypeInValid = 0x35;
+  E_CET_GameSeasonLVError = 0x36;
+  E_CET_GameSeasonLVRewardAlready = 0x37;
+  E_CET_GameSeasonRewardTimeError = 0x38;
+  E_CET_NickNameLengthError = 0x40;
+  E_CET_NickNameAlreadyExist = 0x41;
+  E_CET_ReduceSpoilsTimeError = 0x42;
+  E_CET_SurrenderRoundNotEnough = 0x43;
+  E_CET_MailNotFound = 0x44;
+  E_CET_MailTimeOut = 0x45;
+  E_CET_MailAlreadyReward = 0x46;
+  E_CET_AlreadyInRegion = 0x47;
+  E_CET_HandCardsNotEnough = 0x48;
+  E_CET_SkillNotFound = 0x49;
+  E_CET_SoldierUnLockFail = 0x4a;
+  E_CET_HandCardsForbidden = 0x4b;
+  E_CET_SkillInteractOptError = 0x50;
+  E_CET_SkillInteractIdError = 0x51;
+  E_CET_IdxError = 0x52;
+
+  E_CET_EquipNotFound = 0x60;
+  E_CET_MaxLimit = 0x61;
+  E_CET_ParamError = 0x62;
+  E_CET_TimeLimit = 0x64;
+  E_CET_MoneyNotEnough = 0x65;
+  E_CET_VIPAlreadyReward = 0x66;
+
+  E_CET_None = 0xfffffff;
+}
+
+enum EVIPAttrType
+{
+  E_VIP_AT_Reward = 0x0;
+  E_VIP_AT_DailyStageCnt = 0x1;
+  E_VIP_AT_SaoDang = 0x2;
+  E_VIP_AT_GlobalCoinsAdd = 0x3;
+  E_VIP_AT_GlobalExpAdd = 0x4;
+  E_VIP_AT_NormalShopAddtionalDiscount = 0x5;
+  E_VIP_AT_None = 0x6;
+}
+
+message MsgPos
+{
+  sint64 x = 1;
+  sint64 y = 2;
+  sint64 z = 3;
+}
+
+enum ESkillType
+{
+        E_ST_None = 0;
+        E_ST_Active = 1; // 主动技能。
+        E_ST_Possive = 2; // 被动技能。
+        E_ST_Sub = 3; // 子技能。
+        E_ST_GuangHuan = 4; // 光环。
+}
+
+enum ESkillCostType
+{
+        E_SCT_None = 0;
+        E_SCT_CurHPValue = 1;
+        E_SCT_MaxHPRatio = 2;
+        E_SCT_Energy = 3;
+        E_SCT_HandCards = 4;
+}
+
+enum ESkillTargetType
+{
+        E_STT_All = 0;
+        E_STT_Mine = 1;
+        E_STT_Enemy = 2;
+}
+
+enum ESkillTargetSubType
+{
+  E_STST_None = 0;
+  E_STST_Manual = 1; // 1，手动选择目标。
+  E_STST_All = 2; // 2，全体。
+  E_STST_LowestMaxHPRatio = 3; // 3，生命最低。
+  E_STST_AtkTarget = 4; // 4，伤害目标。
+  E_STST_Self = 5; // 5，自身。
+  E_STST_Atk = 6; // 6，攻击者。
+  E_STST_InhiretSkillTarget = 7; // 7，继承目标。
+  E_STST_InhiretSkillMainTarget = 8; // 8，继承主目标。
+  E_STST_SrcNerbyFriend = 9; // 9，距离自己最近的友军。
+  E_STST_RandomX = 10; // 随机X个目标
+  E_STST_Race = 11; // 某个种族
+  E_STST_ExcludeRace = 12; // 除某个种族
+  E_STST_Occup = 13; // 某个职业
+  E_STST_ExcludeOccup = 14; // 除某个职业
+  E_STST_Camp = 15; // 某个阵营
+}
+
+enum ESkillEffectiveType
+{
+        E_SET_None = 0;
+        E_SET_Damage = 1; // 伤害。
+        E_SET_Treat = 2; // 治疗。
+        E_SET_Buff = 3; // Buff。
+        E_SET_Shield = 4; // 护盾。
+        E_SET_Call = 5; // 召唤。
+}
+
+enum ESkillUseCheckTargetType
+{
+        E_SUCTT_None = 0;
+        E_SUCTT_Self = 1;
+        E_SUCTT_Target = 2;
+}
+
+enum ESkillTriggerPointType
+{
+  E_STPT_None = 0;
+  E_STPT_OnHit = 1; // 命中时。
+  E_STPT_OnDamage = 2; // 造成伤害。
+  E_STPT_OnBeDamage = 3; // 受到伤害。
+  E_STPT_OnHPLower = 4; // 生命低于。
+  E_STPT_BattleStart = 5; // 战斗开始时。
+  E_STPT_NormalAtk = 6; // 普攻X次。
+  E_STPT_Manual = 7;
+  E_STPT_Timeout = 8;
+  E_STPT_OnDie = 9;
+  E_STPT_MagicFull = 10;
+}
+
+enum EPVEEventTargetType
+{
+        E_PVE_ETT_None = 0;
+        E_PVE_ETT_Mine = 1;
+        E_PVE_ETT_Enemy = 2;
+        E_PVE_ETT_All = 3;
+}
+
+enum EPVEEventTriggerPoint
+{
+        E_PVE_ETP_None = 0;
+        E_PVE_ETP_BeforePlay = 1;
+        E_PVE_ETP_ShowEnd = 2;
+        E_PVE_ETP_EnergyChange = 3;
+        E_PVE_ETP_Win = 4;
+        E_PVE_ETP_UnlockSoldier = 5;
+        E_PVE_ETP_BattleSoldierCntChange = 6;
+        E_PVE_ETP_OtherEventTriggered = 7; // 其它事件触发时。
+        E_PVE_ETP_FullRoad = 8; // 完整占领线路时。
+        E_PVE_ETP_HandCardsChange = 9; // 手牌数量发生变化时。
+}
+
+message MsgGoodsItem
+{
+  sint64 type = 1;
+  sint64 id = 2;
+  sint64 num = 3;
+}
+
+message MsgSpoilsItem
+{
+  sint64 id = 1;
+  sint64 open_time = 2;
+}
+
+message MsgMainCitySoldierBaseInfo
+{
+  sint64 cfg_id = 1;
+  sint64 lv = 2;
+}
+
+message MsgMainCitySoldierInfo
+{
+  MsgMainCitySoldierBaseInfo base_info = 1;
+
+  sint64 skill_2_idx = 2;
+  sint64 skill_3_idx = 3;
+  sint64 cur_skill_idx = 4;
+}
+
+enum EPinZhiType
+{
+  E_PZT_None = 0;
+  E_PZT_Bai = 1;
+  E_PZT_Lan = 2;
+  E_PZT_Zhi = 3;
+  E_PZT_Cheng = 4;
+}
+
+message MsgShopPlayerDataItem
+{
+  sint64 pos = 10;
+  sint64 buy_cnt = 20;
+}
+
+message MsgShopPlayerData
+{
+  sint64 id = 10;
+  sint64 version = 20;
+  sint64 param = 30;
+  message MsgParamItem
+  {
+    sint64 id = 10;
+    sint64 cnt = 20;
+  }
+  repeated MsgParamItem param_item_list = 40;
+  repeated MsgShopPlayerDataItem item_list = 50;
+}
+
+message MsgShopItem
+{
+  sint64 pos = 10;
+  sint64 id = 20;
+  sint64 param = 30;
+  sint64 param_1 = 40;
+}
+
+message MsgShop
+{
+  sint64 id = 10;
+  sint64 version = 20;
+  repeated MsgShopItem item_list = 30;
+}
+
+message MsgShopMgr
+{
+  repeated MsgShopPlayerData shop_player_data_list = 10;
+  repeated MsgShop shop_list = 20;
+
+  message MsgBuyOtherLimitItem
+  {
+    sint64 drop_type = 10;
+    sint64 sub_type = 20;
+    sint64 cnt = 30;
+  }
+  repeated MsgBuyOtherLimitItem buy_other_item_list = 100;
+}
+
+message MsgTalent
+{
+  sint64 id = 10;
+  sint64 lv = 20;
+}
+
+message MsgTalentMgr
+{
+  repeated MsgTalent item_list = 10;
+}
+
+message MsgGameSeasonBattleStatisticsInfo
+{
+  MsgBattleInfo battle_info = 10;
+  sint64 continue_win_cnt = 40;
+  sint64 max_continue_win_cnt = 50;
+}
+
+message MsgBattleInfo
+{
+  sint64 win_cnt = 20;
+  sint64 lose_cnt = 30;
+  sint64 draw_cnt = 40;
+  repeated sint64 push_cnt_list = 50;
+  repeated sint64 kill_cnt_list = 60;
+}
+
+message MsgPVPPlayerBattleSaveInfo
+{
+  sint64 version = 10;
+  sint64 idx = 20;
+  sint64 hidden_score = 30;
+}
+
+message MsgConcludeFighterInfo
+{
+  sint64 guid = 10;
+  string nick_name = 20;
+  sint64 icon_idx = 30;
+  repeated sint64 hand_cards_list = 40;
+  sint64 road_cnt = 50;
+  sint64 pos_cnt = 60;
+  repeated sint64 push_cnt_list = 70;
+  repeated sint64 kill_cnt_list = 80;
+}
+
+message MsgConcludeInfo
+{
+  sint64 win_guid = 10;
+  sint64 round = 20;
+  repeated MsgConcludeFighterInfo fighter_list = 30;
+}
+
+message MsgBattleStatisticsInfo
+{
+  ERegionType region_type = 10;
+  repeated MsgConcludeInfo conclude_info_list = 20;
+}
+
+message MsgBattleStatisticsRankInfo
+{
+  sint64 cur_rank = 4;
+  sint64 max_rank = 5;
+
+  MsgBattleInfo battle_info = 10;
+}
+
+message MsgSysMailInfo
+{
+  sint64 id = 10;
+  sint64 time = 20;
+  string title = 30;
+  string from = 40;
+  string content = 50;
+  repeated MsgGoodsItem goods_list = 60;
+}
+
+message DBPlayerSysMailInfo
+{
+  sint64 id = 10;
+  sint64 over_time = 20;
+  sint64 flag = 30;
+}
+
+message DBPlayerMailSys
+{
+  repeated DBPlayerSysMailInfo sys_mail_list = 110;
+}
+
+message MsgPlayerHandCardsItem
+{
+  sint64 idx = 1;
+  repeated sint64 soldier_cfg_id_list = 2;
+}
+
+message MsgRuneMgr
+{
+  message MsgRuneItem
+  {
+    sint64 page_idx = 10;
+    sint64 pos_idx = 20;
+    sint64 cfg_id = 30;
+  };
+
+  sint64 cur_page = 10;
+  repeated MsgRuneItem item_list = 11;
+}
+
+enum EPlayerAttrType
+{
+  E_PAT_Exp = 0;
+  E_PAT_Coins = 1;
+  E_PAT_TiLi = 2;
+  E_PAT_Diamond = 3;
+  E_PAT_DailyActivity = 4;
+  E_PAT_WeeklyActivity = 5;
+  E_PAT_LV = 6;
+  E_PAT_TiLiStartRecoverTime = 7;
+  E_PAT_NickNameChangeCnt = 8;
+}
+
+message MsgUpdatePlayerAttr
+{
+  EPlayerAttrType type = 1;
+  sint64 val = 2;
+  sint64 val_1 = 3;
+}
+
+message MsgPlayerGameSeasonInfo
+{
+  sint64 season = 1;
+  sint64 lv = 2;
+  sint64 max_lv = 3;
+  sint64 cur_max_lv = 4;
+  sint64 score = 5;
+  sint64 cur_season = 6;
+  bool already_reward = 7;
+  repeated sint64 reward_list = 8;
+  MsgGameSeasonBattleStatisticsInfo cur_info = 9;
+  MsgGameSeasonBattleStatisticsInfo total_info = 10;
+}
+
+message MsgEquip
+{
+  sint64 id = 10;
+  sint64 cfg_id = 20;
+  sint64 lv = 30;
+  sint64 set_cfg_id = 40;
+
+  message MsgGemItem
+  {
+    sint64 cfg_id = 10;
+    sint64 pos = 20;
+  }
+  repeated MsgGemItem gem_list = 100;
+}
+
+message MsgEquipMgr
+{
+  repeated MsgEquip equip_list = 10;
+}
+
+message MsgHero
+{
+  sint64 id = 10;
+  sint64 lv = 20;
+  sint64 total_exp = 30;
+  sint64 pi_fu = 40;
+  sint64 use_talent_pnt = 50;
+  sint64 total_talent_pnt = 60;
+
+  repeated MsgTalent talent_list = 100;
+}
+
+message MsgHeroTuJianItem
+{
+  sint64 cfg_id = 10;
+  sint64 flag = 20;
+}
+
+message MsgHeroMgr
+{
+  sint64 main_hero = 10;
+  repeated MsgHero hero_list = 20;
+  repeated MsgEquip equip_list = 30;
+  repeated MsgHeroTuJianItem tu_jian_item_list = 40;
+}
+
+message MsgAD
+{
+  sint64 id = 10;
+  sint64 cnt = 20;
+}
+
+message MsgADMgr
+{
+  repeated MsgAD item_list = 10;
+}
+
+message MsgVIPItem
+{
+  sint64 id = 10;
+  sint64 over_time = 20;
+  repeated sint64 flag_list = 30;
+}
+
+message MsgVIPMgr
+{
+  repeated MsgVIPItem item_list = 10;
+}
+
+message MsgPlayerChange
+{
+  repeated MsgUpdatePlayerAttr change_attr_list = 1;
+  repeated MsgGoodsItem change_goods_list = 2;
+  repeated sint64 icon_idx_list = 3;
+  repeated MsgEquip change_equip_list = 4;
+  repeated MsgEquip puton_equip_list = 5;
+  repeated MsgHero change_hero_list = 7;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

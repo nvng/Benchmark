@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// package PokerProto;
+
+// import "msg_common.proto";
+
+enum EInternalErrorType
+{
+  E_IET_Success = 0;
+  E_IET_Fail = 1;
+  E_IET_FromIsNull = 2;
+  E_IET_CallTimeOut = 3;
+
+  E_IET_RegionCreateTimeout = 10;
+  E_IET_RegionCreateAlreadyExist = 11;
+  E_IET_EnterRegionError = 12;
+  E_IET_GameSesAlreadyRelease = 13;
+  E_IET_GateSesAlreadyRelease = 14;
+  E_IET_LobbySesAlreadyRelease = 15;
+  E_IET_RegionLoadFighterFail = 16;
+  E_IET_ReqEnterRegionTimeout = 17;
+  E_IET_RegionCannotExit = 18;
+  E_IET_RegionCreateError = 19;
+  E_IET_RegionNotFound = 20;
+  E_IET_FighterNotFound = 21;
+  E_IET_FighterInitFromLobbyFail = 22;
+
+  E_IET_PlayerDataSIDError = 0x20;
+  E_IET_PlayerDelete = 0x21;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

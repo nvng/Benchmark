@@ -1,0 +1,29 @@
+{
+  "control_server": {},
+  "login_server": {},
+  "gate_server": {
+    "crt": "config_cx/server.crt",
+    "key": "config_cx/server.key"
+  },
+  "lobby_server": {},
+  "game_server": {},
+  "redis": {
+    "game_db": {
+      "ip": "127.0.0.1",
+      "port": 6379,
+      "pwd": "",
+      "db": -1
+    }
+  },
+  "mysql": {
+    "game_db": {
+      "host": "127.0.0.1",
+      "port": 3306,
+      "user": "root",
+      "pwd":"123456",
+      "db": "-1",
+      "conn_cnt": 50
+    }
+  },
+  "cfg_dir": "./config_ch"
+}

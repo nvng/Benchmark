@@ -1,0 +1,74 @@
+{
+  "rid": 1,
+  "control_server":
+  {
+    "sid": 1,
+    "fa_name": "ens33",
+    "ip": "10.0.0.93",
+    "port": 999
+  },
+  "game_mgr_server": {
+    "sid": 10,
+    "fa_name": "ens33",
+    "ip": "10.0.0.93",
+    "lobby_port": 910,
+    "game_port": 911,
+    "workers_cnt": 20,
+    "net_proc_cnt": 4,
+    "timer_proc_cnt": 4,
+    "request_workers_cnt": 1024
+  },
+  "db_server_list": [
+    {
+      "sid": 30,
+      "fa_name": "ens33",
+      "ip": "10.0.0.93",
+      "lobby_port": 930,
+      "workers_cnt": 20,
+      "net_proc_cnt": 4,
+      "timer_proc_cnt": 4,
+      "request_workers_cnt": 1024
+    }
+  ],
+  "gate_server_list": [
+    {
+      "sid": 200,
+      "fa_name": "ens33",
+      "ip": "10.0.0.93",
+      "client_port": 200
+    }
+  ],
+  "login_server_list": [
+    {
+      "sid": 300,
+      "fa_name": "ens33",
+      "ip": "10.0.0.93",
+      "gate_port": 300,
+      "redis_conn_cnt": 1
+    }
+  ],
+  "lobby_server_list": [
+    {
+      "sid": 400,
+      "fa_name": "ens33",
+      "ip": "10.0.0.93",
+      "gate_port": 400,
+      "game_port": 401,
+      "workers_cnt": 20,
+      "net_proc_cnt": 4,
+      "timer_proc_cnt": 4,
+      "redis_conn_cnt": 4
+    }
+  ],
+  "game_server_list": [
+    {
+      "sid": 500,
+      "fa_name": "ens33",
+      "ip": "10.0.0.93",
+      "gate_port": 500,
+      "workers_cnt": 20,
+      "net_proc_cnt": 4,
+      "timer_proc_cnt": 4
+    }
+  ]
+}
