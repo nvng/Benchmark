@@ -304,4 +304,19 @@ void App::StopPreTask()
         _stopPriorityTaskList.CheckAndExecute();
 }
 
+#include "Player/Player.h"
+ACTOR_MAIL_HANDLE(Player, 0x7f, 0)
+{
+	++GetApp()->_cnt;
+	Send2Client(0x7f, 0, nullptr);
+	return nullptr;
+}
+
+ACTOR_MAIL_HANDLE(Player, 0x7f, 1)
+{
+	++GetApp()->_cnt;
+	Send2Client(0x7f, 1, nullptr);
+	return nullptr;
+}
+
 // vim: fenc=utf8:expandtab:ts=8

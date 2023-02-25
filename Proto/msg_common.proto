@@ -20,10 +20,11 @@ option optimize_for = LITE_RUNTIME;
 
 enum ERegionType
 {
-  E_RT_MainCity = 0;
+  E_RT_None = 0;
+  E_RT_MainCity = 1;
   E_RT_PVE = 101;
   E_RT_PVP = 102;
-  E_RT_MaxLimit = 1000; // 最大限制，有地方将其作为ID。
+  E_RT_MaxLimit = 999; // 最大限制，有地方将其作为ID。
 }
 
 enum EClientErrorType
@@ -410,6 +411,7 @@ enum EPlayerAttrType
   E_PAT_LV = 6;
   E_PAT_TiLiStartRecoverTime = 7;
   E_PAT_NickNameChangeCnt = 8;
+  E_PAT_IconIdx = 9;
 }
 
 message MsgUpdatePlayerAttr

@@ -31,7 +31,7 @@ if (vm.count("help")) \
 } \
  \
 if (vm.count("daemon")) \
-        GetAppBase()->_isRunAsDaemon = true;
+        FLAG_ADD(GetAppBase()->_internalFlag, E_AFT_Daemon);
 
 template <int16_t _Mx, int16_t _My>
 union stPos2D
