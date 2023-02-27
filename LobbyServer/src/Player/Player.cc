@@ -2,7 +2,6 @@
 
 #include "PlayerMgr.h"
 #include "Region/RegionMgr.h"
-#include "DB/DBMgr.h"
 
 Player::Player(uint64_t guid, const std::string& nickName)
 	: SuperType(guid, nickName)

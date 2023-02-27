@@ -2,9 +2,7 @@
 
 #include "Player/PlayerMgr.h"
 #include "Net/LobbyGateSession.h"
-#include "Net/LobbyDBSession.h"
 #include "Region/RegionMgr.h"
-#include "DB/DBMgr.h"
 
 AppBase* GetAppBase()
 {
@@ -28,7 +26,6 @@ App::App()
 
 	RegionMgr::CreateInstance();
 
-	DBMgr::CreateInstance();
 	PlayerMgr::CreateInstance();
 
 	SpecialActorMgr::CreateInstance();
@@ -49,7 +46,6 @@ App::~App()
 	RegionMgr::DestroyInstance();
 
 	PlayerMgr::DestroyInstance();
-	DBMgr::DestroyInstance();
 
 	SpecialActorMgr::DestroyInstance();
 	GlobalSetup_CH::DestroyInstance();
@@ -79,7 +75,6 @@ bool App::Init(const std::string& appName, int32_t coCnt /*= 100*/, int32_t thCn
 	LOG_FATAL_IF(!RedisProcMgr::GetInstance()->Init(_lobbyInfo->_redis_conn_cnt, "Redis", nl::af::impl::ServerCfgMgr::GetInstance()->_redisCfg), "RedisProcMgr init error!!!");
 
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "初始化策划全局配置失败!!!");
-	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "DBMgr init error!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 
