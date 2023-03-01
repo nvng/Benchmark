@@ -79,7 +79,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_GameCommon, E_MCGCST_SwitchRegion, MsgSwitchReg
 {
         // LOG_INFO("玩家[{}] 收到 SwitchRegion type[{}]", GetID(), msg->region_type());
         SendPB(E_MCMT_GameCommon, E_MCGCST_LoadFinish);
-        SendPB(0x7f, 0, nullptr);
+        // SendPB(0x7f, 0, nullptr);
 
         /*
         StateEventInfo evt(E_MCGCST_SwitchRegion);

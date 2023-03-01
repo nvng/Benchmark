@@ -3,14 +3,14 @@
   "control_server":
   {
     "sid": 1,
-    "fa_name": "ens33",
-    "ip": "10.0.0.93",
+    "fa_name": "eth0",
+    "ip": "172.17.0.4",
     "port": 999
   },
   "game_mgr_server": {
     "sid": 10,
-    "fa_name": "ens33",
-    "ip": "10.0.0.93",
+    "fa_name": "eth0",
+    "ip": "172.17.0.4",
     "lobby_port": 910,
     "game_port": 911,
     "workers_cnt": 20,
@@ -21,8 +21,8 @@
   "db_server_list": [
     {
       "sid": 30,
-      "fa_name": "ens33",
-      "ip": "10.0.0.93",
+      "fa_name": "eth0",
+      "ip": "172.17.0.4",
       "lobby_port": 930,
       "workers_cnt": 20,
       "net_proc_cnt": 4,
@@ -33,34 +33,34 @@
   "gate_server_list": [
     {
       "sid": 200,
-      "fa_name": "ens33",
-      "ip": "10.0.0.93",
+      "fa_name": "eth0",
+      "ip": "172.17.0.4",
       "client_port": 200
     }
     ,{
       "sid": 201,
-      "fa_name": "ens33",
-      "ip": "10.0.0.93",
+      "fa_name": "eth0",
+      "ip": "172.17.0.4",
       "client_port": 201
     }
     ,{
       "sid": 202,
-      "fa_name": "ens33",
-      "ip": "10.0.0.93",
+      "fa_name": "eth0",
+      "ip": "172.17.0.4",
       "client_port": 202
     }
     ,{
       "sid": 203,
-      "fa_name": "ens33",
-      "ip": "10.0.0.93",
+      "fa_name": "eth0",
+      "ip": "172.17.0.4",
       "client_port": 203
     }
   ],
   "login_server_list": [
     {
       "sid": 300,
-      "fa_name": "ens33",
-      "ip": "10.0.0.93",
+      "fa_name": "eth0",
+      "ip": "172.17.0.4",
       "gate_port": 300,
       "redis_conn_cnt": 1
     }
@@ -68,22 +68,22 @@
   "lobby_server_list": [
     {
       "sid": 400,
-      "fa_name": "ens33",
-      "ip": "10.0.0.93",
+      "fa_name": "eth0",
+      "ip": "172.17.0.4",
       "gate_port": 400,
       "game_port": 401,
-      "workers_cnt": 20,
+      "workers_cnt": 4,
       "net_proc_cnt": 4,
       "timer_proc_cnt": 4,
       "redis_conn_cnt": 4
     }
     ,{
       "sid": 401,
-      "fa_name": "ens33",
-      "ip": "10.0.0.93",
+      "fa_name": "eth0",
+      "ip": "172.17.0.4",
       "gate_port": 402,
       "game_port": 403,
-      "workers_cnt": 20,
+      "workers_cnt": 4,
       "net_proc_cnt": 4,
       "timer_proc_cnt": 4,
       "redis_conn_cnt": 4
@@ -92,8 +92,8 @@
   "game_server_list": [
     {
       "sid": 500,
-      "fa_name": "ens33",
-      "ip": "10.0.0.93",
+      "fa_name": "eth0",
+      "ip": "172.17.0.4",
       "gate_port": 500,
       "workers_cnt": 20,
       "net_proc_cnt": 4,

@@ -37,6 +37,8 @@ message MsgPlayerInfo
   string nick_name = 2;
 
   repeated sint64 attr_list = 3;
+
+  MsgQueueInfo queue_info = 10;
 }
 
 message MsgDataResetNoneZero
@@ -72,6 +74,24 @@ message MsgReqEnterRegion
   ERegionType region_type = 2;
   sint64 region_guid = 3;
   sint64 param = 4;
+}
+
+message MsgQueueInfo
+{
+  ERegionType region_type = 1;
+  sint64 queue_guid = 2;
+}
+
+message MsgReqQueue
+{
+  EClientErrorType error_type = 1;
+  ERegionType region_type = 2;
+  sint64 queue_guid = 3;
+}
+
+message MsgExitQueue
+{
+  EClientErrorType error_type = 1;
 }
 
 message MsgResult

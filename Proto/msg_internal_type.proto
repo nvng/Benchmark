@@ -66,7 +66,7 @@ enum EMsgInternalGameCommonSubType
   E_MIGCST_Conclude = 0x11;
   E_MIGCST_ReqRegionRelationList = 0x12;
 
-  E_MIGCST_SyncPlayerInfo = 0x1f;
+  E_MIGCST_SyncPlayerInfo2Region = 0x1f;
 }
 
 // vim: fenc=utf8:expandtab:ts=8
