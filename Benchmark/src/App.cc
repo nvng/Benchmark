@@ -34,8 +34,8 @@ bool App::Init(const std::string& appName)
 {
 	LOG_FATAL_IF(!nl::af::impl::ServerListCfgMgr::GetInstance()->Init("./config_cx/server_list.json"), "服务器列表初始化失败!!!");
 
-	const auto totalThCnt = std::thread::hardware_concurrency() * 2 + 2;
-	LOG_FATAL_IF(!SuperType::Init(appName, INT64_MAX, INT64_MAX, totalThCnt - 3), "AppBase init error!!!");
+	// const auto totalThCnt = std::thread::hardware_concurrency() * 2 + 2;
+	LOG_FATAL_IF(!SuperType::Init(appName, INT64_MAX, INT64_MAX, 4), "AppBase init error!!!");
 	LOG_FATAL_IF(!NetProcMgr::GetInstance()->Init(4, "Net"), "NetProcMgr init error!!!");
 	LOG_FATAL_IF(!TimerProcMgr::GetInstance()->Init(1, "Timer"), "TimerProcMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");

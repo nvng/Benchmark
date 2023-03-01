@@ -40,7 +40,6 @@ public :
         void OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf) override;
 
 public :
-	uint64_t _playerGuid = UINT64_MAX;
 	std::weak_ptr<Player> _player;
 
 	DECLARE_SHARED_FROM_THIS(ClientGateSession);

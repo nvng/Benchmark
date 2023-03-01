@@ -22,8 +22,8 @@ bool Player::Init()
 uint64_t Player::GenPlayerGuid()
 {
 	// TODO:后面根据规则生成
-	// return RandInRange(10000000, 10000000*10-1);
-        return 10 * 1000 * 1000 + RandInRange(0, 40000);
+	return RandInRange(10000000, 10000000*10-1);
+        // return 10 * 1000 * 1000 + RandInRange(0, 40000);
         // return 99999999;
 }
 

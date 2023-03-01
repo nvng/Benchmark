@@ -18,6 +18,7 @@ public :
         FORCE_INLINE static IService* GetService() { return PlayerMgr::GetInstance(); }
 	FORCE_INLINE PlayerPtr GetPlayer(uint64_t guid) { return std::reinterpret_pointer_cast<Player>(GetActor(guid)); }
 
+	std::vector<uint64_t> _idList;
 public :
 	FORCE_INLINE std::shared_ptr<ClientGateSession> DistSes() { return _sesList[_idx++ % _sesList.size()];  }
 private :

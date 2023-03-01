@@ -17,8 +17,14 @@ bool PlayerMgr::Init()
         if (!SuperType::Init())
                 return false;
 
-        nl::af::impl::ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([](const nl::af::impl::stGateServerInfoPtr& gateInfo) {
-                for (int i=0; i<5000; ++i)
+        int64_t perCnt = 1000;
+        nl::af::impl::ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([this, perCnt](const nl::af::impl::stGateServerInfoPtr& gateInfo) {
+                for (int i=0; i<perCnt; ++i)
+                        _idList.emplace_back(Player::GenPlayerGuid());
+        });
+
+        nl::af::impl::ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([this, perCnt](const nl::af::impl::stGateServerInfoPtr& gateInfo) {
+                for (int i=0; i<perCnt; ++i)
                 {
                         auto proc = NetProcMgr::GetInstance()->Dist(i);
                         proc->Connect(gateInfo->_ip, gateInfo->_client_port, false, []() { return CreateSession<ClientGateSession>(); });

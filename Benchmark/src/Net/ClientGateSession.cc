@@ -34,9 +34,9 @@ void ClientGateSession::OnConnect()
 	++GetApp()->_cnt;
 
 	MsgClientLogin msg;
-	if (UINT64_MAX == _playerGuid)
-		_playerGuid = Player::GenPlayerGuid();
-	msg.set_player_guid(_playerGuid);
+	static std::atomic_int64_t cnt = 0;
+	auto playerGuid = PlayerMgr::GetInstance()->_idList[++cnt % PlayerMgr::GetInstance()->_idList.size()];
+	msg.set_player_guid(playerGuid);
 	SendPB(&msg, E_MCMT_ClientCommon, E_MCCCST_Login);
 
 	if (0 != RandInRange(0, 10))
