@@ -39,6 +39,7 @@ void ClientGateSession::OnConnect()
 	msg.set_player_guid(playerGuid);
 	SendPB(&msg, E_MCMT_ClientCommon, E_MCCCST_Login);
 
+	return;
 	if (0 != RandInRange(0, 10))
 	{
 		TcpSessionWeakPtr weakSes = shared_from_this();
@@ -79,7 +80,7 @@ void ClientGateSession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 		{
 			SendPB(nullptr, 0x7f, 0);
 			int64_t i = 0;
-			for (; i<10; ++i)
+			for (; i<100; ++i)
 				SendPB(nullptr, 0x7f, 1);
 			GetApp()->_cnt += i + 1;
 		}

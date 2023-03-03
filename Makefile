@@ -9,6 +9,7 @@ cl	:
 release	:
 	cd LobbyServer && make cl && make release && cd ..
 	cd GateServer && make cl && make release && cd ..
+	cd Benchmark && make cl && make release && cd ..
 
 db	:
 	cd LobbyServer && make cl && compiledb -n make && cd ..

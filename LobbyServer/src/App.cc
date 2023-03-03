@@ -53,6 +53,7 @@ App::~App()
 	nl::af::impl::ServerCfgMgr::DestroyInstance();
 }
 
+#include <malloc.h>
 bool App::Init(const std::string& appName, int32_t coCnt /*= 100*/, int32_t thCnt /*= 1*/)
 {
         LOG_FATAL_IF(!nl::af::impl::ServerListCfgMgr::GetInstance()->Init("./config_cx/server_list.json"), "服务器列表初始化失败!!!");
@@ -69,7 +70,7 @@ bool App::Init(const std::string& appName, int32_t coCnt /*= 100*/, int32_t thCn
         });
 	LOG_FATAL_IF(!_lobbyInfo, "server info not found!!!");
 
-	LOG_FATAL_IF(!SuperType::Init(appName, nl::af::impl::ServerListCfgMgr::GetInstance()->_rid, _lobbyInfo->_sid, _lobbyInfo->_workers_cnt), "AppBase init error!!!");
+	LOG_FATAL_IF(!SuperType::Init(appName, nl::af::impl::ServerListCfgMgr::GetInstance()->_rid, _lobbyInfo->_sid, 4/*_lobbyInfo->_workers_cnt*/), "AppBase init error!!!");
 	LOG_FATAL_IF(!NetProcMgr::GetInstance()->Init(_lobbyInfo->_net_proc_cnt, "Net"), "NetProcMgr init error!!!");
 	LOG_FATAL_IF(!TimerProcMgr::GetInstance()->Init(_lobbyInfo->_timer_proc_cnt, "Timer"), "TimerProcMgr init error!!!");
 	LOG_FATAL_IF(!RedisProcMgr::GetInstance()->Init(_lobbyInfo->_redis_conn_cnt, "Redis", nl::af::impl::ServerCfgMgr::GetInstance()->_redisCfg), "RedisProcMgr init error!!!");
@@ -115,6 +116,7 @@ bool App::Init(const std::string& appName, int32_t coCnt /*= 100*/, int32_t thCn
 			 );
 #endif
 		oldCnt = GetApp()->_cnt;
+		malloc_trim(0);
 	});
 
 	InitPreTask();

@@ -17,7 +17,7 @@ bool PlayerMgr::Init()
         if (!SuperType::Init())
                 return false;
 
-        int64_t perCnt = 1000;
+        int64_t perCnt = 100;
         nl::af::impl::ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([this, perCnt](const nl::af::impl::stGateServerInfoPtr& gateInfo) {
                 for (int i=0; i<perCnt; ++i)
                         _idList.emplace_back(Player::GenPlayerGuid());
