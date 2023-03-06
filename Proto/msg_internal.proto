@@ -96,6 +96,7 @@ message MailReqQueue
   sint64 game_sid = 6;
   sint64 lobby_sid = 7;
   sint64 gate_sid = 8;
+  sint64 param = 9;
 }
 
 message MailResult
@@ -120,7 +121,8 @@ message MailRegionKickout
 
 message MsgServerInit
 {
-  uint64 sid = 1;
+  sint64 sid = 1;
+  sint64 remote_id = 2;
 }
 
 message MsgMultiCastInfo

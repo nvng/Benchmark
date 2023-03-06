@@ -34,8 +34,23 @@ bool App::Init(const std::string& appName)
 {
 	LOG_FATAL_IF(!nl::af::impl::ServerListCfgMgr::GetInstance()->Init("./config_cx/server_list.json"), "服务器列表初始化失败!!!");
 
+	int64_t sid = 10;
+        std::ifstream f("sid.txt");
+	std::string str;
+	getline(f, str);
+	if (!str.empty())
+	{
+	    sid = atoll(str.c_str());
+	    // printf("sid[%ld] str[%s]", sid, str.c_str());
+	}
+	f.close();
+
+	std::ofstream f1("sid.txt", std::ios_base::trunc);
+	f1 << ((sid+1>=100) ? 10 : sid + 1);
+        f1.close();
+
 	// const auto totalThCnt = std::thread::hardware_concurrency() * 2 + 2;
-	LOG_FATAL_IF(!SuperType::Init(appName, INT64_MAX, INT64_MAX, 4), "AppBase init error!!!");
+	LOG_FATAL_IF(!SuperType::Init(appName, GetApp()->GetRID(), sid, 1), "AppBase init error!!!");
 	LOG_FATAL_IF(!NetProcMgr::GetInstance()->Init(4, "Net"), "NetProcMgr init error!!!");
 	LOG_FATAL_IF(!TimerProcMgr::GetInstance()->Init(1, "Timer"), "TimerProcMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");

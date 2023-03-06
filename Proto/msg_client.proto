@@ -87,6 +87,7 @@ message MsgReqQueue
   EClientErrorType error_type = 1;
   ERegionType region_type = 2;
   sint64 queue_guid = 3;
+  sint64 param = 4;
 }
 
 message MsgExitQueue

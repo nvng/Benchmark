@@ -39,8 +39,7 @@ void ClientGateSession::OnConnect()
 	msg.set_player_guid(playerGuid);
 	SendPB(&msg, E_MCMT_ClientCommon, E_MCCCST_Login);
 
-	return;
-	if (0 != RandInRange(0, 10))
+	if (0 != RandInRange(0, 5))
 	{
 		TcpSessionWeakPtr weakSes = shared_from_this();
 		GetSteadyTimer().StartWithRelativeTimeOnce(RandInRange(0.01, 40.0), [weakSes](TimedEventItem& eventData) {
@@ -87,7 +86,12 @@ void ClientGateSession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 		break;
 	case MsgHeaderType::MsgTypeMerge<0x7f, 1>() :
 		break;
+	case MsgHeaderType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_SwitchRegion>() :
+		SendPB(nullptr, E_MCMT_GameCommon, E_MCGCST_LoadFinish);
+		SendPB(nullptr, 0x7f, 0);
+		break;
 	default :
+		if (false)
 		{
 			// LOG_INFO("收到网关消息 mt[{:#x}] st[{:#x}] size[{}]", MsgHeaderType::MsgMainType(msgHead.type_), MsgHeaderType::MsgSubType(msgHead.type_), msgHead.size_);
 			auto p = _player.lock();

@@ -17,11 +17,17 @@ bool PlayerMgr::Init()
         if (!SuperType::Init())
                 return false;
 
-        int64_t perCnt = 100;
+        int64_t perCnt = 1000;
         nl::af::impl::ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([this, perCnt](const nl::af::impl::stGateServerInfoPtr& gateInfo) {
                 for (int i=0; i<perCnt; ++i)
-                        _idList.emplace_back(Player::GenPlayerGuid());
+                {
+                        static int64_t idx = 0;
+                        _idList.emplace_back(GetApp()->GetSID() * 1000 * 1000 + ++idx);
+                }
         });
+
+        for (auto id : _idList)
+                LOG_INFO("1111111111111 id:{}", id);
 
         nl::af::impl::ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([this, perCnt](const nl::af::impl::stGateServerInfoPtr& gateInfo) {
                 for (int i=0; i<perCnt; ++i)
