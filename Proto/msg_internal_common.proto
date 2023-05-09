@@ -22,27 +22,34 @@ option optimize_for = LITE_RUNTIME;
 
 enum EInternalErrorType
 {
-  E_IET_Success = 0;
-  E_IET_Fail = 1;
-  E_IET_FromIsNull = 2;
-  E_IET_CallTimeOut = 3;
+  E_IET_None = 0x0; // 0 不能作为有效值，ByteSize 为 0。
+  E_IET_Success = 0x1;
+  E_IET_Fail = 0x2;
+  E_IET_FromIsNull = 0x3;
+  E_IET_CallTimeOut = 0x4;
+  E_IET_ParamError = 0x5;
+  E_IET_RemoteCrash = 0x6;
 
-  E_IET_RegionCreateTimeout = 10;
-  E_IET_RegionCreateAlreadyExist = 11;
-  E_IET_EnterRegionError = 12;
-  E_IET_GameSesAlreadyRelease = 13;
-  E_IET_GateSesAlreadyRelease = 14;
-  E_IET_LobbySesAlreadyRelease = 15;
-  E_IET_RegionLoadFighterFail = 16;
-  E_IET_ReqEnterRegionTimeout = 17;
-  E_IET_RegionCannotExit = 18;
-  E_IET_RegionCreateError = 19;
-  E_IET_RegionNotFound = 20;
-  E_IET_FighterNotFound = 21;
-  E_IET_FighterInitFromLobbyFail = 22;
+  E_IET_RegionCreateTimeout = 0x10;
+  E_IET_RegionCreateAlreadyExist = 0x11;
+  E_IET_EnterRegionError = 0x12;
+  E_IET_GameSesAlreadyRelease = 0x13;
+  E_IET_GateSesAlreadyRelease = 0x14;
+  E_IET_LobbySesAlreadyRelease = 0x15;
+  E_IET_RegionLoadFighterFail = 0x16;
+  E_IET_ReqEnterRegionTimeout = 0x17;
+  E_IET_RegionCannotExit = 0x18;
+  E_IET_RegionCreateError = 0x19;
+  E_IET_RegionNotFound = 0x1a;
+  E_IET_RegionMgrNotFound = 0x1b;
+  E_IET_FighterNotFound = 0x1c;
+  E_IET_FighterInitFromLobbyFail = 0x1d;
 
   E_IET_PlayerDataSIDError = 0x20;
   E_IET_PlayerDelete = 0x21;
+
+  E_IET_FighterClientError = 0x30;
+  E_IET_GateNotFound = 0x31;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

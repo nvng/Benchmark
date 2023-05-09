@@ -19,6 +19,10 @@ option optimize_for = LITE_RUNTIME;
 // package PokerProto;
 
 import "msg_common.proto";
+import "msg_client_common.proto";
+import "msg_mail.proto";
+import "msg_shop.proto";
+import "msg_achievement.proto";
 
 message MsgClientHeartBeat
 {
@@ -27,18 +31,30 @@ message MsgClientHeartBeat
 
 message MsgClientLogin
 {
-  sint32 player_guid = 1;
+  sint64 player_guid = 1;
   string nick_name = 2;
+  string icon = 3;
 }
 
 message MsgPlayerInfo
 {
   sint64 player_guid = 1;
   string nick_name = 2;
+  string icon = 3;
+  repeated sint64 icon_idx_list = 4;
 
-  repeated sint64 attr_list = 3;
+  repeated sint64 attr_list = 5;
 
   MsgQueueInfo queue_info = 10;
+
+  repeated MsgGoodsItem goods_list = 30;
+  MsgPlayerMailSysBrief mail = 31;
+  MsgPlayerGameSeasonInfo game_season = 32;
+  MsgShopMgr shop_mgr = 33;
+  MsgADMgr ad_mgr = 34;
+  MsgVIPMgr vip_mgr = 35;
+  MsgHeroMgr hero_mgr = 36;
+  MsgAchievementMgr achievement_mgr = 37;
 }
 
 message MsgDataResetNoneZero
@@ -52,6 +68,12 @@ message MsgClientLoginRet
   MsgPlayerInfo player_info = 2;
 }
 
+message MsgCommitLocation
+{
+  EClientErrorType error_type = 1;
+  sint64 val = 2;
+}
+
 message MsgClientKickout
 {
   EClientErrorType error_type = 1;
@@ -61,6 +83,7 @@ message MsgSwitchRegion
 {
   ERegionType region_type = 1;
   ERegionType old_region_type = 2;
+  EClientErrorType error_type = 3;
 }
 
 message MsgLoadFinish
@@ -79,25 +102,86 @@ message MsgReqEnterRegion
 message MsgQueueInfo
 {
   ERegionType region_type = 1;
-  sint64 queue_guid = 2;
+  EQueueType queue_type = 2;
+  sint64 queue_guid = 3;
+  sint64 time = 4;
+  sint64 param = 5;
+  repeated MsgPlayerQueueInfo player_list = 6;
+}
+
+message MsgSyncQueueInfo
+{
+  sint64 queue_guid = 1;
+  sint64 time = 2;
+  sint64 param = 3;
+  repeated MsgPlayerQueueInfo player_list = 4;
 }
 
 message MsgReqQueue
 {
   EClientErrorType error_type = 1;
   ERegionType region_type = 2;
-  sint64 queue_guid = 3;
-  sint64 param = 4;
+  EQueueType queue_type = 3;
+  sint64 queue_guid = 4;
+  sint64 param = 5;
+  sint64 time = 6;
 }
 
 message MsgExitQueue
 {
   EClientErrorType error_type = 1;
+  sint64 time = 2;
+}
+
+message MsgQueueReady
+{
+  EClientErrorType error_type = 1;
+  ERegionType region_type = 2;
+  sint64 queue_guid = 3;
+  sint64 time = 4;
+  sint64 player_guid = 5;
+  bool ready = 6;
+}
+
+message MsgQueueStart
+{
+  EClientErrorType error_type = 1;
+  ERegionType region_type = 2;
+  sint64 queue_guid = 3;
+  sint64 time = 4;
+}
+
+enum EQueueOptType
+{
+  E_QOT_None = 0x0;
+  E_QOT_SetMap = 0x1;
+  E_QOT_SetHero = 0x2;
+  E_QOT_Offline = 0x3;
+  E_QOT_Kickout = 0x4;
+}
+
+message MsgQueueOpt
+{
+  EClientErrorType error_type = 1;
+  EQueueOptType opt_type = 2;
+  sint64 param = 3;
+
+  sint64 player_guid = 4;
+  ERegionType region_type = 5;
+  sint64 queue_guid = 6;
+  sint64 time = 7;
 }
 
 message MsgResult
 {
   EClientErrorType error_type = 1;
+}
+
+message MsgFighterExit
+{
+  ERegionType region_type = 1;
+  sint64 region_guid = 2;
+  sint64 fighter_guid = 3;
 }
 
 message MsgGameGM
@@ -108,6 +192,101 @@ message MsgGameGM
 message MsgLobbyGM
 {
   string cmd = 1;
+}
+
+// {{{ game season
+message DBGameSeasonInfo
+{
+  sint64 season = 10;
+
+  sint64 lv = 20;
+  sint64 star = 30;
+  sint64 score = 40;
+
+  sint64 show_lv = 50;
+  sint64 show_star = 60;
+
+  sint64 max_lv = 70;
+  sint64 max_star = 80;
+
+  sint64 cur_max_lv = 90;
+  sint64 cur_max_star = 100;
+
+  sint64 cur_season = 110;
+  bool already_reward = 120;
+  sint64 reward_version = 200;
+  repeated sint64 reward_list = 210;
+  repeated sint64 segment_level_reward_list = 220;
+  MsgGameSeasonBattleStatisticsInfo cur_info = 230;
+  MsgGameSeasonBattleStatisticsInfo total_info = 240;
+}
+
+message MsgReqPlayerGameSeasonInfo
+{
+  EClientErrorType error_type = 1;
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgGameSeasonJourneyReward
+{
+  EClientErrorType error_type = 1;
+  sint64 lv = 2;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgSegmentLevelReward
+{
+  EClientErrorType error_type = 1;
+  sint64 lv = 2;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgGameSeasonReward
+{
+  EClientErrorType error_type = 1;
+  MsgPlayerChange player_change = 10;
+}
+
+// }}}
+
+enum EVIPAttrType
+{
+  E_VIP_AT_Reward = 0x0;
+  E_VIP_AT_DailyStageCnt = 0x1;
+  E_VIP_AT_SaoDang = 0x2;
+  E_VIP_AT_GlobalCoinsAdd = 0x3;
+  E_VIP_AT_GlobalExpAdd = 0x4;
+  E_VIP_AT_NormalShopAddtionalDiscount = 0x5;
+  E_VIP_AT_None = 0x6;
+}
+
+message MsgVIPItem
+{
+  sint64 id = 10;
+  sint64 over_time = 20;
+  repeated sint64 flag_list = 30;
+}
+
+message MsgVIPMgr
+{
+  repeated MsgVIPItem item_list = 10;
+}
+
+message MsgVIPReward
+{
+  EClientErrorType error_type = 1;
+  sint64 cfg_id = 2;
+  sint64 idx = 3;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgSyncIcon
+{
+  EClientErrorType error_type = 1;
+  string icon = 2;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

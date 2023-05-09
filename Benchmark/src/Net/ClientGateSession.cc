@@ -39,10 +39,10 @@ void ClientGateSession::OnConnect()
 	msg.set_player_guid(playerGuid);
 	SendPB(&msg, E_MCMT_ClientCommon, E_MCCCST_Login);
 
-	if (0 != RandInRange(0, 5))
+	if (0 != RandInRange(0, 3))
 	{
 		TcpSessionWeakPtr weakSes = shared_from_this();
-		GetSteadyTimer().StartWithRelativeTimeOnce(RandInRange(0.01, 40.0), [weakSes](TimedEventItem& eventData) {
+		GetSteadyTimer().StartWithRelativeTimeOnce(RandInRange(0.0, 40.0), [weakSes](TimedEventItem& eventData) {
 			auto ses = weakSes.lock();
 			if (ses)
 				ses->Close(1024);
@@ -56,16 +56,23 @@ void ClientGateSession::OnConnect()
 
 void ClientGateSession::OnClose(int32_t reasonType)
 {
-	// DLOG_INFO("连接关闭!!! reasonType[{}]", reasonType);
-	SuperType::OnClose(reasonType);
+	std::weak_ptr<ClientGateSession> weakSes = shared_from_this();
+	GetSteadyTimer().StartWithRelativeTimeOnce(RandInRange(0.0, 4.0), [weakSes, reasonType](TimedEventItem& eventData) {
+		auto ses = weakSes.lock();
+		if (ses)
+		{
+			// DLOG_INFO("连接关闭!!! reasonType[{}]", reasonType);
+			ses->SuperType::OnClose(reasonType);
 
-	auto p = _player.lock();
-	if (p)
-	{
-		p->Terminate();
-		p->WaitForTerminate();
-		PlayerMgr::GetInstance()->RemoveActor(p);
-	}
+			auto p = ses->_player.lock();
+			if (p)
+			{
+				p->Terminate();
+				p->WaitForTerminate();
+				PlayerMgr::GetInstance()->RemoveActor(p);
+			}
+		}
+	});
 }
 
 void ClientGateSession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
@@ -79,16 +86,17 @@ void ClientGateSession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 		{
 			SendPB(nullptr, 0x7f, 0);
 			int64_t i = 0;
-			for (; i<100; ++i)
+			for (; i<0; ++i)
 				SendPB(nullptr, 0x7f, 1);
 			GetApp()->_cnt += i + 1;
 		}
 		break;
 	case MsgHeaderType::MsgTypeMerge<0x7f, 1>() :
+		GetApp()->_cnt += 1;
 		break;
 	case MsgHeaderType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_SwitchRegion>() :
 		SendPB(nullptr, E_MCMT_GameCommon, E_MCGCST_LoadFinish);
-		SendPB(nullptr, 0x7f, 0);
+		// SendPB(nullptr, 0x7f, 0);
 		break;
 	default :
 		if (false)
@@ -97,7 +105,8 @@ void ClientGateSession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 			auto p = _player.lock();
 			if (p)
 			{
-				p->SendPush(nullptr, msgHead.MainType(), msgHead.SubType(), stNetBufferActorMailData::Create(evbuf, msgHead.size_, sizeof(MsgHeaderType), msgHead.CompressType()));
+				auto mail = std::make_shared<ActorNetMail<ActorMail, MsgHeaderType>>(nullptr, msgHead, evbuf);
+				p->Push(mail);
 			}
 			else
 			{

@@ -16,8 +16,13 @@ option optimize_for = LITE_RUNTIME;
    or reflection are not available.
  */
 
-// import "msg_common.proto";
+import "msg_common.proto";
 import "msg_internal_common.proto";
+import "msg_client_common.proto";
+import "msg_client.proto";
+import "msg_mail.proto";
+import "msg_shop.proto";
+import "msg_achievement.proto";
 
 enum EMsgInternalDBSubType
 {
@@ -33,7 +38,35 @@ message DBPlayerInfo
   sint64 version = 10;
   sint64 player_guid = 20;
   string nick_name = 30;
-  repeated sint64 attr_list = 40;
+  string icon = 40;
+  repeated sint64 icon_idx_list = 50;
+  repeated sint64 attr_list = 60;
+
+  repeated MsgGoodsItem goods_list = 100;
+  DBPlayerMailSys mail_sys = 110;
+  DBGameSeasonInfo game_season = 120;
+  MsgShopMgr shop_mgr = 130;
+  MsgADMgr ad_mgr = 140;
+  MsgVIPMgr vip_mgr = 150;
+  MsgHeroMgr hero_mgr = 160;
+  MsgAchievementMgr achievement_mgr = 170;
+}
+
+message DBRobotInfo
+{
+  sint64 cfg_id = 10;
+  sint64 id = 20;
+  sint64 lv = 30;
+  sint64 exp = 40;
+  string nick_name = 50;
+  string icon = 60;
+
+  DBGameSeasonInfo game_season = 70;
+}
+
+message DBRobotList
+{
+  repeated DBRobotInfo robot_list = 10;
 }
 
 message MsgPlayerVersion

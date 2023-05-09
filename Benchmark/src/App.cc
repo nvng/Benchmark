@@ -13,7 +13,8 @@ App* GetApp()
 	return App::GetInstance();
 }
 
-App::App()
+App::App(const std::string& appName)
+  : SuperType(appName)
 {
 	nl::af::impl::ServerListCfgMgr::CreateInstance();
 	TimerProcMgr::CreateInstance();
@@ -30,7 +31,7 @@ App::~App()
 	nl::af::impl::ServerListCfgMgr::DestroyInstance();
 }
 
-bool App::Init(const std::string& appName)
+bool App::Init()
 {
 	LOG_FATAL_IF(!nl::af::impl::ServerListCfgMgr::GetInstance()->Init("./config_cx/server_list.json"), "服务器列表初始化失败!!!");
 
@@ -50,8 +51,8 @@ bool App::Init(const std::string& appName)
         f1.close();
 
 	// const auto totalThCnt = std::thread::hardware_concurrency() * 2 + 2;
-	LOG_FATAL_IF(!SuperType::Init(appName, GetApp()->GetRID(), sid, 1), "AppBase init error!!!");
-	LOG_FATAL_IF(!NetProcMgr::GetInstance()->Init(4, "Net"), "NetProcMgr init error!!!");
+	LOG_FATAL_IF(!SuperType::Init(GetApp()->GetRID(), sid, 1), "AppBase init error!!!");
+	LOG_FATAL_IF(!NetProcMgr::GetInstance()->Init(2, "Net"), "NetProcMgr init error!!!");
 	LOG_FATAL_IF(!TimerProcMgr::GetInstance()->Init(1, "Timer"), "TimerProcMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 
@@ -77,6 +78,18 @@ void App::Stop()
 	NetProcMgr::GetInstance()->WaitForTerminate();
 
 	SuperType::Stop();
+}
+
+int main(int argc, char* argv[])
+{
+	App::CreateInstance(argv[0]);
+	INIT_OPT();
+
+	LOG_FATAL_IF(!App::GetInstance()->Init(), "app init error!!!");
+	App::GetInstance()->Start();
+	App::DestroyInstance();
+
+	return 0;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

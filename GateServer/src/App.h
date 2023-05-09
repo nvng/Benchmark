@@ -4,12 +4,12 @@ class App : public AppBase, public Singleton<App>
 {
   typedef AppBase SuperType;
 
-  App();
+  App(const std::string& appName);
   ~App() override;
   friend class Singleton<App>;
 
 public :
-  bool Init(const std::string& appName);
+  bool Init();
   void Stop() override;
 
 public :

@@ -1,6 +1,6 @@
 ifeq ($(JOBS),)
 	# JOBS := $(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
-	JOBS := 10
+	JOBS := 6
 	ifeq ($(JOBS),)
 		JOBS := 1
 	endif
@@ -8,7 +8,7 @@ endif
 
 ifeq ($(release), y)
 	CC = g++
-	CC_FLAG = -DNDEBUG -std=c++2a -Wall -Werror -O2 -fno-omit-frame-pointer -Wno-unused-function -rdynamic
+	CC_FLAG = -DNDEBUG -std=c++2a -Wall -Werror -O3 -fno-omit-frame-pointer -Wno-unused-function -rdynamic
 else
 	CC = ccache g++
 	# CC_FLAG = -g -std=c++2a -Wall -Werror -O0 -Wno-unused-function -rdynamic -fno-omit-frame-pointer -fsanitize=address,leak,undefined,pointer-compare,pointer-subtract -fstack-protector
@@ -17,7 +17,6 @@ endif
 
 # {{{ project info
 INC_DIR	= . .. ./src \
-          ../Share \
           ../Deps/libnvngLib/include/ActorFramework/Impl/Share
 
 SRC_DIR   = ./src \
@@ -48,12 +47,13 @@ RM_ALL  += $(DEPS)
 
 # {{{ dependency includes and libs
 EXT_DIR = ../Deps/libnvngLib \
+	  ../Deps/libevent-2.1.12-stable \
           ../Deps/libboost
 
 EXT_LIB = nvngLib fmt protobuf pthread \
           boost_program_options boost_filesystem boost_stacktrace_backtrace \
           event event_core event_extra event_openssl event_pthreads \
-          ssl crypto libgo dl jemalloc mysqlcppconn hiredis atomic z lz4 zstd
+          ssl crypto libgo dl mysqlcppconn hiredis atomic z lz4 zstd
 
 LIB_DIR = $(foreach d, $(EXT_DIR), $(addprefix -L, $(d)/lib))
 INC	+= $(foreach d, $(EXT_DIR), $(addprefix -I, $(d)/include))

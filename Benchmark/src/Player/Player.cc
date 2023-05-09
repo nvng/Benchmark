@@ -35,7 +35,7 @@ void Player::UnPack(const MsgPlayerInfo& msg)
 void Player::SendPB(uint16_t mainType, uint16_t subType, google::protobuf::MessageLite* pb/*=nullptr*/)
 {
         if (_ses)
-                _ses->SendPB(pb, mainType, subType);
+                ; // _ses->SendPB(pb, mainType, subType);
 }
 
 bool Player::UseGMGoods()
@@ -45,11 +45,6 @@ bool Player::UseGMGoods()
 
 void Player::DealPlayerChange(const MsgPlayerChange& msg)
 {
-        if (msg.change_goods_list_size() > 0)
-        {
-                for (auto& info : msg.change_goods_list())
-                        _goodsList[info.id()] = info.num();
-        }
 }
 
 ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClientLoginRet)

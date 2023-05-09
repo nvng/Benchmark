@@ -32,12 +32,14 @@
 #include "Proto/msg_internal.pb.h"
 
 #include "nvngLib.h"
+#include "GlobalDef.h"
 #include "ServerList.hpp"
-#include "GlobalDef.hpp"
 
 #include "Share/GlobalDef.h"
 
 #include "App.h"
+
+using namespace nl::af::impl;
 
 #endif // __PRE_COMPILE_H__
 

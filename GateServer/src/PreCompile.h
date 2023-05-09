@@ -36,7 +36,7 @@
 
 #include "nvngLib.h"
 
-#include "GlobalDef.hpp"
+#include "GlobalDef.h"
 #include "GateClientSession.h"
 #include "GateLobbySession.h"
 #include "GateGameSession.h"
@@ -46,6 +46,8 @@
 #include "Share/GlobalDef.h"
 
 #include "App.h"
+
+using namespace nl::af::impl;
 
 #endif // __PRE_COMPILE_H__
 

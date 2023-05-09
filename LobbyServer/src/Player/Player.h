@@ -5,16 +5,44 @@
 
 #define INVALID_MONEY_VAL INT64_MIN
 
+struct stTest
+{
+        stTest() : _ch(128) { }
+        void Run()
+        {
+                go [this]() {
+                        std::shared_ptr<int64_t> v;
+                        while (true)
+                                _ch >> v;
+                };
+        }
+        co_chan<std::shared_ptr<int64_t>> _ch;
+};
+
 class Player : public nl::af::impl::PlayerBase
 {
         typedef nl::af::impl::PlayerBase SuperType;
 public :
-        Player(uint64_t guid, const std::string& nickName);
+        Player(uint64_t guid, const std::string& nickName, const std::string& icon);
         ~Player() override;
 
         bool Init() override;
 
         void Online() override;
+        void Push()
+        {
+                for (auto t : testList)
+                {
+                        auto m = std::make_shared<int64_t>(1);
+                        if (!t->_ch.TryPush(m))
+                        {
+                                // LOG_INFO("111111111111111111111111111111111111111111");
+                                t->_ch << m;
+                        }
+                }
+        }
+
+        std::vector<stTest*> testList;
 
         EXTERN_ACTOR_MAIL_HANDLE();
         DECLARE_SHARED_FROM_THIS(Player);

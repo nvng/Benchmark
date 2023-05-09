@@ -1,8 +1,10 @@
 #include "App.h"
 
 #include "Player/PlayerMgr.h"
-#include "Net/LobbyGateSession.h"
 #include "Region/RegionMgr.h"
+
+#include "MailSys.h"
+#include "DBMgr.h"
 
 AppBase* GetAppBase()
 {
@@ -14,17 +16,21 @@ App* GetApp()
 	return App::GetInstance();
 }
 
-App::App()
+App::App(const std::string& appName)
+	: SuperType(appName)
+	  , _gateSesList("App_gateSesList")
 {
-	nl::af::impl::ServerListCfgMgr::CreateInstance();
-	nl::af::impl::ServerCfgMgr::CreateInstance();
+	ServerListCfgMgr::CreateInstance();
+	ServerCfgMgr::CreateInstance();
 
 	GlobalSetup_CH::CreateInstance();
 	TimerProcMgr::CreateInstance();
 	NetProcMgr::CreateInstance();
 	RedisProcMgr::CreateInstance();
 
+	DBMgr::CreateInstance();
 	RegionMgr::CreateInstance();
+	MailSys::CreateInstance();
 
 	PlayerMgr::CreateInstance();
 
@@ -44,22 +50,25 @@ App::~App()
 	RedisProcMgr::DestroyInstance();
 
 	RegionMgr::DestroyInstance();
+	MailSys::DestroyInstance();
+	DBMgr::DestroyInstance();
 
 	PlayerMgr::DestroyInstance();
 
 	SpecialActorMgr::DestroyInstance();
 	GlobalSetup_CH::DestroyInstance();
-	nl::af::impl::ServerListCfgMgr::DestroyInstance();
-	nl::af::impl::ServerCfgMgr::DestroyInstance();
+	ServerListCfgMgr::DestroyInstance();
+	ServerCfgMgr::DestroyInstance();
 }
 
+#include <sys/prctl.h>
 #include <malloc.h>
-bool App::Init(const std::string& appName, int32_t coCnt /*= 100*/, int32_t thCnt /*= 1*/)
+bool App::Init(int32_t coCnt /*= 100*/, int32_t thCnt /*= 1*/)
 {
-        LOG_FATAL_IF(!nl::af::impl::ServerListCfgMgr::GetInstance()->Init("./config_cx/server_list.json"), "服务器列表初始化失败!!!");
-        LOG_FATAL_IF(!nl::af::impl::ServerCfgMgr::GetInstance()->Init("./config_cx/server_cfg.json"), "服务器配置初始化失败!!!");
+        LOG_FATAL_IF(!ServerListCfgMgr::GetInstance()->Init("./config_cx/server_list.json"), "服务器列表初始化失败!!!");
+        LOG_FATAL_IF(!ServerCfgMgr::GetInstance()->Init("./config_cx/server_cfg.json"), "服务器配置初始化失败!!!");
 
-	nl::af::impl::ServerListCfgMgr::GetInstance()->_lobbyServerList.Foreach([](const nl::af::impl::stLobbyServerInfoPtr& sInfo) {
+	ServerListCfgMgr::GetInstance()->_lobbyServerList.Foreach([](const stLobbyServerInfoPtr& sInfo) {
 		if (GetApp()->_lobbyInfo)
 			return;
                 auto ip = GetIP(AF_INET, sInfo->_faName);
@@ -70,14 +79,16 @@ bool App::Init(const std::string& appName, int32_t coCnt /*= 100*/, int32_t thCn
         });
 	LOG_FATAL_IF(!_lobbyInfo, "server info not found!!!");
 
-	LOG_FATAL_IF(!SuperType::Init(appName, nl::af::impl::ServerListCfgMgr::GetInstance()->_rid, _lobbyInfo->_sid, 4/*_lobbyInfo->_workers_cnt*/), "AppBase init error!!!");
+	LOG_FATAL_IF(!SuperType::Init(ServerListCfgMgr::GetInstance()->_rid, _lobbyInfo->_sid, _lobbyInfo->_workers_cnt), "AppBase init error!!!");
 	LOG_FATAL_IF(!NetProcMgr::GetInstance()->Init(_lobbyInfo->_net_proc_cnt, "Net"), "NetProcMgr init error!!!");
 	LOG_FATAL_IF(!TimerProcMgr::GetInstance()->Init(_lobbyInfo->_timer_proc_cnt, "Timer"), "TimerProcMgr init error!!!");
-	LOG_FATAL_IF(!RedisProcMgr::GetInstance()->Init(_lobbyInfo->_redis_conn_cnt, "Redis", nl::af::impl::ServerCfgMgr::GetInstance()->_redisCfg), "RedisProcMgr init error!!!");
+	LOG_FATAL_IF(!RedisProcMgr::GetInstance()->Init(_lobbyInfo->_redis_conn_cnt, "Redis", ServerCfgMgr::GetInstance()->_redisCfg), "RedisProcMgr init error!!!");
 
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "初始化策划全局配置失败!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
+	LOG_FATAL_IF(!MailSys::GetInstance()->Init(), "MailSys init error!!!");
+	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "DBMgr init error!!!");
 
 #if 0
 	int64_t idx = 0;
@@ -104,7 +115,7 @@ bool App::Init(const std::string& appName, int32_t coCnt /*= 100*/, int32_t thCn
 			 agentCnt,
 			 GetApp()->_cnt - oldCnt,
 			 // TimedEventLoop::_timedEventItemCnt,
-			 nl::af::impl::PlayerBase::_playerFlag,
+			 PlayerBase::_playerFlag,
 			 GetFrameController().GetAverageFrameCnt()
 			 );
 #else
@@ -119,32 +130,12 @@ bool App::Init(const std::string& appName, int32_t coCnt /*= 100*/, int32_t thCn
 		malloc_trim(0);
 	});
 
-	InitPreTask();
-	return true;
-}
 
-void App::InitPreTask()
-{
-	GetSteadyTimer().StartWithRelativeTimeForever(10.0, 1.0,[](TimedEventItem& eventData) {
-		std::vector<std::string> taskKeyList = GetApp()->_startPriorityTaskList.GetRunButNotFinishedTask();
-		if (taskKeyList.empty())
-		{
-			GetSteadyTimer().Stop(eventData);
-		}
-		else
-		{
-			std::string printStr;
-			for (auto& taskKey : taskKeyList)
-			{
-				printStr += taskKey;
-				printStr += " ";
-			}
-			LOG_WARN("init task not finish : {}", printStr);
-		}
-	});
+	for (int64_t i=0; i<(2<<18); ++i)
+		_testList.Add(i);
 
 	std::vector<std::string> preTask;
-        _startPriorityTaskList.SetFinalTaskCallback([]() {
+        _startPriorityTaskList->AddFinalTaskCallback([]() {
 		// Note: 多线程
 		// TODO: 监听端口
 
@@ -179,7 +170,7 @@ void App::InitPreTask()
 		   _serviceDiscoveryActor->Start();
 		   */
 
-		GetApp()->_globalVarActor = std::make_shared<nl::af::impl::GlobalVarActor>();
+		GetApp()->_globalVarActor = std::make_shared<GlobalVarActor>();
 		GetApp()->_globalVarActor->Start();
 
 		GetApp()->PostTask([]() {
@@ -220,56 +211,7 @@ void App::InitPreTask()
 		});
         });
 
-	/*
-	preTask.clear();
-	preTask.emplace_back("load_sid");
-	_startPriorityTask.AddTask(preTask, "load_sid", [](const std::string& key) {
-	});
-	*/
-
-	// 这个必须放在最后
-        _startPriorityTaskList.CheckAndExecute();
-}
-
-void App::OnDayChange()
-{
-        LOG_WARN("app day change now:{}", Clock::GetTimeString_Slow(GetClock().GetTimeStamp()));
-	PlayerMgr::GetInstance()->OnDayChange();
-}
-
-void App::OnDataReset()
-{
-        LOG_WARN("app data reset now:{}", Clock::GetTimeString_Slow(GetClock().GetTimeStamp()));
-	PlayerMgr::GetInstance()->OnDataReset(GlobalSetup_CH::GetInstance()->_dataResetNonZero);
-}
-
-void App::Stop()
-{
-        StopPreTask();
-}
-
-void App::StopPreTask()
-{
-	GetSteadyTimer().StartWithRelativeTimeForever(10.0, 1.0,[](TimedEventItem& eventData) {
-		std::vector<std::string> taskKeyList = GetApp()->_stopPriorityTaskList.GetRunButNotFinishedTask();
-		if (taskKeyList.empty())
-		{
-			GetSteadyTimer().Stop(eventData);
-		}
-		else
-		{
-			std::string printStr;
-			for (auto& taskKey : taskKeyList)
-			{
-				printStr += taskKey;
-				printStr += " ";
-			}
-			LOG_WARN("stop task not finish : {}", printStr);
-		}
-	});
-
-	std::vector<std::string> preTask;
-        _stopPriorityTaskList.SetFinalTaskCallback([this]() {
+        _stopPriorityTaskList->AddFinalTaskCallback([this]() {
 		if (_globalVarActor)
 		{
 			_globalVarActor->Terminate();
@@ -297,23 +239,118 @@ void App::StopPreTask()
                 LOG_WARN("server stop success!!!");
         });
 
-	// 这个必须放在最后
-        _stopPriorityTaskList.CheckAndExecute();
+	return true;
 }
 
+void App::OnDayChange()
+{
+        LOG_WARN("app day change now:{}", Clock::GetTimeString_Slow(GetClock().GetTimeStamp()));
+	PlayerMgr::GetInstance()->OnDayChange();
+}
+
+void App::OnDataReset()
+{
+        LOG_WARN("app data reset now:{}", Clock::GetTimeString_Slow(GetClock().GetTimeStamp()));
+	PlayerMgr::GetInstance()->OnDataReset(GlobalSetup_CH::GetInstance()->_dataResetNonZero);
+}
+
+int main(int argc, char* argv[])
+{
+	App::CreateInstance(argv[0]);
+	INIT_OPT();
+
+	LOG_FATAL_IF(!App::GetInstance()->Init(), "app init error!!!");
+	App::GetInstance()->Start();
+	App::DestroyInstance();
+
+	return 0;
+}
+
+template <> constexpr uint64_t GetLogModuleParallelCnt<E_LOG_MT_Player>() { return 8; }
 #include "Player/Player.h"
-ACTOR_MAIL_HANDLE(Player, 0x7f, 0)
+ACTOR_MAIL_HANDLE(Player, 0x7f, 0, MsgClientLogin)
 {
+  // for (int64_t i=0; i<10; ++i)
+	// RedisCmd("SET a 1", false);
+  // PLAYER_LOG_INFO(GetID(), "aaa{}bbb{}ccc{}", 1, 2, 3);
+  // LOG_INFO("");
 	++GetApp()->_cnt;
-	Send2Client(0x7f, 0, nullptr);
+	Push();
+	// for (int64_t i=0; i<300; ++i)
+	{
+	  // co_yield;
+	  // static char buf[100];
+	  // memcpy(buf, msg->nick_name().c_str(), 100);
+		// GetApp()->_i = GetApp()->_testList.Get(i);
+		// GetApp()->_i = RandInRange(1, 100);
+	}
+
+
+	Send2Client(0x7f, 0, msg);
+	for (int64_t i=0; i<0; ++i)
+	  Send2Client(0x7f, 1, msg);
 	return nullptr;
 }
 
-ACTOR_MAIL_HANDLE(Player, 0x7f, 1)
+ACTOR_MAIL_HANDLE(Player, 0x7f, 1, MsgClientLogin)
 {
+  // for (int64_t i=0; i<10; ++i)
+	// RedisCmd("SET a 1", false);
+  // PLAYER_LOG_INFO(GetID(), "aaa{}bbb{}ccc{}", 1, 2, 3);
+  // LOG_INFO("");
 	++GetApp()->_cnt;
-	Send2Client(0x7f, 1, nullptr);
+	Push();
+	// for (int64_t i=0; i<300; ++i)
+	{
+	  // co_yield;
+	  // static char buf[100];
+	  // memcpy(buf, msg->nick_name().c_str(), 100);
+		// GetApp()->_i = GetApp()->_testList.Get(i);
+		// GetApp()->_i = RandInRange(1, 100);
+	}
+	Send2Client(0x7f, 1, msg);
 	return nullptr;
 }
+
+/*
+NET_MSG_HANDLE(LobbyGateSessionBase, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClientLogin)
+{
+        // LOG_INFO("from:{} to:{}", msgHead.from_, msgHead.to_);
+        const auto playerGuid = msg->player_guid();
+        if (0 == playerGuid)
+        {
+                LOG_WARN("玩家[{}] 登录时出错，playerGuid 不能为0!!!", playerGuid);
+                return;
+        }
+
+        LOG_FATAL_IF(!(0!=msgHead.from_ && playerGuid == static_cast<decltype(playerGuid)>(msgHead.to_)),
+                     "playerGuid[{}] msgHead.to_[{}]",
+                     playerGuid, msgHead.to_);
+
+        auto createPlayerFunc = [this, &msgHead, &msg](int64_t playerGuid) {
+		auto tMsg = std::make_shared<MsgClientLogin>();
+		tMsg->CopyFrom(*msg);
+		tMsg->set_player_guid(playerGuid);
+                auto loginInfo = std::make_shared<stLoginInfo>();
+                if (GetPlayerMgrBase()->_loginInfoList.Add(playerGuid, loginInfo))
+                {
+                        loginInfo->_from = msgHead.from_;
+                        loginInfo->_ses = shared_from_this();
+                        GetPlayerMgrBase()->GetPlayerMgrActor(playerGuid)->SendPush(0, tMsg);
+                }
+                else
+                {
+                        DLOG_WARN("玩家[{}] 在登录时，已经有别的端在登录!!!", playerGuid);
+                        MsgClientLoginRet sendMsg;
+                        sendMsg.set_error_type(E_CET_InLogin);
+                        SendPB(&sendMsg, E_MCMT_ClientCommon, E_MCCCST_Login, MsgHeaderType::E_RMT_Send, E_CET_InLogin, msgHead.to_, msgHead.from_);
+                }
+        };
+
+        createPlayerFunc(playerGuid);
+        for (int64_t i=0; i<500 * 1000; ++i)
+                createPlayerFunc(playerGuid + i + 1);
+}
+*/
 
 // vim: fenc=utf8:expandtab:ts=8

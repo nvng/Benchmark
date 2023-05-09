@@ -11,7 +11,7 @@ class PlayerMgr : public nl::af::impl::PlayerMgrBase, public Singleton<PlayerMgr
 	typedef nl::af::impl::PlayerMgrBase SuperType;
 public :
 	bool Init() override;
-	nl::af::impl::PlayerBasePtr CreatePlayer(uint64_t id, const std::string& nickName);
+	nl::af::impl::PlayerBasePtr CreatePlayer(uint64_t id, const std::string& nickName, const std::string& icon);
 
 public :
 	bool ReadLevelUpCfg();

@@ -5,6 +5,7 @@
 #include "Net/ClientGateSession.h"
 
 PlayerMgr::PlayerMgr()
+        : SuperType("PlayerMgr")
 {
 }
 
@@ -17,17 +18,17 @@ bool PlayerMgr::Init()
         if (!SuperType::Init())
                 return false;
 
-        int64_t perCnt = 1000;
+        int64_t perCnt = 5000;
         nl::af::impl::ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([this, perCnt](const nl::af::impl::stGateServerInfoPtr& gateInfo) {
                 for (int i=0; i<perCnt; ++i)
                 {
-                        static int64_t idx = 0;
-                        _idList.emplace_back(GetApp()->GetSID() * 1000 * 1000 + ++idx);
+                        // static int64_t idx = 0;
+                        // _idList.emplace_back(GetApp()->GetSID() * 1000 * 1000 + ++idx);
+
+                        static int64_t base = 10 * 1000 * 1000;
+                        _idList.emplace_back(RandInRange(base, base + 40 * 1000)); // 不停地断线重连接以及异地登录。
                 }
         });
-
-        for (auto id : _idList)
-                LOG_INFO("1111111111111 id:{}", id);
 
         nl::af::impl::ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([this, perCnt](const nl::af::impl::stGateServerInfoPtr& gateInfo) {
                 for (int i=0; i<perCnt; ++i)

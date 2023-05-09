@@ -27,7 +27,16 @@ enum EMsgClientMainType
   E_MCMT_Login = 0x1; // 登录相关。
   E_MCMT_ClientCommon = 0x2; // 大厅通用。
   E_MCMT_Client = 0x3; // 大厅。
+  E_MCMT_Mail = 0x4;
+  E_MCMT_Shop = 0x5;
+  E_MCMT_VIP = 0x6;
+  E_MCMT_AD = 0x7;
+  E_MCMT_Rank = 0x8;
+  E_MCMT_Hero = 0x9;
+  E_MCMT_Achievement = 0xa;
 
+  E_MCMT_QueueCommon = 0xfa;
+  E_MCMT_Queue = 0xfb;
   E_MCMT_GameCommon = 0xfc; // 场景基本操作。
   E_MCMT_Game = 0xfd; // 场景相关。
   E_MCMT_MatchCommon = 0xfe; // 比赛基本操作。
@@ -37,47 +46,58 @@ enum EMsgClientMainType
 enum EMsgClientInternalSubType
 {
   E_MCIST_HeartBeat = 0x0; // 心跳
-  E_MCIST_ServerInit = 0x1;
-
-  E_MCIST_Login = 0x2;
-  E_MCIST_Logout = 0x3;
-  E_MCIST_Kickout = 0x4;
-  E_MCIST_Disconnect = 0x5;
-  E_MCIST_DayChange = 0x6;
-  E_MCIST_DataResetNoneZero = 0x7;
-  E_MCIST_Terminate = 0x8;
 }
 
 enum EMsgClientClientCommonSubType
 {
   E_MCCCST_Login = 0x0; // 登录
-  E_MCCCST_Reconnect = 0x1; // 玩家重连。
   E_MCCCST_Logout = 0x2; // 登出
+  E_MCCCST_Reconnect = 0x1; // 玩家重连。
+  E_MCCCST_Disconnect = 0x8;
   E_MCCCST_Kickout = 0x3; // 踢人。
   E_MCCCST_DayChange = 0x4; // 跨天。
   E_MCCCST_DataResetNoneZero = 0x5; // 非零点数据重置。
   E_MCCCST_Result = 0x6; // 通用返回。
+  E_MCCCST_CommitLocation = 0x7; // 设置位置信息。
 }
 
 enum EMsgClientClientSubType
 {
   E_MCCST_GM = 0x0;
+  E_MCCST_SyncIcon = 0x1;
+
+  E_MCCST_SegmentLevelReward = 0x15;
+  E_MCCST_GameSeasonJourneyReward = 0x16; // 领取段位奖励。
+  E_MCCST_GameSeasonReward = 0x17; // 领取赛季奖励。
+  E_MCCST_ReqGameSeasonInfo = 0x18; // 请求玩家赛季信息。
+
+  E_MCCCST_VIPReward = 0x19;
+}
+
+enum EMsgClientQueueCommonSubType
+{
+  E_MCQCST_ReqQueue = 0x0; // 请求排队!!!
+  E_MCQCST_ExitQueue = 0x1; // 退出排队!!!
+  E_MCQCST_Start = 0x2;
+  E_MCQCST_Ready = 0x3;
+  E_MCQCST_SyncQueueInfo = 0x4;
+  E_MCQCST_Opt = 0x5;
 }
 
 enum EMsgClientGameCommonSubType
 {
   E_MCGCST_ReqEnterRegion = 0x0; // 请求进入场景。
-  E_MCGCST_SwitchRegion = 0x1; // 通知玩家切场景。
-  E_MCGCST_LoadFinish = 0x2;
-  E_MCGCST_OnFighterEnter = 0x3; // 有玩家进入场景。
-  E_MCGCST_OnFighterExit = 0x4; // 有玩家退出场景。
-  E_MCGCST_ReqQueue = 0x5; // 请求排队!!!
-  E_MCGCST_ExitQueue = 0x6; // 退出排队!!!
-  E_MCGCST_UpdateRegionStateInfo = 0x7; // 更新场景状态信息。
-  E_MCGCST_RegionInfo = 0x8; // 同步场景信息给玩家。
+  E_MCGCST_ReqExitRegion = 0x1;
+  E_MCGCST_SwitchRegion = 0x2; // 通知玩家切场景。
+  E_MCGCST_LoadFinish = 0x3;
+  E_MCGCST_OnFighterEnter = 0x4; // 有玩家进入场景。
+  E_MCGCST_OnFighterExit = 0x5; // 有玩家退出场景。
+  E_MCGCST_UpdateRegionStateInfo = 0x6; // 更新场景状态信息。
+  E_MCGCST_RegionInfo = 0x7; // 同步场景信息给玩家。
+  E_MCGCST_Conclude = 0x8;
 
-  E_MCGCST_TestRegionInfo = 0x12;
-  E_MCGCST_TestSelectTarget = 0x14; // 测试技能范围选取。
+  E_MCGCST_GM = 0x1e; // GM
+  E_MCGCST_GameDisconnect = 0x1f; // 大厅或网关与 GameServer 断开连接。
 }
 
 // vim: fenc=utf8:expandtab:ts=8

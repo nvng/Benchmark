@@ -34,12 +34,15 @@
 #include "Proto/msg_db.pb.h"
 
 #include "nvngLib.h"
-#include "GlobalDef.hpp"
+#include "GlobalDef.h"
 #include "ServerList.hpp"
 #include "GlobalVarActor.h"
+#include "LobbyGateSession.h"
 
 #include "Share/GlobalDef.h"
 #include "Share/GlobalSetup.h"
+
+using namespace nl::af::impl;
 
 #include "App.h"
 

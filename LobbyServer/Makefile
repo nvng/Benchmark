@@ -1,6 +1,6 @@
 ifeq ($(JOBS),)
 	# JOBS := $(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
-	JOBS := 10
+	JOBS := 6
 	ifeq ($(JOBS),)
 		JOBS := 1
 	endif
@@ -8,8 +8,8 @@ endif
 
 ifeq ($(release), y)
 	CC = g++
-	# CC_FLAG = -DNDEBUG -g -std=c++2a -Wall -O2 -Wno-unused-function -rdynamic -fsanitize=address -fno-omit-frame-pointer
-	CC_FLAG = -DNDEBUG -g -std=c++2a -Wall -O2 -Wno-unused-function -rdynamic
+	# CC_FLAG = -DNDEBUG -g -std=c++2a -Wall -O3 -Wno-unused-function -rdynamic -fsanitize=address -fno-omit-frame-pointer
+	CC_FLAG = -DNDEBUG -g -std=c++2a -Wall -O3 -Wno-unused-function -rdynamic
 else
 	CC = ccache g++
 	# CC_FLAG = -g -std=c++2a -Wall -Werror -O0 -Wno-unused-function -rdynamic -fno-omit-frame-pointer -fsanitize=address,leak,undefined,pointer-compare,pointer-subtract -fstack-protector
@@ -18,7 +18,6 @@ endif
 
 # {{{ project info
 INC_DIR	= . .. ./src \
-          ../Share \
           ../Deps/libnvngLib/include/ActorFramework/Impl/Share \
           ../Deps/libnvngLib/include/ActorFramework/Impl/Lobby
 
@@ -54,6 +53,7 @@ RM_ALL  += $(DEPS)
 
 # {{{ dependency includes and libs
 EXT_DIR = ../Deps/libnvngLib \
+	  ../Deps/libevent-2.1.12-stable \
           ../Deps/libboost
 
 EXT_LIB = nvngLib fmt protobuf pthread \

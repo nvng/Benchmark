@@ -24,9 +24,9 @@ bool PlayerMgr::Init()
 	return ReadLevelUpCfg();
 }
 
-nl::af::impl::PlayerBasePtr PlayerMgr::CreatePlayer(uint64_t id, const std::string& nickName)
+nl::af::impl::PlayerBasePtr PlayerMgr::CreatePlayer(uint64_t id, const std::string& nickName, const std::string& icon)
 {
-        return std::make_shared<Player>(id, nickName);
+        return std::make_shared<Player>(id, nickName, icon);
 }
 
 bool PlayerMgr::ReadLevelUpCfg()

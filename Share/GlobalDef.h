@@ -1,38 +1,5 @@
 #pragma once
 
-#include <string>
-
-#ifdef NDEBUG
-#define GLOG_BUF_SECS   1
-#else
-#define GLOG_BUF_SECS   0
-#endif
-
-#define INIT_OPT() \
-boost::program_options::options_description desc("Usage"); \
-desc.add_options() \
-("help,h", "produce help message") \
-("daemon,d", "run as daemon") \
-("configdir,c", boost::program_options::value<std::string>(&(GetAppBase()->_configDir))->default_value("./config"), "config dir") \
-("logdir", boost::program_options::value<std::string>(&LogHelper::sLogDir)->default_value("./log"), "log dir") \
-("loglevel", boost::program_options::value<int64_t>(&LogHelper::sLogLV)->default_value(0), "log level") \
-("logfv", boost::program_options::value<uint64_t>(&LogHelper::sLogFilterFlag)->default_value(0), "log filter level") \
-("logmf", boost::program_options::value<uint64_t>(&LogHelper::sLogMaxFiles)->default_value(128), "log max files") \
-("logms", boost::program_options::value<uint64_t>(&LogHelper::sLogMaxSize)->default_value(1024), "log max size per file"); \
- \
-boost::program_options::variables_map vm; \
-boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm); \
-boost::program_options::notify(vm); \
- \
-if (vm.count("help")) \
-{ \
-        std::cout << std::endl << desc << std::endl; \
-        return 1; \
-} \
- \
-if (vm.count("daemon")) \
-        FLAG_ADD(GetAppBase()->_internalFlag, E_AFT_Daemon);
-
 template <int16_t _Mx, int16_t _My>
 union stPos2D
 {

@@ -23,12 +23,29 @@ option optimize_for = LITE_RUNTIME;
 
 enum EMsgInternalMainType
 {
-  E_MIMT_Internal = 0x0; // 内部消息
-  E_MIMT_DB = 0x7fb;
-  E_MIMT_GameCommon = 0x7fc;
-  E_MIMT_Game = 0x7fd;
-  E_MIMT_MatchCommon = 0x7fe; // 比赛
-  E_MIMT_Match = 0x7ff; // 比赛
+  E_MIMT_Internal = 0x0; // 服务器间内部消息
+
+  E_MIMT_DB = 0x7e8;
+
+  E_MIMT_Robot = 0x7e9;
+  E_MIMT_QueueCommon = 0x7ea;
+  E_MIMT_Queue = 0x7eb;
+  E_MIMT_GameCommon = 0x7ec;
+  E_MIMT_Game = 0x7ed;
+  E_MIMT_MatchCommon = 0x7ee; // 比赛
+  E_MIMT_Match = 0x7ef; // 比赛
+
+  E_MIMT_Local = 0x7ff; // 本地消息。
+}
+
+enum EMsgInternalLocalSubType
+{
+  E_MILST_Disconnect = 0x0;
+  E_MILST_Reconnect = 0x1;
+  E_MILST_Init = 0x2;
+  E_MILST_DayChange = 0x3;
+  E_MILST_DataResetNoneZero = 0x4;
+  E_MILST_Terminate = 0x5;
 }
 
 enum EMsgInternalInternalSubType
@@ -37,35 +54,32 @@ enum EMsgInternalInternalSubType
   E_MIIST_ServerInit = 0x1;
   E_MIIST_MultiCast = 0x2;
   E_MIIST_BroadCast = 0x3;
+  E_MIIST_BroadCastAll = 0x4;
+  E_MIIST_SyncRelation = 0x5;
 
-  E_MIIST_Init = 0x4;
-  E_MIIST_GameServerDisconnect = 0x5;
-  E_MIIST_LobbyServerDisconnect = 0x6;
-  E_MIIST_PlayerReconnect = 0x7;
-  E_MIIST_ClientReconnect = 0x8;
+  E_MIIST_Reconnect = 0x1b;
+  E_MIIST_Result = 0x1c;
+}
+
+enum EMsgInternalRobotSubType
+{
+  E_MIRST_Req = 0x0;
+  E_MIRST_Back = 0x1;
+}
+
+enum EMsgInternalQueueCommonSubType
+{
+  E_MIQCST_ReqQueue = 0x0; // 请求排队。
 }
 
 enum EMsgInternalGameCommonSubType
 {
-  E_MIGCST_SwitchRegion = 0x0;
+  // 约定：像排队一样异步，或不能在 E_MCMT_GameCommon 中的消息，才在这里。
+  E_MIGCST_RegionCreate = 0x0;
+  E_MIGCST_RegionDestroy = 0x1;
+  E_MIGCST_RegionKickout = 0x2;
 
-  E_MIGCST_ReqEnterRegion = 0x1;
-  E_MIGCST_ReqEnterRegionRet = 0x2;
-  E_MIGCST_ReqExit = 0x3;
-  E_MIGCST_ReqQueue = 0x4; // 请求排队。
-  E_MIGCST_ExitQueue = 0x5; // 退出排队。
-
-  E_MIGCST_Reconnect = 0x6;
-  E_MIGCST_Disconnect = 0x7;
-
-  E_MIGCST_RegionCreate = 0x8;
-  E_MIGCST_RegionDestroy = 0x9;
-  E_MIGCST_RegionKickout = 0xa;
-
-  E_MIGCST_SyncRegionEnterCond = 0x10;
-  E_MIGCST_Conclude = 0x11;
-  E_MIGCST_ReqRegionRelationList = 0x12;
-
+  E_MIGCST_SyncRegionEnterCond = 0x1e;
   E_MIGCST_SyncPlayerInfo2Region = 0x1f;
 }
 
