@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// package PokerProto;
+
+import "msg_common.proto";
+import "msg_client_common.proto";
+
+enum EMsgClientShopSubType
+{
+  E_MCSST_SyncShopData = 0x0;
+  E_MCSST_Refresh = 0x1;
+  E_MCSST_Buy = 0x2;
+  E_MCSST_BuyOther = 0x3;
+  E_MCSST_Sell = 0x4;
+  E_MCSST_ChouKa = 0x5;
+}
+
+message MsgShopBuy
+{
+  EClientErrorType error_type = 1;
+  sint64 shop_cfg_id = 2;
+  sint64 pos = 3;
+  sint64 cnt = 4;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgShopBuyOther
+{
+  EClientErrorType error_type = 1;
+  sint64 drop_type = 2;
+  sint64 sub_type = 3;
+  sint64 cnt = 4;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgShopSell
+{
+  EClientErrorType error_type = 1;
+  repeated MsgGoodsItem item_list = 2;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgShopRefresh
+{
+  EClientErrorType error_type = 1;
+  sint64 id = 2;
+
+  MsgShop shop = 10;
+  MsgShopPlayerData shop_player_data = 11;
+  MsgPlayerChange player_change = 12;
+}
+
+message MsgShopChouKa
+{
+  EClientErrorType error_type = 1;
+  sint64 shop_cfg_id = 2;
+  sint64 flag = 3;
+
+  repeated MsgPlayerChange player_change_list = 10;
+  repeated MsgShopPlayerData.MsgParamItem param_item_list = 11;
+}
+
+message MsgShopPlayerDataItem
+{
+  sint64 pos = 10;
+  sint64 buy_cnt = 20;
+}
+
+message MsgShopPlayerData
+{
+  sint64 id = 10;
+  sint64 version = 20;
+  sint64 param = 30;
+  message MsgParamItem
+  {
+    sint64 id = 10;
+    sint64 cnt = 20;
+  }
+  repeated MsgParamItem param_item_list = 40;
+  repeated MsgShopPlayerDataItem item_list = 50;
+}
+
+message MsgShopItem
+{
+  sint64 pos = 10;
+  sint64 id = 20;
+  sint64 param = 30;
+  sint64 param_1 = 40;
+}
+
+message MsgShop
+{
+  sint64 id = 10;
+  sint64 version = 20;
+  repeated MsgShopItem item_list = 30;
+}
+
+message MsgShopMgr
+{
+  repeated MsgShopPlayerData shop_player_data_list = 10;
+  repeated MsgShop shop_list = 20;
+
+  message MsgBuyOtherLimitItem
+  {
+    sint64 drop_type = 10;
+    sint64 sub_type = 20;
+    sint64 cnt = 30;
+  }
+  repeated MsgBuyOtherLimitItem buy_other_item_list = 100;
+}
+
+message DBShopMgr
+{
+  repeated MsgShop shop_list = 10;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

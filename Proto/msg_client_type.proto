@@ -65,6 +65,7 @@ enum EMsgClientClientSubType
 {
   E_MCCST_GM = 0x0;
   E_MCCST_SyncIcon = 0x1;
+  E_MCCST_ChangeNickName = 0x2;
 
   E_MCCST_SegmentLevelReward = 0x15;
   E_MCCST_GameSeasonJourneyReward = 0x16; // 领取段位奖励。

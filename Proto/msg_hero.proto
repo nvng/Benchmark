@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// package PokerProto;
+
+import "msg_common.proto";
+import "msg_client_common.proto";
+
+enum EMsgClientHeroSubType
+{
+  E_MCHST_SetPiFu = 0x0;
+  E_MCHST_SetMainHero = 0x1;
+  E_MCHST_UpdateCombatPower = 0x2;
+
+  E_MCHTST_Buy = 0x10;
+  E_MCHTST_Upgrade = 0x11;
+  E_MCHTST_Reset = 0x12;
+
+  E_MCHTST_TuJianMark = 0x13;
+}
+
+message MsgHeroUpdateCombatPower
+{
+  sint64 combat_power = 1;
+}
+
+message MsgHeroTalentBuy
+{
+  EClientErrorType error_type = 1;
+  sint64 hero_id = 2;
+  sint64 id = 3;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgHeroTalentUpgrade
+{
+  EClientErrorType error_type = 1;
+  sint64 hero_id = 2;
+  sint64 id = 3;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgHeroTalentReset
+{
+  EClientErrorType error_type = 1;
+  sint64 hero_id = 2;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgHeroSetPiFu
+{
+  EClientErrorType error_type = 1;
+  sint64 hero_id = 2;
+  sint64 pi_fu = 3;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgHeroSetMainHero
+{
+  EClientErrorType error_type = 1;
+  sint64 hero_id = 2;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

@@ -70,6 +70,7 @@ enum EMsgInternalRobotSubType
 enum EMsgInternalQueueCommonSubType
 {
   E_MIQCST_ReqQueue = 0x0; // 请求排队。
+  E_MIQCST_ExitQueue = 0x1;
 }
 
 enum EMsgInternalGameCommonSubType

@@ -39,8 +39,9 @@ message DBPlayerInfo
   sint64 player_guid = 20;
   string nick_name = 30;
   string icon = 40;
-  repeated sint64 icon_idx_list = 50;
-  repeated sint64 attr_list = 60;
+  string we_chat_icon = 50;
+  repeated sint64 icon_idx_list = 60;
+  repeated sint64 attr_list = 70;
 
   repeated MsgGoodsItem goods_list = 100;
   DBPlayerMailSys mail_sys = 110;

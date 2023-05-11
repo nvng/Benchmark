@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+import "msg_client_common.proto";
+
+enum EMsgClientMailSubType
+{
+  E_MCCST_PlayerReqMailList = 0x0; // 请求邮件简要列表。
+  E_MCCST_PlayerReqMailDetailInfo = 0x1; // 请求邮件详细信息。
+  E_MCCST_PlayerMailReward = 0x2; // 领取邮件附件。
+  E_MCCST_PlayerMailDel = 0x3; // 删除已读邮件。
+}
+
+enum EPlayerMailDealFlagType
+{
+        E_PMDFT_None = 0;
+        E_PMDFT_Read = 0x1;
+        E_PMDFT_Reward = 0x2;
+        E_PMDFT_Del = 0x4;
+        E_PMDFT_HasGoods = 0x8;
+};
+
+message MsgPlayerSysMailBriefInfo
+{
+  sint64 id = 1;
+  sint64 over_time = 2;
+  string title = 3;
+  string content = 4;
+  sint64 flag = 5;
+}
+
+message MsgPlayerMailSysBrief
+{
+  sint64 page_idx = 1;
+  repeated MsgPlayerSysMailBriefInfo sys_mail_list = 10;
+}
+
+message MsgPlayerReqMailDetailInfo
+{
+  EClientErrorType error_type = 1;
+  sint64 type = 2;
+  sint64 id = 3;
+  sint64 flag = 4;
+
+  MsgSysMailInfo sys_mail = 10;
+}
+
+message MsgPlayerMailReward
+{
+  EClientErrorType error_type = 1;
+  sint64 id = 2;
+  message MsgMailFlagInfo
+  {
+    sint64 id = 1;
+    sint64 flag = 2;
+  }
+  repeated MsgMailFlagInfo flag_list = 3;
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgPlayerMailDel
+{
+  EClientErrorType error_type = 1;
+  sint64 id = 2;
+  repeated sint64 del_id_list = 3;
+}
+
+message DBPlayerSysMailInfo
+{
+  sint64 id = 10;
+  sint64 over_time = 20;
+  sint64 flag = 30;
+}
+
+message DBPlayerMailSys
+{
+  repeated DBPlayerSysMailInfo sys_mail_list = 110;
+}
+
+message DBSysMail
+{
+  repeated MsgSysMailInfo sys_mail_list = 10;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

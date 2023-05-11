@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// package PokerProto;
+
+import "msg_client_common.proto";
+
+enum EMsgClientRankSubType
+{
+  E_MCRST_ReqRankByType = 0x0;
+  E_MCRST_ReqRankDetailInfo = 0x1;
+}
+
+enum ERankType
+{
+  E_RankT_None = 0x0;
+  E_RankT_AreaRankScore = 0x1; // 段位排行榜。
+}
+
+message MsgRankBriefInfo
+{
+  sint64 id = 10;
+  sint64 lv = 20;
+  string nick_name = 30;
+  string icon = 40;
+  sint64 score = 50;
+  sint64 time = 60;
+  sint64 param = 70;
+  sint64 param_1 = 80;
+}
+
+message MsgAreaRankScoreRankInfo
+{
+  MsgRankBriefInfo base_info = 10;
+}
+
+message MsgTowerRankInfo
+{
+  MsgRankBriefInfo base_info = 10;
+  // MsgHero hero_info = 20;
+  // repeated MsgEquip equip_list = 30;
+}
+
+message MsgReqRankInfo
+{
+  EClientErrorType error_type = 1;
+  ERankType type = 2;
+  sint64 flag = 3;
+  sint64 page_idx = 4;
+  sint64 rank = 5;
+
+  bytes rank_brief_info = 10;
+}
+
+message MsgRankInfo
+{
+  ERankType type = 1;
+  sint64 page_idx = 2;
+  sint64 cnt = 3;
+  repeated MsgRankBriefInfo rank_brief_info_list = 10;
+}
+
+message MsgRankDetailInfo
+{
+  EClientErrorType error_type = 1;
+  sint64 id = 2;
+  ERankType type = 3;
+  sint64 flag = 4;
+  sint64 rank = 5;
+
+  MsgAreaRankScoreRankInfo area_rank_score_rank_info = 10;
+}
+
+message DBRankInfo
+{
+  ERankType type = 10;
+  sint64 flag = 20;
+
+  repeated MsgAreaRankScoreRankInfo area_rank_score_rank_info_list = 30;
+}
+
+// vim: fenc=utf8:expandtab:ts=8
