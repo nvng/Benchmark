@@ -2,7 +2,6 @@
 #define __PRE_COMPILE_H__
 
 // #define ____PRINT_ACTOR_MAIL_COST_TIME____
-#define ____BENCHMARK____
 
 #define BOOST_SP_DISABLE_THREADS
 #include <boost/shared_ptr.hpp>
@@ -26,20 +25,13 @@
 
 #include <rapidjson/document.h>
 
-// 有些 pb 会在库中使用。
 #include "Proto/msg_internal_type.pb.h"
 #include "Proto/msg_internal.pb.h"
-#include "Proto/msg_client_type.pb.h"
-#include "Proto/msg_client.pb.h"
-#include "Proto/msg_db.pb.h"
 
 #include "nvngLib.h"
 #include "GlobalDef.h"
-#include "GlobalVarActor.h"
-#include "LobbyGateSession.h"
 
 #include "Share/GlobalDef.h"
-#include "Share/GlobalSetup.h"
 
 using namespace nl::af::impl;
 
@@ -47,4 +39,4 @@ using namespace nl::af::impl;
 
 #endif // __PRE_COMPILE_H__
 
-// vim: fenc=utf8:expandtab:ts=8
+// vim: fenc=utf8:expandtab:ts=8:

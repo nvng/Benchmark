@@ -2,7 +2,7 @@
 
 bool GlobalSetup_CH::Init()
 {
-        const std::string fileName = nl::af::impl::ServerCfgMgr::GetInstance()->GetConfigAbsolute("Global.txt");
+        const std::string fileName = ServerCfgMgr::GetInstance()->GetConfigAbsolute("Global.txt");
         std::stringstream ss;
         if (!ReadFileToSS(ss, fileName))
                 return false;

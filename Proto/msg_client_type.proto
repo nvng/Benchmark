@@ -34,6 +34,7 @@ enum EMsgClientMainType
   E_MCMT_Rank = 0x8;
   E_MCMT_Hero = 0x9;
   E_MCMT_Achievement = 0xa;
+  E_MCMT_Activity = 0xb;
 
   E_MCMT_QueueCommon = 0xfa;
   E_MCMT_Queue = 0xfb;
@@ -51,14 +52,15 @@ enum EMsgClientInternalSubType
 enum EMsgClientClientCommonSubType
 {
   E_MCCCST_Login = 0x0; // 登录
-  E_MCCCST_Logout = 0x2; // 登出
-  E_MCCCST_Reconnect = 0x1; // 玩家重连。
-  E_MCCCST_Disconnect = 0x8;
-  E_MCCCST_Kickout = 0x3; // 踢人。
-  E_MCCCST_DayChange = 0x4; // 跨天。
-  E_MCCCST_DataResetNoneZero = 0x5; // 非零点数据重置。
-  E_MCCCST_Result = 0x6; // 通用返回。
-  E_MCCCST_CommitLocation = 0x7; // 设置位置信息。
+  E_MCCCST_Logout = 0x1; // 登出
+  E_MCCCST_Reconnect = 0x2; // 玩家重连。
+  E_MCCCST_Disconnect = 0x3;
+  E_MCCCST_Kickout = 0x4; // 踢人。
+  E_MCCCST_DayChange = 0x5; // 跨天。
+  E_MCCCST_DataResetNoneZero = 0x6; // 非零点数据重置。
+  E_MCCCST_Result = 0x7; // 通用返回。
+  E_MCCCST_CommitLocation = 0x8; // 设置位置信息。
+  E_MCCCST_PlayerChange = 0x9;
 }
 
 enum EMsgClientClientSubType
@@ -66,6 +68,7 @@ enum EMsgClientClientSubType
   E_MCCST_GM = 0x0;
   E_MCCST_SyncIcon = 0x1;
   E_MCCST_ChangeNickName = 0x2;
+  E_MCCST_ChangeIcon = 0x3;
 
   E_MCCST_SegmentLevelReward = 0x15;
   E_MCCST_GameSeasonJourneyReward = 0x16; // 领取段位奖励。

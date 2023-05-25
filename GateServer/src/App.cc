@@ -224,51 +224,31 @@ App* GetApp()
 App::App(const std::string& appName)
   : SuperType(appName)
 {
-        ServerListCfgMgr::CreateInstance();
-	ServerCfgMgr::CreateInstance();
-
-	NetProcMgr::CreateInstance();
 	NetMgr::CreateInstance();
 	PlayerMgr::CreateInstance();
 }
 
 App::~App()
 {
-	NetProcMgr::DestroyInstance();
 	NetMgr::DestroyInstance();
 	PlayerMgr::DestroyInstance();
-
-        ServerListCfgMgr::DestroyInstance();
-	ServerCfgMgr::DestroyInstance();
 }
 
 bool App::Init()
 {
-        LOG_FATAL_IF(!ServerListCfgMgr::GetInstance()->Init("./config_cx/server_list.json"), "服务器列表初始化失败!!!");
-        LOG_FATAL_IF(!ServerCfgMgr::GetInstance()->Init("./config_cx/server_cfg.json"), "服务器配置初始化失败!!!");
-
-        ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([](const stGateServerInfoPtr& sInfo) {
-                if (GetApp()->_gateInfo)
-                        return;
-                auto ip = GetIP(AF_INET, sInfo->_faName);
-		if (ip == sInfo->_ip
-		    && RunShellCmd(fmt::format("netstat -apn | grep 0.0.0.0:{}", sInfo->_client_port)).empty())
-			GetApp()->_gateInfo = sInfo;
-        });
-	LOG_FATAL_IF(!_gateInfo, "server info not found!!!");
+	LOG_FATAL_IF(!SuperType::Init(E_ST_Gate), "super init fail!!!");
 	_gateCfg = ServerCfgMgr::GetInstance()->_gateCfg;
 
-	LOG_FATAL_IF(!SuperType::Init(ServerListCfgMgr::GetInstance()->_rid, _gateInfo->_sid, 0), "super init fail!!!");
-	LOG_FATAL_IF(!NetProcMgr::GetInstance()->Init(2, "Net"), "net proc mgr init fail!!!");
 	LOG_FATAL_IF(!NetMgr::GetInstance()->Init(), "net mgr init fail!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "player mgr init fail!!!");
 
+	auto gateInfo = GetServerInfo<stGateServerInfo>();
 	int64_t idx = 0;
 	auto proc = NetProcMgr::GetInstance()->Dist(++idx);
-	// proc->StartListener("0.0.0.0", _gateInfo->_client_port, _gateCfg->_crt, _gateCfg->_key, []() { return CreateSession<GateClientSession>(); });
-	proc->StartListener("0.0.0.0", _gateInfo->_client_port, "", "", []() { return CreateSession<GateClientSession>(); });
+	// proc->StartListener("0.0.0.0", gateInfo->_client_port, _gateCfg->_crt, _gateCfg->_key, []() { return CreateSession<GateClientSession>(); });
+	proc->StartListener("0.0.0.0", gateInfo->_client_port, "", "", []() { return CreateSession<GateClientSession>(); });
 
-	ServerListCfgMgr::GetInstance()->_lobbyServerList.Foreach([&idx](const stLobbyServerInfoPtr& sInfo) {
+	ServerListCfgMgr::GetInstance()->Foreach<stLobbyServerInfo>([&idx](const stLobbyServerInfoPtr& sInfo) {
 	  auto proc = NetProcMgr::GetInstance()->Dist(++idx);
 	  proc->Connect(sInfo->_ip, sInfo->_gate_port, false, []() { return CreateSession<GateLobbySession>(); });
 	});
@@ -315,10 +295,6 @@ bool App::Init()
 
 void App::Stop()
 {
-	NetProcMgr::GetInstance()->Terminate();
-
-	NetProcMgr::GetInstance()->WaitForTerminate();
-
 	SuperType::Stop();
 }
 

@@ -74,6 +74,12 @@ enum EPlayerAttrType
   E_PAT_LV = 4;
   E_PAT_TiLiStartRecoverTime = 5;
   E_PAT_Location = 6;
+
+  E_PAT_CreateTime = 7;
+  E_PAT_LastLoginTime = 8;
+  E_PAT_LastLogoutTime = 9;
+  E_PAT_LastDayChangeResetTime = 10;
+  E_PAT_LastNotZeroResetTime = 11;
 }
 
 message MsgUpdatePlayerAttr
@@ -188,6 +194,7 @@ message MsgPlayerQueueInfo
   repeated sint64 attr_list = 1;
   string nick_name = 2;
   bool is_main = 3;
+  sint64 rank = 4;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

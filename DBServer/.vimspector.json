@@ -1,0 +1,25 @@
+{
+  "configurations": {
+    "cpp:launch": {
+      "adapter": "vscode-cpptools",
+      "configuration": {
+	"name": "cpp:launch",
+	// "stopAtEntry": true,
+	"type": "cppdbg",
+	"request": "launch",
+	"program": "./DBServer.out",
+	"args": [],
+	"cmd": ".",
+	"environment": [],
+	"externalConsole": true,
+	"MIMode": "gdb",
+	"breakpointers": {
+	  "exception": {
+	    "cpp_throw": "Y",
+	    "cpp_catch": "N"
+	  }
+	}
+      }
+    }
+  }
+}

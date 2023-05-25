@@ -41,7 +41,6 @@
 #include "GateLobbySession.h"
 #include "GateGameSession.h"
 #include "NetMgr.h"
-#include "ServerList.hpp"
 
 #include "Share/GlobalDef.h"
 

@@ -18,7 +18,6 @@ option optimize_for = LITE_RUNTIME;
 
 // package PokerProto;
 
-import "msg_common.proto";
 import "msg_client_common.proto";
 
 enum EMsgClientHeroSubType

@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// package PokerProto;
+
+import "msg_common.proto";
+import "msg_client_common.proto";
+
+enum EMsgClientActivitySubType
+{
+  E_MCATST_Mark = 0x0;
+  E_MCATST_Reward = 0x1;
+  E_MCATST_Sync = 0x2;
+  E_MCATST_Active = 0x3;
+}
+
+message MsgActivityPlayerDataCommon
+{
+  sint64 task_id = 10;
+  sint64 cnt = 20;
+  bool reward = 30;
+  sint64 flag = 40;
+}
+
+// 玩家数据。
+message MsgActivityPlayerDataItem
+{
+  sint64 type = 10;
+  MsgActivityPlayerDataCommon common = 20;
+}
+
+// 玩法数据。
+message MsgActivityDataItem
+{
+}
+
+message MsgActivityMgr
+{
+  bytes festival_data = 10;
+  repeated MsgFestivalGroup group_list = 20;
+}
+
+message MsgActivityMark
+{
+  EClientErrorType error_type = 1;
+  repeated MsgActivityPlayerDataItem item_list = 2;
+  sint64 param = 3;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgActivityReward
+{
+  EClientErrorType error_type = 1;
+  sint64 id = 2;
+  sint64 param = 3;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgActivityTime
+{
+  sint64 type = 10;
+  sint64 active_time = 20;
+  sint64 start_time = 30;
+  sint64 opt_end_time = 40;
+  sint64 end_time = 50;
+  sint64 publish_time = 60;
+}
+
+message MsgFestivalGoodsItem
+{
+  sint64 guid = 1;
+  MsgGoodsItem goods_item = 2;
+}
+
+message MsgActivityFestivalActivityCfg
+{
+  sint64 cfg_id = 1;
+  sint64 state = 2;
+  MsgActivityTime time = 3;
+  sint64 type = 4;
+  sint64 param = 5;
+  sint64 param_1 = 6;
+  sint64 param_2 = 7;
+
+  message MsgActivityRewardItem
+  {
+    sint64 task_id = 1;
+    sint64 target = 2;
+    sint64 target_arg1 = 3;
+    sint64 target_arg2 = 4;
+    string name = 5;
+    sint64 event_type = 6;
+    repeated MsgFestivalGoodsItem goods_list = 10;
+  }
+  repeated MsgActivityRewardItem reward_list = 10;
+
+  message MsgActivityCumRewardItem
+  {
+    string icon = 1;
+    repeated MsgFestivalGoodsItem goods_list = 2;
+  }
+  repeated MsgActivityCumRewardItem cum_rewards = 11;
+}
+
+message MsgActivityFestivalGroupCfg
+{
+  sint64 group_guid = 1;
+  sint64 type = 2;
+  sint64 state = 3;
+  string icon = 4;
+  string name = 5;
+  string desc = 6;
+
+  MsgActivityTime time = 10;
+  MsgActivityFestivalActivityCfg activity = 11;
+  map<sint64, MsgActivityFestivalActivityCfg> activity_list = 12;
+}
+
+message MsgActivityFestivalCfg
+{
+  map<sint64, MsgActivityFestivalGroupCfg> group_list = 1;
+  sint64 version = 2;
+}
+
+message MsgFestivalTime
+{
+  sint64 active_time = 10;
+  sint64 start_time = 20;
+  sint64 opt_start_time = 30;
+  sint64 opt_end_time = 40;
+  sint64 end_time = 50;
+  sint64 del_time = 60;
+}
+
+message MsgFestivalTask
+{
+  sint64 id = 10;
+  sint64 cnt = 20;
+  sint64 event_type = 30;
+  sint64 flag = 40;
+}
+
+message MsgFestival
+{
+  sint64 id = 10;
+  sint64 type = 20;
+  MsgFestivalTime time = 30;
+  sint64 param = 40;
+  repeated sint64 param_list = 50;
+  repeated MsgFestivalTask fes_task_list = 60;
+};
+
+message MsgFestivalGroup
+{
+  sint64 type = 10;
+  sint64 id = 20;
+  sint64 param = 30;
+  MsgFestivalTime time = 40;
+
+  repeated MsgFestival fes_list = 50;
+}
+
+message MsgFestivalMgr
+{
+  sint64 version = 10;
+  repeated MsgFestivalGroup group_list = 20;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

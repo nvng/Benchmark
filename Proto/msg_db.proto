@@ -23,6 +23,7 @@ import "msg_client.proto";
 import "msg_mail.proto";
 import "msg_shop.proto";
 import "msg_achievement.proto";
+import "msg_activity.proto";
 
 enum EMsgInternalDBSubType
 {
@@ -51,6 +52,7 @@ message DBPlayerInfo
   MsgVIPMgr vip_mgr = 150;
   MsgHeroMgr hero_mgr = 160;
   MsgAchievementMgr achievement_mgr = 170;
+  MsgActivityMgr activity_mgr = 180;
 }
 
 message DBRobotInfo

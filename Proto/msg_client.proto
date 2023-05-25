@@ -23,6 +23,7 @@ import "msg_client_common.proto";
 import "msg_mail.proto";
 import "msg_shop.proto";
 import "msg_achievement.proto";
+import "msg_activity.proto";
 
 message MsgClientHeartBeat
 {
@@ -46,6 +47,7 @@ message MsgPlayerInfo
   repeated sint64 attr_list = 6;
 
   MsgQueueInfo queue_info = 10;
+  repeated MsgPlayerChange player_change_list = 11;
 
   repeated MsgGoodsItem goods_list = 30;
   MsgPlayerMailSysBrief mail = 31;
@@ -55,6 +57,7 @@ message MsgPlayerInfo
   MsgVIPMgr vip_mgr = 35;
   MsgHeroMgr hero_mgr = 36;
   MsgAchievementMgr achievement_mgr = 37;
+  MsgActivityMgr activity_mgr = 38;
 }
 
 message MsgDataResetNoneZero
@@ -131,7 +134,10 @@ message MsgExitQueue
 {
   EClientErrorType error_type = 1;
   ERegionType region_type = 2;
-  sint64 time = 3;
+  EQueueType queue_type = 3;
+  sint64 queue_guid = 4;
+  sint64 time = 5;
+  sint64 player_guid = 6;
 }
 
 message MsgQueueReady
@@ -290,10 +296,22 @@ message MsgChangeNickName
   string nick_name = 2;
 }
 
+message MsgChangeIcon
+{
+  EClientErrorType error_type = 1;
+  string icon = 2;
+}
+
 message MsgSyncIcon
 {
   EClientErrorType error_type = 1;
   string icon = 2;
+}
+
+message MsgTestTime
+{
+  sint64 client_time = 1;
+  sint64 server_time = 2;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

@@ -31,7 +31,7 @@ nl::af::impl::PlayerBasePtr PlayerMgr::CreatePlayer(uint64_t id, const std::stri
 
 bool PlayerMgr::ReadLevelUpCfg()
 {
-        auto fileName = nl::af::impl::ServerCfgMgr::GetInstance()->GetConfigAbsolute("PlayerLevel.txt");
+        auto fileName = ServerCfgMgr::GetInstance()->GetConfigAbsolute("PlayerLevel.txt");
         std::stringstream ss;
         if (!ReadFileToSS(ss, fileName))
                 return false;
