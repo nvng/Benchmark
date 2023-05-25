@@ -19,7 +19,7 @@ bool PlayerMgr::Init()
                 return false;
 
         int64_t perCnt = 5000;
-        nl::af::impl::ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([this, perCnt](const nl::af::impl::stGateServerInfoPtr& gateInfo) {
+        ServerListCfgMgr::GetInstance()->Foreach<stGateServerInfo>([this, perCnt](const stGateServerInfoPtr& gateInfo) {
                 for (int i=0; i<perCnt; ++i)
                 {
                         // static int64_t idx = 0;
@@ -30,7 +30,7 @@ bool PlayerMgr::Init()
                 }
         });
 
-        nl::af::impl::ServerListCfgMgr::GetInstance()->_gateServerList.Foreach([this, perCnt](const nl::af::impl::stGateServerInfoPtr& gateInfo) {
+        ServerListCfgMgr::GetInstance()->Foreach<stGateServerInfo>([this, perCnt](const stGateServerInfoPtr& gateInfo) {
                 for (int i=0; i<perCnt; ++i)
                 {
                         auto proc = NetProcMgr::GetInstance()->Dist(i);

@@ -33,7 +33,6 @@
 
 #include "nvngLib.h"
 #include "GlobalDef.h"
-#include "ServerList.hpp"
 
 #include "Share/GlobalDef.h"
 

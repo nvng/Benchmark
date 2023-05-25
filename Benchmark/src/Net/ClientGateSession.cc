@@ -77,7 +77,7 @@ void ClientGateSession::OnClose(int32_t reasonType)
 
 void ClientGateSession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 {
-	switch (msgHead.type_)
+	switch (msgHead._type)
 	{
 	case 0 :
 		SuperType::OnRecv(msgHead, evbuf);
