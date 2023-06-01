@@ -27,9 +27,9 @@ import "msg_activity.proto";
 
 enum EMsgInternalDBSubType
 {
-  E_MIDBST_PlayerVersion = 0x0;
-  E_MIDBST_SavePlayerData = 0x1;
-  E_MIDBST_LoadPlayerData = 0x3;
+  E_MIDBST_DBDataVersion = 0x0;
+  E_MIDBST_SaveDBData = 0x1;
+  E_MIDBST_LoadDBData = 0x3;
 }
 
 // 约定：凡是DB结构，每个字段初始序号间隔10，方便后面插入。
@@ -72,19 +72,19 @@ message DBRobotList
   repeated DBRobotInfo robot_list = 10;
 }
 
-message MsgPlayerVersion
+message MsgDBDataVersion
 {
   EInternalErrorType error_type = 1;
-  sint64 player_guid = 2;
+  sint64 guid = 2;
   sint64 version = 3;
 }
 
-message MsgPlayerData
+message MsgDBData
 {
   EInternalErrorType error_type = 1;
-  sint64 player_guid = 2;
+  sint64 guid = 2;
   sint64 version = 3;
-  bytes player_data = 5;
+  bytes data = 5;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

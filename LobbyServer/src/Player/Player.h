@@ -19,9 +19,9 @@ struct stTest
         co_chan<std::shared_ptr<int64_t>> _ch;
 };
 
-class Player : public nl::af::impl::PlayerBase
+class Player : public PlayerBase
 {
-        typedef nl::af::impl::PlayerBase SuperType;
+        typedef PlayerBase SuperType;
 public :
         Player(uint64_t guid, const std::string& nickName, const std::string& icon);
         ~Player() override;

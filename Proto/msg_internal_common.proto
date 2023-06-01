@@ -45,8 +45,8 @@ enum EInternalErrorType
   E_IET_FighterNotFound = 0x1c;
   E_IET_FighterInitFromLobbyFail = 0x1d;
 
-  E_IET_PlayerDataSIDError = 0x20;
-  E_IET_PlayerDelete = 0x21;
+  E_IET_DBDataSIDError = 0x20;
+  E_IET_DBDataDelete = 0x21;
 
   E_IET_FighterClientError = 0x30;
   E_IET_GateNotFound = 0x31;

@@ -102,60 +102,34 @@ message MsgReqEnterRegion
   sint64 param = 4;
 }
 
+// {{{ Queue
+
 message MsgQueueInfo
 {
-  ERegionType region_type = 1;
-  EQueueType queue_type = 2;
-  sint64 queue_guid = 3;
-  sint64 time = 4;
+  MsgQueueBaseInfo base_info = 1;
   sint64 param = 5;
   repeated MsgPlayerQueueInfo player_list = 6;
 }
 
 message MsgSyncQueueInfo
 {
-  sint64 queue_guid = 1;
-  sint64 time = 2;
-  sint64 param = 3;
-  repeated MsgPlayerQueueInfo player_list = 4;
+  MsgQueueBaseInfo base_info = 1;
+  sint64 param = 2;
+  repeated MsgPlayerQueueInfo player_list = 3;
 }
 
 message MsgReqQueue
 {
   EClientErrorType error_type = 1;
-  ERegionType region_type = 2;
-  EQueueType queue_type = 3;
-  sint64 queue_guid = 4;
-  sint64 param = 5;
-  sint64 time = 6;
+  MsgQueueBaseInfo base_info = 2;
+  sint64 param = 3;
 }
 
 message MsgExitQueue
 {
   EClientErrorType error_type = 1;
-  ERegionType region_type = 2;
-  EQueueType queue_type = 3;
-  sint64 queue_guid = 4;
-  sint64 time = 5;
-  sint64 player_guid = 6;
-}
-
-message MsgQueueReady
-{
-  EClientErrorType error_type = 1;
-  ERegionType region_type = 2;
-  sint64 queue_guid = 3;
-  sint64 time = 4;
-  sint64 player_guid = 5;
-  bool ready = 6;
-}
-
-message MsgQueueStart
-{
-  EClientErrorType error_type = 1;
-  ERegionType region_type = 2;
-  sint64 queue_guid = 3;
-  sint64 time = 4;
+  MsgQueueBaseInfo base_info = 2;
+  sint64 player_guid = 3;
 }
 
 enum EQueueOptType
@@ -165,19 +139,19 @@ enum EQueueOptType
   E_QOT_SetHero = 0x2;
   E_QOT_Offline = 0x3;
   E_QOT_Kickout = 0x4;
+  E_QOT_Ready = 0x5;
+  E_QOT_Start = 0x6;
 }
 
 message MsgQueueOpt
 {
   EClientErrorType error_type = 1;
-  EQueueOptType opt_type = 2;
-  sint64 param = 3;
-
-  sint64 player_guid = 4;
-  ERegionType region_type = 5;
-  sint64 queue_guid = 6;
-  sint64 time = 7;
+  MsgQueueBaseInfo base_info = 2;
+  EQueueOptType opt_type = 3;
+  sint64 param = 4;
+  sint64 player_guid = 5;
 }
+// }}}
 
 message MsgResult
 {

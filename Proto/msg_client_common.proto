@@ -182,19 +182,34 @@ message MsgHeroMgr
   repeated MsgHero hero_list = 20;
 }
 
+// {{{ Queue
+// 要做数组索引，尽量连续。
 enum EQueueType
 {
-  E_QT_None = 0x0;
-  E_QT_Normal = 0x1;
-  E_QT_Manual = 0x2; // 手动创建，手动开始。
+  E_QT_Normal = 0x0;
+  E_QT_Manual = 0x1; // 手动创建，手动开始。
+
+  E_QT_None = 0x2;
+}
+
+message MsgQueueBaseInfo
+{
+  ERegionType region_type = 1;
+  EQueueType queue_type = 2;
+  sint64 queue_guid = 3;
+  sint64 time = 4;
 }
 
 message MsgPlayerQueueInfo
 {
   repeated sint64 attr_list = 1;
   string nick_name = 2;
-  bool is_main = 3;
-  sint64 rank = 4;
+  string icon = 3;
+  bool is_main = 4;
+  sint64 rank = 5;
+  sint64 camp = 6;
 }
+
+// }}}
 
 // vim: fenc=utf8:expandtab:ts=8

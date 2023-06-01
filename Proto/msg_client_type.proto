@@ -70,22 +70,20 @@ enum EMsgClientClientSubType
   E_MCCST_ChangeNickName = 0x2;
   E_MCCST_ChangeIcon = 0x3;
 
-  E_MCCST_SegmentLevelReward = 0x15;
-  E_MCCST_GameSeasonJourneyReward = 0x16; // 领取段位奖励。
-  E_MCCST_GameSeasonReward = 0x17; // 领取赛季奖励。
-  E_MCCST_ReqGameSeasonInfo = 0x18; // 请求玩家赛季信息。
+  E_MCCST_SegmentLevelReward = 0x5;
+  E_MCCST_GameSeasonJourneyReward = 0x6; // 领取段位奖励。
+  E_MCCST_GameSeasonReward = 0x7; // 领取赛季奖励。
+  E_MCCST_ReqGameSeasonInfo = 0x8; // 请求玩家赛季信息。
 
-  E_MCCCST_VIPReward = 0x19;
+  E_MCCCST_VIPReward = 0x9;
 }
 
 enum EMsgClientQueueCommonSubType
 {
   E_MCQCST_ReqQueue = 0x0; // 请求排队!!!
   E_MCQCST_ExitQueue = 0x1; // 退出排队!!!
-  E_MCQCST_Start = 0x2;
-  E_MCQCST_Ready = 0x3;
-  E_MCQCST_SyncQueueInfo = 0x4;
-  E_MCQCST_Opt = 0x5;
+  E_MCQCST_SyncQueueInfo = 0x2;
+  E_MCQCST_Opt = 0x3;
 }
 
 enum EMsgClientGameCommonSubType
@@ -100,8 +98,8 @@ enum EMsgClientGameCommonSubType
   E_MCGCST_RegionInfo = 0x7; // 同步场景信息给玩家。
   E_MCGCST_Conclude = 0x8;
 
-  E_MCGCST_GM = 0x1e; // GM
-  E_MCGCST_GameDisconnect = 0x1f; // 大厅或网关与 GameServer 断开连接。
+  E_MCGCST_GM = 0xe; // GM
+  E_MCGCST_GameDisconnect = 0xf; // 大厅或网关与 GameServer 断开连接。
 }
 
 // vim: fenc=utf8:expandtab:ts=8

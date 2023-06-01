@@ -22,7 +22,7 @@
       "user": "root",
       "pwd":"123456",
       "db": "-1",
-      "conn_cnt": 50
+      "conn_cnt": 10
     }
   },
   "cfg_dir": "./config_ch"

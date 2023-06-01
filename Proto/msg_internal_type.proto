@@ -25,17 +25,17 @@ enum EMsgInternalMainType
 {
   E_MIMT_Internal = 0x0; // 服务器间内部消息
 
-  E_MIMT_DB = 0x7e8;
+  E_MIMT_DB = 0xfe8;
 
-  E_MIMT_Robot = 0x7e9;
-  E_MIMT_QueueCommon = 0x7ea;
-  E_MIMT_Queue = 0x7eb;
-  E_MIMT_GameCommon = 0x7ec;
-  E_MIMT_Game = 0x7ed;
-  E_MIMT_MatchCommon = 0x7ee; // 比赛
-  E_MIMT_Match = 0x7ef; // 比赛
+  E_MIMT_Robot = 0xfe9;
+  E_MIMT_QueueCommon = 0xfea;
+  E_MIMT_Queue = 0xfeb;
+  E_MIMT_GameCommon = 0xfec;
+  E_MIMT_Game = 0xfed;
+  E_MIMT_MatchCommon = 0xfee; // 比赛
+  E_MIMT_Match = 0xfef; // 比赛
 
-  E_MIMT_Local = 0x7ff; // 本地消息。
+  E_MIMT_Local = 0xfff; // 本地消息。
 }
 
 enum EMsgInternalLocalSubType
@@ -57,8 +57,8 @@ enum EMsgInternalInternalSubType
   E_MIIST_BroadCastAll = 0x4;
   E_MIIST_SyncRelation = 0x5;
 
-  E_MIIST_Reconnect = 0x1b;
-  E_MIIST_Result = 0x1c;
+  E_MIIST_Reconnect = 0xe;
+  E_MIIST_Result = 0xf;
 }
 
 enum EMsgInternalRobotSubType
@@ -80,8 +80,8 @@ enum EMsgInternalGameCommonSubType
   E_MIGCST_RegionDestroy = 0x1;
   E_MIGCST_RegionKickout = 0x2;
 
-  E_MIGCST_SyncRegionEnterCond = 0x1e;
-  E_MIGCST_SyncPlayerInfo2Region = 0x1f;
+  E_MIGCST_SyncRegionEnterCond = 0xe;
+  E_MIGCST_SyncPlayerInfo2Region = 0xf;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

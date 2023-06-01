@@ -1,6 +1,6 @@
 #include "RegionMgr.h"
 
-nl::af::impl::RegionMgrBase* nl::af::impl::GetRegionMgrBase()
+RegionMgrBase* nl::af::impl::GetRegionMgrBase()
 {
         return RegionMgr::GetInstance();
 }

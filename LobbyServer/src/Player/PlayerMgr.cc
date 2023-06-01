@@ -2,7 +2,7 @@
 
 #include "Player.h"
 
-nl::af::impl::PlayerMgrBase* nl::af::impl::GetPlayerMgrBase()
+PlayerMgrBase* nl::af::impl::GetPlayerMgrBase()
 {
         return PlayerMgr::GetInstance();
 }
@@ -24,7 +24,7 @@ bool PlayerMgr::Init()
 	return ReadLevelUpCfg();
 }
 
-nl::af::impl::PlayerBasePtr PlayerMgr::CreatePlayer(uint64_t id, const std::string& nickName, const std::string& icon)
+PlayerBasePtr PlayerMgr::CreatePlayer(uint64_t id, const std::string& nickName, const std::string& icon)
 {
         return std::make_shared<Player>(id, nickName, icon);
 }
@@ -36,7 +36,7 @@ bool PlayerMgr::ReadLevelUpCfg()
         if (!ReadFileToSS(ss, fileName))
                 return false;
 
-        std::vector<std::pair<int32_t, nl::af::impl::stPlayerLevelInfoPtr>> tmpList;
+        std::vector<std::pair<int32_t, stPlayerLevelInfoPtr>> tmpList;
         int64_t idx = 0;
         std::string tmpStr;
         while (ReadTo(ss, "#"))
@@ -44,7 +44,7 @@ bool PlayerMgr::ReadLevelUpCfg()
                 if (++idx <= 3)
                         continue;
 
-                auto cfg = std::make_shared<nl::af::impl::stPlayerLevelInfo>();
+                auto cfg = std::make_shared<stPlayerLevelInfo>();
                 ss >> tmpStr
                         >> tmpStr
                         >> cfg->_lv
@@ -71,7 +71,7 @@ bool PlayerMgr::ReadLevelUpCfg()
         delete[] _lvExpArr;
 
         _lvExpArrMax = tmpList.size();
-        _lvExpArr = new nl::af::impl::stPlayerLevelInfoPtr[tmpList.size()];
+        _lvExpArr = new stPlayerLevelInfoPtr[tmpList.size()];
         for (auto& val : tmpList)
                 _lvExpArr[val.first-1] = val.second;
 

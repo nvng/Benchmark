@@ -23,7 +23,6 @@ App::App(const std::string& appName)
 	GlobalSetup_CH::CreateInstance();
 	DBMgr::CreateInstance();
 	RegionMgr::CreateInstance();
-	MailSys::CreateInstance();
 
 	PlayerMgr::CreateInstance();
 }
@@ -31,7 +30,6 @@ App::App(const std::string& appName)
 App::~App()
 {
 	RegionMgr::DestroyInstance();
-	MailSys::DestroyInstance();
 	DBMgr::DestroyInstance();
 
 	PlayerMgr::DestroyInstance();
@@ -48,7 +46,6 @@ bool App::Init()
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "初始化策划全局配置失败!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
-	LOG_FATAL_IF(!MailSys::GetInstance()->Init(), "MailSys init error!!!");
 	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "DBMgr init error!!!");
 
 #if 0

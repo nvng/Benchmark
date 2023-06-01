@@ -80,7 +80,8 @@ message MailReqEnterRegion
     sint64 lobby_sid = 2;
 
     sint64 player_guid = 3;
-    sint64 param = 4;
+    sint64 camp = 4;
+    sint64 param = 5;
   }
   repeated MsgReqFighterInfo fighter_list = 10;
 }
@@ -95,16 +96,13 @@ message MailReqEnterRegionRet
 message MailReqQueue
 {
   EInternalErrorType error_type = 1;
-  ERegionType region_type = 2;
-  EQueueType queue_type = 3;
+  MsgQueueBaseInfo base_info = 2;
   sint64 player_guid = 4;
-  sint64 queue_guid = 5;
   sint64 region_guid = 6;
   sint64 game_sid = 7;
   sint64 lobby_sid = 8;
   sint64 gate_sid = 9;
   sint64 param = 10;
-  sint64 time = 11;
 
   repeated MsgPlayerQueueInfo player_list = 20;
 }
