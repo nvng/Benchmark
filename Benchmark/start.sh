@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in {1..2}
+for i in {1..3}
 do
   ./Benchmark.out --logmf=1 -d
   sleep 1

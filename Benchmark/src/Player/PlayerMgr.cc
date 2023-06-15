@@ -22,11 +22,13 @@ bool PlayerMgr::Init()
         ServerListCfgMgr::GetInstance()->Foreach<stGateServerInfo>([this, perCnt](const stGateServerInfoPtr& gateInfo) {
                 for (int i=0; i<perCnt; ++i)
                 {
-                        // static int64_t idx = 0;
-                        // _idList.emplace_back(GetApp()->GetSID() * 1000 * 1000 + ++idx);
-
+#if 0
+                        static int64_t idx = 0;
+                        _idList.emplace_back(GetApp()->GetSID() * 1000 * 1000 + ++idx);
+#else
                         static int64_t base = 10 * 1000 * 1000;
                         _idList.emplace_back(RandInRange(base, base + 40 * 1000)); // 不停地断线重连接以及异地登录。
+#endif
                 }
         });
 
@@ -45,13 +47,24 @@ NET_MSG_HANDLE(ClientGateSession, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClient
 {
 	// LOG_INFO("玩家登录成功返回!!!");
         
-	auto p = std::make_shared<Player>(msg->player_info().player_guid());
-        if (p->Init())
+        const auto& playerInfo = msg->player_info();
+        auto p = std::dynamic_pointer_cast<Player>(PlayerMgr::GetInstance()->GetActor(playerInfo.player_guid()));
+        if (!p)
         {
+                auto p = std::make_shared<Player>(playerInfo.player_guid());
+                if (p->Init())
+                {
+                        p->SendPush(nullptr, E_MCMT_ClientCommon, E_MCCCST_Login, msg);
+                        p->_ses = shared_from_this();
+                        _player = p;
+                        p->Start();
+                }
+        }
+        else
+        {
+                p->SendPush(nullptr, E_MCMT_ClientCommon, E_MCCCST_Login, msg);
                 p->_ses = shared_from_this();
                 _player = p;
-                p->SendPush(nullptr, E_MCMT_ClientCommon, E_MCCCST_Login, msg);
-                p->Start();
         }
 }
 

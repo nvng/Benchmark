@@ -1,30 +1,23 @@
 #pragma once
 
-#if 0
 class Player;
 typedef std::shared_ptr<Player> PlayerPtr;
 
-namespace JCC {
-
-enum EPlayerStateEventType
-{
-        E_PSET_None = 256,
-        E_PSET_ReqQueue,
-};
+// namespace Jump {
 
 struct StateEventInfo
 {
-        explicit StateEventInfo(int eventType)
+        explicit StateEventInfo(int64_t eventType)
                 : _eventType(eventType)
         {
         }
 
-        int       _eventType = 0;
+        int64_t   _eventType = 0;
         double    _dlParam = 0.0;
         bool      _bParam = false;
         int64_t   _param = 0;
         std::string_view _strParam;
-        std::shared_ptr<void> _data;
+        MessageLitePtr _data;
         EClientErrorType _errorType = E_CET_Success;
 };
 
@@ -41,37 +34,56 @@ public :
         PlayerStateBase(int stateType) : StateBase(stateType) {}
 };
 
-enum EPlayerGameStateType
+enum EPlayerStateType
 {
-	E_PGST_None = 0,
-        E_PGST_Queue = 1, // 排队。
-        E_PGST_Game = 2,
-	E_PGST_Count,
+        E_PST_None = 0,
+        E_PST_Lobby = 1,
+        E_PST_Queue = 2, // 排队。
+        E_PST_Game = 3,
+        E_PST_Count,
 };
 
-class PlayerGameStateMgr : public PlayerStateMgrBase
+class PlayerStateMgr : public PlayerStateMgrBase
 {
 public :
-	PlayerGameStateMgr() : PlayerStateMgrBase(E_PGST_Count) {}
+	PlayerStateMgr() : PlayerStateMgrBase(E_PST_Count) {}
 	StateBaseType* CreateStateByType(int stateType) override;
 };
 
-class PlayerGameQueueState : public PlayerStateBase
+class PlayerNoneState : public PlayerStateBase
 {
 public :
-        PlayerGameQueueState() : PlayerStateBase(E_PGST_Game) {}
-	void OnEvent(const PlayerPtr& player, StateEventInfo& evt) override;
+        PlayerNoneState() : PlayerStateBase(E_PST_None) {}
+        void OnEvent(const PlayerPtr& player, StateEventInfo& evt) override;
 };
 
-class PlayerGameGameState : public PlayerStateBase
+class PlayerLobbyState : public PlayerStateBase
 {
 public :
-        PlayerGameGameState() : PlayerStateBase(E_PGST_Game) {}
-	void Enter(const PlayerPtr& player, StateEventInfo& evt) override;
-	void OnEvent(const PlayerPtr& player, StateEventInfo& evt) override;
+        PlayerLobbyState() : PlayerStateBase(E_PST_Lobby) {}
+        void Enter(const PlayerPtr& player, StateEventInfo& evt) override;
+        void Exit(const PlayerPtr& player, StateEventInfo& evt) override;
+        void OnEvent(const PlayerPtr& player, StateEventInfo& evt) override;
+
+public :
+        TimerGuidType _exitQueueTimerGuid = INVALID_TIMER_GUID;
 };
 
-} // end namespace JCC
-#endif
+class PlayerQueueState : public PlayerStateBase
+{
+public :
+        PlayerQueueState() : PlayerStateBase(E_PST_Queue) {}
+        void OnEvent(const PlayerPtr& player, StateEventInfo& evt) override;
+};
+
+class PlayerGameState : public PlayerStateBase
+{
+public :
+        PlayerGameState() : PlayerStateBase(E_PST_Game) {}
+        void Enter(const PlayerPtr& player, StateEventInfo& evt) override;
+        void OnEvent(const PlayerPtr& player, StateEventInfo& evt) override;
+};
+
+// } // end namespace Jump
 
 // vim: fenc=utf8:expandtab:ts=8

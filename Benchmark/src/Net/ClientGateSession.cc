@@ -2,27 +2,6 @@
 
 #include "Player/Player.h"
 
-#if 0
-static std::atomic_int64_t _guid = 0;
-
-std::mutex ClientGateSession::_costTimeListMutex;
-std::deque<double> ClientGateSession::_costTimeList;
-
-void ClientGateSession::OnConnect()
-{
-	SuperType::OnConnect();
-
-	// for (int i=0; i<1000 * 90; ++i)
-	for (int i=0; i<1000; ++i)
-	// for (int i=0; i<1; ++i)
-	{
-		auto p = std::make_shared<Player>(1000 * 1000 * 10 + ++_guid);
-		p->_ses = this;
-		p->Start();
-	}
-}
-#endif
-
 ClientGateSession::ClientGateSession()
 {
 }
@@ -39,6 +18,7 @@ void ClientGateSession::OnConnect()
 	msg.set_player_guid(playerGuid);
 	SendPB(&msg, E_MCMT_ClientCommon, E_MCCCST_Login);
 
+#if 1
 	if (0 != RandInRange(0, 3))
 	{
 		TcpSessionWeakPtr weakSes = shared_from_this();
@@ -52,6 +32,7 @@ void ClientGateSession::OnConnect()
 	{
 		Close(1025);
 	}
+#endif
 }
 
 void ClientGateSession::OnClose(int32_t reasonType)
@@ -82,6 +63,7 @@ void ClientGateSession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 	case 0 :
 		SuperType::OnRecv(msgHead, evbuf);
 		break;
+#if 0
 	case MsgHeaderType::MsgTypeMerge<0x7f, 0>() :
 		{
 			SendPB(nullptr, 0x7f, 0);
@@ -98,21 +80,29 @@ void ClientGateSession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 		SendPB(nullptr, E_MCMT_GameCommon, E_MCGCST_LoadFinish);
 		// SendPB(nullptr, 0x7f, 0);
 		break;
+#endif
 	default :
-		if (false)
-		{
-			// LOG_INFO("收到网关消息 mt[{:#x}] st[{:#x}] size[{}]", MsgHeaderType::MsgMainType(msgHead.type_), MsgHeaderType::MsgSubType(msgHead.type_), msgHead.size_);
-			auto p = _player.lock();
-			if (p)
-			{
-				auto mail = std::make_shared<ActorNetMail<ActorMail, MsgHeaderType>>(nullptr, msgHead, evbuf);
-				p->Push(mail);
-			}
-			else
-			{
-				SuperType::OnRecv(msgHead, evbuf);
-			}
-		}
+                if (true)
+                {
+                        /*
+                           LOG_INFO("收到网关消息 mt[{:#x}] st[{:#x}] size[{}]",
+                                   MsgHeaderType::MsgMainType(msgHead.type_),
+                                   MsgHeaderType::MsgSubType(msgHead.type_),
+                                   msgHead.size_);
+                           */
+                        auto p = _player.lock();
+                        if (p)
+                        {
+                                auto mail = std::make_shared<ActorNetMail<ActorMail, MsgHeaderType>>(nullptr, msgHead, evbuf);
+                                p->Push(mail);
+                        }
+                        else
+                        {
+                                SuperType::OnRecv(msgHead, evbuf);
+                        }
+                }
 		break;
 	}
 }
+
+// vim: fenc=utf8:expandtab:ts=8

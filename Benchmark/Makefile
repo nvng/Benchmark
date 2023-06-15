@@ -1,6 +1,5 @@
 ifeq ($(JOBS),)
-	# JOBS := $(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
-	JOBS := 6
+	JOBS := $(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
 	ifeq ($(JOBS),)
 		JOBS := 1
 	endif

@@ -15,7 +15,10 @@ bool Player::Init()
 {
 	SuperType::Init();
 
-        // ChangeStateMgr<PlayerGameStateMgr>(E_PGST_Game);
+
+        _stateMgr.Init();
+        StateEventInfo evt(ClientGateSession::MsgHeaderType::MsgTypeMerge(E_MCMT_Internal, E_MCIST_HeartBeat));
+        _stateMgr.SetCurState(E_PST_None, shared_from_this(), evt, true);
 	return true;
 }
 
@@ -35,7 +38,7 @@ void Player::UnPack(const MsgPlayerInfo& msg)
 void Player::SendPB(uint16_t mainType, uint16_t subType, google::protobuf::MessageLite* pb/*=nullptr*/)
 {
         if (_ses)
-                ; // _ses->SendPB(pb, mainType, subType);
+                _ses->SendPB(pb, mainType, subType);
 }
 
 bool Player::UseGMGoods()
@@ -66,7 +69,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_DayChange)
 
 ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_DataResetNoneZero)
 {
-	LOG_INFO("玩家收到 data reset 消息!!!");
+	// LOG_INFO("玩家收到 data reset 消息!!!");
         return nullptr;
 }
 
@@ -74,13 +77,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_GameCommon, E_MCGCST_SwitchRegion, MsgSwitchReg
 {
         // LOG_INFO("玩家[{}] 收到 SwitchRegion type[{}]", GetID(), msg->region_type());
         SendPB(E_MCMT_GameCommon, E_MCGCST_LoadFinish);
-        // SendPB(0x7f, 0, nullptr);
-
-        /*
-        StateEventInfo evt(E_MCGCST_SwitchRegion);
-        evt._data = msg;
-        OnEvent(evt);
-        */
+        OnEvent(E_MCMT_GameCommon, E_MCGCST_SwitchRegion, msg);
 
         return nullptr;
 }
