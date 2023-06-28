@@ -7,6 +7,7 @@
 *.o
 *.obj
 *.pb.*
+*.o.tmp
 
 # Precompiled Headers
 *.gch
@@ -34,4 +35,5 @@
 *.app
 
 .ccls-cache
+.cache
 log

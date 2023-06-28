@@ -16,21 +16,18 @@ endif
 
 # {{{ project info
 INC_DIR	= . .. ./src \
-          ../Deps/libnvngLib/include/ActorFramework/Impl/Share \
-          ../Deps/libnvngLib/include/ActorFramework/Impl/Lobby
+	  ../Deps/libnvngLib/include/ActorFramework/Impl/Share \
+	  ../Deps/libnvngLib/include/ActorFramework/Impl/GameMgr
 
 SRC_DIR   = ./src \
-            ./src/Net \
-            ./src/DB \
-            ./src/Player \
-            ./src/Setup \
-            ./src/Region \
-            ../Share \
-            ../Share/Net \
-            ../Deps/libnvngLib/include/ActorFramework/Impl/Share \
-            ../Deps/libnvngLib/include/ActorFramework/Impl/Lobby
+	    ./src/Net \
+	    ./src/Region \
+	    ../Share \
+	    ../Share/Net \
+	    ../Deps/libnvngLib/include/ActorFramework/Impl/Share \
+	    ../Deps/libnvngLib/include/ActorFramework/Impl/GameMgr
 
-TARGET	= LobbyServer.out
+TARGET	= GameMgrServer.out
 
 SRC_EXTS = .c .cc
 HDR_EXTS = .h .hpp
@@ -52,8 +49,8 @@ RM_ALL  += $(DEPS)
 # {{{ dependency includes and libs
 EXT_DIR = ../Deps/libnvngLib \
 	  ../Deps/libevent-2.1.12-stable \
-          ../Deps/libboost \
-          ../Deps/hiredis
+	  ../Deps/libboost \
+	  ../Deps/hiredis
 
 EXT_LIB = nvngLib fmt protobuf pthread \
           boost_program_options boost_filesystem boost_stacktrace_backtrace \
@@ -68,7 +65,7 @@ LIB	+= $(addprefix -l, $(EXT_LIB))
 #{{{ protobuf
 PROTO_DIR = ../Proto
 ifneq ($(PROTO_DIR),)
-	PROTO_PROTO = $(foreach d, $(PROTO_DIR), $(wildcard $(addprefix $(d)/*, .proto)))
+	PROTO_PROTO = $(foreach d, $(abspath $(PROTO_DIR)), $(wildcard $(addprefix $(d)/*, .proto)))
 	PROTO_CC = $(PROTO_PROTO:.proto=.pb.cc)
 	PROTO_H  = $(PROTO_PROTO:.proto=.pb.h)
 	OBJS	+= $(PROTO_PROTO:.proto=.pb.o)
@@ -96,7 +93,7 @@ endif
 #{{{ compile rules
 COMPILE_CMD = $(CC) $(CC_FLAG) $(INC)
 
-.PHONY	: all show c cl release db j
+.PHONY	: all show c cl db release j
 
 # 虽然生成依赖的时候就生成了 PROTO_CC，而如果这里不写，删除之前生成的。
 # 然后根据 TARGET 的依赖 OBJS 生成 PROTO_CC
@@ -121,7 +118,7 @@ MAKE_DEP_CMD = @echo create dep $@; \
 
 # for protobuf
 %.pb.cc : %.proto
-	protoc -I=$(dir $<) --cpp_out=$(dir $<) $<
+	protoc -I.. -I=$(dir $<) --cpp_out=$(dir $<) $<
 
 %.pb.d : %.pb.cc
 	$(MAKE_DEP_CMD)
@@ -143,9 +140,10 @@ j :
 
 db :
 	@make cl; \
-        bear -- make release;
+        compiledb -n make;
 
 release :
+	@make c; \
 	make -j$(JOBS) release=y;
 
 show :

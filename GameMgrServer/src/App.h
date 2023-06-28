@@ -10,12 +10,9 @@ class App : public AppBase, public Singleton<App>
 
 public :
   bool Init() override;
-  void Stop() override;
 
 public :
-  stGateServerCfgPtr _gateCfg;
-  std::atomic_int64_t _clientRecvCnt;
-  std::atomic_int64_t _serverRecvCnt;
+  std::atomic_int64_t _cnt;
 };
 
 extern App* GetApp();

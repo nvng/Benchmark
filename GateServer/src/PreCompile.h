@@ -2,6 +2,8 @@
 #define __PRE_COMPILE_H__
 
 // #define ROBOT_TEST
+#define ____BENCHMARK____
+// #define ____USE_IMPL_GATE_LOBBY_SESSION_ONRECV___
 
 #define BOOST_SP_DISABLE_THREADS
 #include <boost/shared_ptr.hpp>

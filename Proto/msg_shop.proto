@@ -37,6 +37,7 @@ message MsgShopBuy
   sint64 shop_cfg_id = 2;
   sint64 pos = 3;
   sint64 cnt = 4;
+  sint64 param = 5;
 
   MsgPlayerChange player_change = 10;
 }

@@ -98,6 +98,8 @@ message MsgFighterInfo
         sint64 shield_end_time = 12;
         repeated sint64 battle_item_list = 13;
         sint64 speed_pos_cnt = 14;
+        sint64 continue_center_cnt = 15;
+        sint64 add_coins = 16;
 }
 
 message MsgFighterEnter
@@ -125,6 +127,7 @@ message MsgRegionInfo
                 sint64 pos_idx = 2;
         }
         repeated MsgBattleItemInfo battle_item_list = 12;
+        repeated MsgSync lattice_list = 13;
 }
 
 message MsgConcludeFighterInfo
@@ -137,6 +140,7 @@ message MsgConcludeFighterInfo
         bool is_finish = 5;
         bool is_du_zhan_ao_tou = 6;
         sint64 di_kang_gan_rao_cnt = 7;
+        sint64 add_coins = 8;
 
         message MsgBattleItemInfo
         {
@@ -172,6 +176,9 @@ enum ESyncStateType
         E_SST_11 = 11; // 落地。
         E_SST_12 = 12; // 护盾消失。
         E_SST_ItemReady = 13;
+        E_SST_14 = 14; // 水柱。
+        E_SST_15 = 15; // 水柱击中。
+        E_SST_16 = 16; // 传送带滑落。
 }
 
 message MsgSync

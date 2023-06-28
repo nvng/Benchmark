@@ -2,6 +2,7 @@
 
 #include "PlayerMgr.h"
 #include "PlayerBase.h"
+#include "Activity.h"
 
 #define INVALID_MONEY_VAL INT64_MIN
 
@@ -27,8 +28,10 @@ public :
         ~Player() override;
 
         bool Init() override;
+        void OnCreateAccount() override;
 
         void Online() override;
+        using SuperType::Push;
         void Push()
         {
                 for (auto t : testList)
@@ -43,6 +46,9 @@ public :
         }
 
         std::vector<stTest*> testList;
+
+public :
+        ActivityMgr _activityMgr;
 
         EXTERN_ACTOR_MAIL_HANDLE();
         DECLARE_SHARED_FROM_THIS(Player);

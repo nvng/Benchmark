@@ -29,6 +29,16 @@ bool Player::Init()
 	return true;
 }
 
+void Player::OnCreateAccount()
+{
+        SuperType::OnCreateAccount();
+
+        /*
+        for (int64_t i=0; i<1000; ++i)
+                _bag.Add(RandInRange(1000*1000, 10 * 1000 * 1000), 9999, 128);
+        */
+}
+
 void InitTimer(const PlayerPtr& player)
 {
         player->StartTimerWithRelativeTimeOnce(10.0, [player](TimerGuidType id) {
@@ -52,7 +62,7 @@ void Player::Online()
         Pack2Client(*(msg->mutable_player_info()));
         Send2Client(E_MCMT_ClientCommon, E_MCCCST_Login, msg);
 
-        static bool _ = [this]() {
+        static bool _ = []() {
                 // InitTimer(shared_from_this());
                 return true;
         }();

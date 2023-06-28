@@ -30,6 +30,7 @@ enum ERankType
 {
   E_RankT_None = 0x0;
   E_RankT_AreaRankScore = 0x1; // 段位排行榜。
+  E_RankT_Normal = 0x2;
 }
 
 message MsgRankBriefInfo
@@ -42,6 +43,11 @@ message MsgRankBriefInfo
   sint64 time = 60;
   sint64 param = 70;
   sint64 param_1 = 80;
+}
+
+message MsgNormalRankInfo
+{
+  MsgRankBriefInfo base_info = 10;
 }
 
 message MsgAreaRankScoreRankInfo
@@ -84,6 +90,7 @@ message MsgRankDetailInfo
   sint64 rank = 5;
 
   MsgAreaRankScoreRankInfo area_rank_score_rank_info = 10;
+  MsgNormalRankInfo normal_rank_info = 11;
 }
 
 message DBRankInfo
@@ -92,6 +99,7 @@ message DBRankInfo
   sint64 flag = 20;
 
   repeated MsgAreaRankScoreRankInfo area_rank_score_rank_info_list = 30;
+  repeated MsgNormalRankInfo normal_rank_info = 40;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

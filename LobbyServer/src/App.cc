@@ -17,7 +17,7 @@ App* GetApp()
 }
 
 App::App(const std::string& appName)
-	: SuperType(appName)
+	: SuperType(appName, E_ST_Lobby)
 	  , _gateSesList("App_gateSesList")
 {
 	GlobalSetup_CH::CreateInstance();
@@ -41,16 +41,16 @@ App::~App()
 #include <malloc.h>
 bool App::Init()
 {
-	LOG_FATAL_IF(!SuperType::Init(E_ST_Lobby), "AppBase init error!!!");
+	LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
 
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "初始化策划全局配置失败!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "DBMgr init error!!!");
 
-#if 0
+#if 1
 	int64_t idx = 0;
-	ServerListCfgMgr::GetInstance()->_dbServerList.Foreach([&idx](const auto& sInfo) {
+	ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([&idx](const auto& sInfo) {
 		auto proc = NetProcMgr::GetInstance()->Dist(++idx);
 		proc->Connect(sInfo->_ip, sInfo->_lobby_port, false, []() { return CreateSession<LobbyDBSession>(); });
 	});
@@ -89,23 +89,6 @@ bool App::Init()
 	});
 
 
-	for (int64_t i=0; i<(2<<18); ++i)
-		_testList.Add(i);
-
-	struct stTest : public stActorMailBase
-	{
-	};
-
-	LOG_INFO("111111111111111111111111111111 size:{}", sizeof(stTest));
-
-	std::vector<std::shared_ptr<stTest>> tList;
-	tList.reserve(1000 * 1000);
-	{
-		std::shared_ptr<stTest> t;
-		TimeCost tm("1111111");
-		for (int64_t i=0; i<1000 * 1000; ++i)
-			tList.emplace_back(std::make_shared<stTest>());
-	}
 
 	// {{{ start task
 	std::vector<std::string> preTask;
@@ -185,6 +168,14 @@ bool App::Init()
 			});
 		});
         });
+
+	preTask.clear();
+	_startPriorityTaskList->AddTask(preTask, LobbyGameMgrSession::_sPriorityTaskKey, [](const std::string& key) {
+		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
+		auto proc = NetProcMgr::GetInstance()->Dist(1);
+		proc->Connect(gameMgrInfo->_ip, gameMgrInfo->_lobby_port, false, []() { return CreateSession<LobbyGameMgrSession>(); });
+	});
+
 	// }}}
 
 	// {{{ stop task
@@ -233,13 +224,14 @@ int main(int argc, char* argv[])
 template <> constexpr uint64_t GetLogModuleParallelCnt<E_LOG_MT_Player>() { return 8; }
 #include "Player/Player.h"
 ACTOR_MAIL_HANDLE(Player, 0x7f, 0, MsgClientLogin)
+// ACTOR_MAIL_HANDLE(Player, 0x7f, 0)
 {
   // for (int64_t i=0; i<10; ++i)
 	// RedisCmd("SET a 1", false);
   // PLAYER_LOG_INFO(GetID(), "aaa{}bbb{}ccc{}", 1, 2, 3);
   // LOG_INFO("");
-	++GetApp()->_cnt;
-	Push();
+	GetApp()->_cnt += 1;
+	// Push();
 	// for (int64_t i=0; i<300; ++i)
 	{
 	  // co_yield;
@@ -256,14 +248,15 @@ ACTOR_MAIL_HANDLE(Player, 0x7f, 0, MsgClientLogin)
 	return nullptr;
 }
 
-ACTOR_MAIL_HANDLE(Player, 0x7f, 1, MsgClientLogin)
+// ACTOR_MAIL_HANDLE(Player, 0x7f, 1, MsgClientLogin)
+ACTOR_MAIL_HANDLE(Player, 0x7f, 1)
 {
   // for (int64_t i=0; i<10; ++i)
 	// RedisCmd("SET a 1", false);
   // PLAYER_LOG_INFO(GetID(), "aaa{}bbb{}ccc{}", 1, 2, 3);
   // LOG_INFO("");
-	++GetApp()->_cnt;
-	Push();
+	GetApp()->_cnt += 1;
+	// Push();
 	// for (int64_t i=0; i<300; ++i)
 	{
 	  // co_yield;
@@ -272,7 +265,8 @@ ACTOR_MAIL_HANDLE(Player, 0x7f, 1, MsgClientLogin)
 		// GetApp()->_i = GetApp()->_testList.Get(i);
 		// GetApp()->_i = RandInRange(1, 100);
 	}
-	Send2Client(0x7f, 1, msg);
+        for (int64_t i=0; i<1; ++i)
+                Send2Client(0x7f, 1, nullptr);
 	return nullptr;
 }
 

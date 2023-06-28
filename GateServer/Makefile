@@ -1,18 +1,17 @@
 ifeq ($(JOBS),)
-	# JOBS := $(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
-	JOBS := 6
+	JOBS := $(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
 	ifeq ($(JOBS),)
 		JOBS := 1
 	endif
 endif
 
 ifeq ($(release), y)
-	CC = g++
-	CC_FLAG = -DNDEBUG -g -std=c++2a -Wall -Werror -O3 -fno-omit-frame-pointer -Wno-unused-function -rdynamic
+	CC = clang++
+	CC_FLAG = -DNDEBUG -g -std=c++2a -Wall -Werror -O3 -Wno-unused-function -fno-omit-frame-pointer
 else
-	CC = ccache g++
-	# CC_FLAG = -g -std=c++2a -Wall -Werror -O0 -Wno-unused-function -rdynamic -fno-omit-frame-pointer -fsanitize=address,leak,undefined,pointer-compare,pointer-subtract -fstack-protector
-	CC_FLAG = -g -std=c++2a -Wall -Werror -O0 -Wno-unused-function -rdynamic -fno-omit-frame-pointer
+	CC = ccache clang++
+	# CC_FLAG = -g -std=c++2a -Wall -Werror -O0 -fno-omit-frame-pointer -fsanitize=address,leak,undefined,pointer-compare,pointer-subtract -fstack-protector
+	CC_FLAG = -g -std=c++2a -Wall -Werror -O0 -Wno-unused-function -fno-omit-frame-pointer -fstack-protector
 endif
 
 # {{{ project info
@@ -46,7 +45,8 @@ RM_ALL  += $(DEPS)
 # {{{ dependency includes and libs
 EXT_DIR = ../Deps/libnvngLib \
 	  ../Deps/libevent-2.1.12-stable \
-          ../Deps/libboost
+	  ../Deps/libboost \
+	  ../Deps/hiredis
 
 EXT_LIB = nvngLib fmt protobuf pthread \
           boost_program_options boost_filesystem boost_stacktrace_backtrace \

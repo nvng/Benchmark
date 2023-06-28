@@ -50,6 +50,16 @@ enum EInternalErrorType
 
   E_IET_FighterClientError = 0x30;
   E_IET_GateNotFound = 0x31;
+
+  E_IET_AlreadyReqEnterRegion = 0x40;
+  E_IET_AlreadyReqQueue = 0x41;
+  E_IET_QueueNotFound = 0x42;
+  E_IET_QueueStateError = 0x43;
+  E_IET_ReqAgentIsNull = 0x44;
+  E_IET_RegionAgentIsNull = 0x45;
+  E_IET_QueueOptError = 0x46;
+  E_IET_CreateRegionAgentError = 0x47;
+  E_IET_AlreadyExitQueue = 0x48;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

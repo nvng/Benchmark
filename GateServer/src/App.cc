@@ -2,10 +2,10 @@
 
 #include <malloc.h>
 
-/*
+#ifdef ____USE_IMPL_GATE_LOBBY_SESSION_ONRECV___
 void GateLobbySession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 {
-        switch (msgHead.type_)
+        switch (msgHead._type)
         {
         case MsgHeaderType::MsgTypeMerge<E_MIMT_Internal, E_MIIST_HeartBeat>() :
         case MsgHeaderType::MsgTypeMerge<E_MIMT_Internal, E_MIIST_ServerInit>() :
@@ -17,33 +17,33 @@ void GateLobbySession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
                 break;
         default :
                 {
-                        const auto mainType = MsgHeaderType::MsgMainType(msgHead.type_);
-                        const auto subType  = MsgHeaderType::MsgSubType(msgHead.type_);
+                        const auto mainType = MsgHeaderType::MsgMainType(msgHead._type);
+                        const auto subType  = MsgHeaderType::MsgSubType(msgHead._type);
                         // DLOG_INFO("GateLobbySession recv mainType:{:#x} subType:{:#x} sesCnt:{}", mainType, subType, NetMgr::GetInstance()->GetSessionCnt());
 
                         PlayerPtr player;
-                        switch (msgHead.type_)
+                        switch (msgHead._type)
                         {
                         case MsgHeaderType::MsgTypeMerge<E_MCMT_ClientCommon, E_MCCCST_Login>() :
-                                player = PlayerMgr::GetInstance()->GetLoginPlayer(msgHead.to_, msgHead.from_);
-                                DLOG_WARN_IF(!player, "网关收到大厅消息，但玩家[{}] 没找到!!! mt[{:#x}] st[{:#x}]", msgHead.to_, mainType, subType);
+                                player = PlayerMgr::GetInstance()->GetLoginPlayer(msgHead._to, msgHead._from);
+                                DLOG_WARN_IF(!player, "网关收到大厅消息，但玩家[{}] 没找到!!! mt[{:#x}] st[{:#x}]", msgHead._to, mainType, subType);
                                 break;
                         default :
-                                player = GetLobbyPlayer(msgHead.to_, msgHead.from_);
-                                DLOG_WARN_IF(!player, "网关收到大厅消息，但玩家[{}] 没找到!!! mt[{:#x}] st[{:#x}]", msgHead.to_, mainType, subType);
+                                player = GetLobbyPlayer(msgHead._to, msgHead._from);
+                                DLOG_WARN_IF(!player, "网关收到大厅消息，但玩家[{}] 没找到!!! mt[{:#x}] st[{:#x}]", msgHead._to, mainType, subType);
                                 break;
                         }
 
                         if (player)
                         {
-                                switch (msgHead.type_)
+                                switch (msgHead._type)
                                 {
                                 case MsgHeaderType::MsgTypeMerge<E_MCMT_ClientCommon, E_MCCCST_Login>() :
                                         {
                                                 auto clientSes = player->_clientSes.lock();
                                                 if (clientSes)
                                                 {
-                                                        if (E_CET_InLogin != msgHead.guid_)
+                                                        if (E_CET_InLogin != msgHead._guid)
                                                         {
 #ifdef ____BENCHMARK____
                                                                 bool playerMgrRet = PlayerMgr::GetInstance()->AddPlayer(player);
@@ -57,17 +57,18 @@ void GateLobbySession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
                                                                 {
                                                                         clientSes->_player_ = player;
                                                                         evbuffer_drain(evbuf, sizeof(MsgHeaderType));
-                                                                        player->Send2Client(evbuf, msgHead.size_-sizeof(MsgHeaderType), msgHead.CompressType(), mainType, subType);
+                                                                        player->Send2Client(evbuf, msgHead._size-sizeof(MsgHeaderType), msgHead.CompressType(), mainType, subType);
 
 									static std::string str = []() {
 										std::string ret;
-										for (int64_t i=0; i<100; ++i)
+										for (int64_t i=0; i<230; ++i)
 											ret += "a";
 										return ret;
 									}();
 									MsgClientLogin msg;
 									msg.set_nick_name(str);
 									player->Send2Lobby(&msg, 0x7f, 0);
+									// player->Send2Lobby(nullptr, 0x7f, 0);
                                                                 }
                                                                 else
                                                                 {
@@ -88,7 +89,7 @@ void GateLobbySession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
                                                         else
                                                         {
                                                                 evbuffer_drain(evbuf, sizeof(MsgHeaderType));
-                                                                player->Send2Client(evbuf, msgHead.size_-sizeof(MsgHeaderType), msgHead.CompressType(), mainType, subType);
+                                                                player->Send2Client(evbuf, msgHead._size-sizeof(MsgHeaderType), msgHead.CompressType(), mainType, subType);
                                                                 player->ResetLobbySes();
                                                                 clientSes->AsyncClose(1006);
                                                         }
@@ -100,7 +101,7 @@ void GateLobbySession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
                                                 auto rp = PlayerMgr::GetInstance()->RemoveLoginPlayer(player->GetID(), player.get());
                                                 (void)rp;
 #ifdef ____BENCHMARK____
-                                                LOG_FATAL_IF(!rp, "4444444444444444444444444444444 guid:{}",  msgHead.guid_);
+                                                LOG_FATAL_IF(!rp, "4444444444444444444444444444444 guid:{}",  msgHead._guid);
 #endif
                                         }
                                         break;
@@ -117,7 +118,7 @@ void GateLobbySession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
                                                 {
                                                         tmpP->ResetLobbySes();
                                                         evbuffer_drain(evbuf, sizeof(MsgHeaderType));
-                                                        tmpP->Send2Client(evbuf, msgHead.size_-sizeof(MsgHeaderType), msgHead.CompressType(), mainType, subType);
+                                                        tmpP->Send2Client(evbuf, msgHead._size-sizeof(MsgHeaderType), msgHead.CompressType(), mainType, subType);
                                                         auto ses = tmpP->_clientSes.lock();
                                                         if (ses)
                                                                 ses->AsyncClose(1003);
@@ -128,9 +129,9 @@ void GateLobbySession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
                                         break;
                                 case MsgHeaderType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_SwitchRegion>() :
                                         {
-                                                auto buf = evbuffer_pullup(evbuf, msgHead.size_);
+                                                auto buf = evbuffer_pullup(evbuf, msgHead._size);
                                                 MailSwitchRegion msg;
-                                                bool ret = Compress::UnCompressAndParseAlloc(static_cast<Compress::ECompressType>(msgHead.ct_), msg, buf+sizeof(MsgHeaderType), msgHead.size_-sizeof(MsgHeaderType));
+                                                bool ret = Compress::UnCompressAndParseAlloc(static_cast<Compress::ECompressType>(msgHead._ct), msg, buf+sizeof(MsgHeaderType), msgHead._size-sizeof(MsgHeaderType));
                                                 if (ret)
                                                 {
                                                         MsgSwitchRegion msgSwitchRegion;
@@ -184,11 +185,11 @@ void GateLobbySession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
                                         {
                                                 evbuffer_drain(evbuf, sizeof(MsgHeaderType));
                                                 evbuffer* sendBuf = evbuffer_new();
-                                                evbuffer_remove_buffer(evbuf, sendBuf, msgHead.size_-sizeof(MsgHeaderType));
-                                                SendBufRef(sendBuf, static_cast<Compress::ECompressType>(msgHead.ct_),
+                                                evbuffer_remove_buffer(evbuf, sendBuf, msgHead._size-sizeof(MsgHeaderType));
+                                                SendBufRef(sendBuf, static_cast<Compress::ECompressType>(msgHead._ct),
                                                            0x7f, 0, MsgHeaderType::E_RMT_Send, 0, player->GetUniqueID(), player->GetID());
-                                                for (int64_t i=0; i<300; ++i)
-                                                        SendBufRef(sendBuf, static_cast<Compress::ECompressType>(msgHead.ct_),
+                                                for (int64_t i=0; i<100; ++i)
+                                                        SendBufRef(sendBuf, static_cast<Compress::ECompressType>(msgHead._ct),
                                                                    0x7f, 1, MsgHeaderType::E_RMT_Send, 0, player->GetUniqueID(), player->GetID());
                                                 evbuffer_free(sendBuf);
                                         }
@@ -197,19 +198,19 @@ void GateLobbySession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 					break;
                                 default :
                                         evbuffer_drain(evbuf, sizeof(MsgHeaderType));
-                                        player->Send2Client(evbuf, msgHead.size_-sizeof(MsgHeaderType), msgHead.CompressType(), mainType, subType);
+                                        player->Send2Client(evbuf, msgHead._size-sizeof(MsgHeaderType), msgHead.CompressType(), mainType, subType);
                                         break;
                                 }
                         }
                         else
                         {
-                                DLOG_ERROR("玩家[{}] 收到大厅消息，但玩家没找到!!!", msgHead.from_);
+                                DLOG_ERROR("玩家[{}] 收到大厅消息，但玩家没找到!!!", msgHead._from);
                         }
                 }
                 break;
         }
 }
-*/
+#endif
 
 AppBase* GetAppBase()
 {
@@ -222,7 +223,7 @@ App* GetApp()
 }
 
 App::App(const std::string& appName)
-  : SuperType(appName)
+  : SuperType(appName, E_ST_Gate)
 {
 	NetMgr::CreateInstance();
 	PlayerMgr::CreateInstance();
@@ -236,7 +237,7 @@ App::~App()
 
 bool App::Init()
 {
-	LOG_FATAL_IF(!SuperType::Init(E_ST_Gate), "super init fail!!!");
+	LOG_FATAL_IF(!SuperType::Init(), "super init fail!!!");
 	_gateCfg = ServerCfgMgr::GetInstance()->_gateCfg;
 
 	LOG_FATAL_IF(!NetMgr::GetInstance()->Init(), "net mgr init fail!!!");
@@ -265,13 +266,20 @@ bool App::Init()
 				gamePlayerCnt += gameSes->GetPlayerCnt();
 		});
 
-		LOG_INFO_IF(true, "sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] avg[{}]",
+                static int64_t clientRecvCnt = 0;
+                static int64_t serverRecvCnt = 0;
+		LOG_INFO_IF(true, "sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] crc[{}] src[{}] avg[{}]",
 			    NetMgr::GetInstance()->GetSessionCnt(),
 			    PlayerMgr::GetInstance()->GetPlayerCnt(),
 			    lobbyPlayerCnt,
 			    gamePlayerCnt,
+                            GetApp()->_clientRecvCnt - clientRecvCnt,
+                            GetApp()->_serverRecvCnt - serverRecvCnt,
 			    GetFrameController().GetAverageFrameCnt()
 			   );
+
+                clientRecvCnt = GetApp()->_clientRecvCnt;
+                serverRecvCnt = GetApp()->_serverRecvCnt;
 
 		// malloc_trim(0);
 	});
