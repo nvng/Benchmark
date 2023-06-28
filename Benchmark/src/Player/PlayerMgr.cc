@@ -22,7 +22,7 @@ bool PlayerMgr::Init()
         ServerListCfgMgr::GetInstance()->Foreach<stGateServerInfo>([this, perCnt](const stGateServerInfoPtr& gateInfo) {
                 for (int i=0; i<perCnt; ++i)
                 {
-#if 0
+#if 1
                         static int64_t idx = 0;
                         _idList.emplace_back(GetApp()->GetSID() * 1000 * 1000 + ++idx);
 #else
@@ -32,7 +32,8 @@ bool PlayerMgr::Init()
                 }
         });
 
-        ServerListCfgMgr::GetInstance()->Foreach<stGateServerInfo>([this, perCnt](const stGateServerInfoPtr& gateInfo) {
+        ServerListCfgMgr::GetInstance()->Foreach<stGateServerInfo>([perCnt](const stGateServerInfoPtr& gateInfo) {
+                LOG_INFO("gggggggggate ip:{} port:{}", gateInfo->_ip, gateInfo->_client_port);
                 for (int i=0; i<perCnt; ++i)
                 {
                         auto proc = NetProcMgr::GetInstance()->Dist(i);

@@ -18,7 +18,7 @@ void ClientGateSession::OnConnect()
 	msg.set_player_guid(playerGuid);
 	SendPB(&msg, E_MCMT_ClientCommon, E_MCCCST_Login);
 
-#if 1
+#if 0
 	if (0 != RandInRange(0, 3))
 	{
 		TcpSessionWeakPtr weakSes = shared_from_this();
@@ -37,6 +37,10 @@ void ClientGateSession::OnConnect()
 
 void ClientGateSession::OnClose(int32_t reasonType)
 {
+        auto p = _player.lock();
+        if (p)
+                p->OnDisconnect();
+
 	std::weak_ptr<ClientGateSession> weakSes = shared_from_this();
 	GetSteadyTimer().StartWithRelativeTimeOnce(RandInRange(0.0, 4.0), [weakSes, reasonType](TimedEventItem& eventData) {
 		auto ses = weakSes.lock();
@@ -81,6 +85,8 @@ void ClientGateSession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 		// SendPB(nullptr, 0x7f, 0);
 		break;
 #endif
+        case MsgHeaderType::MsgTypeMerge<0x7f, 1>() :
+                break;
 	default :
                 if (true)
                 {
@@ -93,7 +99,14 @@ void ClientGateSession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
                         auto p = _player.lock();
                         if (p)
                         {
-                                auto mail = std::make_shared<ActorNetMail<ActorMail, MsgHeaderType>>(nullptr, msgHead, evbuf);
+                                auto tmpMsgHeader = msgHead;
+                                tmpMsgHeader._type = Player::ActorMailType::MsgTypeMerge(MsgHeaderType::MsgMainType(msgHead._type), MsgHeaderType::MsgSubType(msgHead._type));
+                                /*
+                                LOG_INFO("1111111 type[{:#x}] newType[{:#x}] mt[{:#x}] st[{:#x}]",
+                                         msgHead._type, tmpMsgHeader._type, MsgHeaderType::MsgMainType(msgHead._type), MsgHeaderType::MsgSubType(msgHead._type));
+                                         */
+                                evbuffer_drain(evbuf, sizeof(MsgHeaderType));
+                                auto mail = std::make_shared<ActorNetMail<ActorMail, MsgHeaderType>>(nullptr, tmpMsgHeader, evbuf);
                                 p->Push(mail);
                         }
                         else

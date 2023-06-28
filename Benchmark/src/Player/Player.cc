@@ -17,7 +17,7 @@ bool Player::Init()
 
 
         _stateMgr.Init();
-        StateEventInfo evt(ClientGateSession::MsgHeaderType::MsgTypeMerge(E_MCMT_Internal, E_MCIST_HeartBeat));
+        StateEventInfo evt(ActorMail::MsgTypeMerge(E_MCMT_Internal, E_MCIST_HeartBeat));
         _stateMgr.SetCurState(E_PST_None, shared_from_this(), evt, true);
 	return true;
 }
@@ -48,6 +48,11 @@ bool Player::UseGMGoods()
 
 void Player::DealPlayerChange(const MsgPlayerChange& msg)
 {
+}
+
+void Player::OnDisconnect()
+{
+        OnEvent(E_MCMT_ClientCommon, E_MCCCST_Disconnect, nullptr);
 }
 
 ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClientLoginRet)

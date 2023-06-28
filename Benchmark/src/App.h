@@ -9,7 +9,7 @@ class App : public AppBase, public Singleton<App>
   friend class Singleton<App>;
 
 public :
-  bool Init();
+  bool Init() override;
   void Stop() override;
 
 public :

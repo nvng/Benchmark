@@ -20,9 +20,9 @@ public :
         void SendPB(uint16_t mainType, uint16_t subType, google::protobuf::MessageLite* pb=nullptr);
         bool UseGMGoods();
         void DealPlayerChange(const MsgPlayerChange& msg);
+        void OnDisconnect();
 
 public :
-        MsgQueueInfo _queueInfo;
         std::shared_ptr<ClientGateSession> _ses;
         MsgPlayerInfo _msgPlayerInfo;
         std::unordered_map<int64_t, int64_t> _goodsList;
@@ -30,7 +30,7 @@ public :
 public :
         FORCE_INLINE void ChangeState(int stateType, StateEventInfo& evt) { _stateMgr.ChangeState(stateType, shared_from_this(), evt); }
         FORCE_INLINE void OnEvent(int64_t mt, int64_t st, const MessageLitePtr& msg)
-        { StateEventInfo evt(ClientGateSession::MsgHeaderType::MsgTypeMerge(mt, st)); evt._data = msg; OnEvent(evt); }
+        { StateEventInfo evt(ActorMail::MsgTypeMerge(mt, st)); evt._data = msg; OnEvent(evt); }
         FORCE_INLINE void OnEvent(StateEventInfo& evt) { _stateMgr.OnEvent(shared_from_this(), evt); }
 private :
         PlayerStateMgr _stateMgr;

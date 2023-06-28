@@ -66,6 +66,7 @@ public :
         void OnEvent(const PlayerPtr& player, StateEventInfo& evt) override;
 
 public :
+        TimerGuidType _reqQueueTimerGuid = INVALID_TIMER_GUID;
         TimerGuidType _exitQueueTimerGuid = INVALID_TIMER_GUID;
 };
 

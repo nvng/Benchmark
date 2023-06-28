@@ -14,7 +14,7 @@ App* GetApp()
 }
 
 App::App(const std::string& appName)
-  : SuperType(appName)
+  : SuperType(appName, E_ST_None)
 {
 	PlayerMgr::CreateInstance();
 }
@@ -33,7 +33,7 @@ bool App::Init()
 	if (!str.empty())
 	{
 	    sid = atoll(str.c_str());
-	    // printf("sid[%ld] str[%s]", sid, str.c_str());
+	    // printf("%s\n", fmt::format("sid[{}] str[{}]", sid, str.c_str()).c_str());
 	}
 	f.close();
 
@@ -41,7 +41,11 @@ bool App::Init()
 	f1 << ((sid+1>=100) ? 10 : sid + 1);
         f1.close();
 
-	LOG_FATAL_IF(!SuperType::Init(E_ST_None), "AppBase init error!!!");
+        _serverInfo = std::make_shared<stServerInfoBase>();
+        _serverInfo->_sid = sid;
+        _serverInfo->_timerProcCnt = 1;
+
+	LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 
 #if 1

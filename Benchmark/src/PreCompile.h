@@ -1,6 +1,8 @@
 #ifndef __PRE_COMPILE_H__
 #define __PRE_COMPILE_H__
 
+#define ____BENCHMARK____
+
 #define BOOST_SP_DISABLE_THREADS
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
