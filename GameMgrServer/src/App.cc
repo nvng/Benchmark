@@ -58,7 +58,6 @@ bool App::Init()
 	 * 强制切换在主场景。
 	 */
 
-        /*
 	preTask.clear();
 	_startPriorityTaskList->AddTask(preTask, GameMgrGameSession::scPriorityTaskKey, [](const std::string& key) {
 		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
@@ -67,7 +66,6 @@ bool App::Init()
 			return CreateSession<GameMgrGameSession>();
 		});
 	});
-        */
 
 	preTask.clear();
 	// preTask.emplace_back(GameMgrGameSession::scPriorityTaskKey);

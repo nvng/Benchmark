@@ -1,6 +1,7 @@
 #include "Player.h"
 
 #include "PlayerMgr.h"
+#include "msg_client.pb.h"
 
 Player::Player(uint64_t guid)
 	: ActorImpl(guid)
@@ -52,7 +53,7 @@ void Player::DealPlayerChange(const MsgPlayerChange& msg)
 
 void Player::OnDisconnect()
 {
-        OnEvent(E_MCMT_ClientCommon, E_MCCCST_Disconnect, nullptr);
+        // OnEvent(E_MCMT_ClientCommon, E_MCCCST_Disconnect, nullptr);
 }
 
 ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClientLoginRet)
@@ -81,7 +82,9 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_DataResetNoneZero)
 ACTOR_MAIL_HANDLE(Player, E_MCMT_GameCommon, E_MCGCST_SwitchRegion, MsgSwitchRegion)
 {
         // LOG_INFO("玩家[{}] 收到 SwitchRegion type[{}]", GetID(), msg->region_type());
-        SendPB(E_MCMT_GameCommon, E_MCGCST_LoadFinish);
+        MsgLoadFinish sendMsg;
+        sendMsg.set_region_type(msg->region_type());
+        SendPB(E_MCMT_GameCommon, E_MCGCST_LoadFinish, &sendMsg);
         OnEvent(E_MCMT_GameCommon, E_MCGCST_SwitchRegion, msg);
 
         return nullptr;

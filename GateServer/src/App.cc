@@ -243,17 +243,6 @@ bool App::Init()
 	LOG_FATAL_IF(!NetMgr::GetInstance()->Init(), "net mgr init fail!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "player mgr init fail!!!");
 
-	auto gateInfo = GetServerInfo<stGateServerInfo>();
-	int64_t idx = 0;
-	auto proc = NetProcMgr::GetInstance()->Dist(++idx);
-	// proc->StartListener("0.0.0.0", gateInfo->_client_port, _gateCfg->_crt, _gateCfg->_key, []() { return CreateSession<GateClientSession>(); });
-	proc->StartListener("0.0.0.0", gateInfo->_client_port, "", "", []() { return CreateSession<GateClientSession>(); });
-
-	ServerListCfgMgr::GetInstance()->Foreach<stLobbyServerInfo>([&idx](const stLobbyServerInfoPtr& sInfo) {
-	  auto proc = NetProcMgr::GetInstance()->Dist(++idx);
-	  proc->Connect(sInfo->_ip, sInfo->_gate_port, false, []() { return CreateSession<GateLobbySession>(); });
-	});
-
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
 		std::size_t lobbyPlayerCnt = 0;
 		std::size_t gamePlayerCnt = 0;
@@ -284,19 +273,49 @@ bool App::Init()
 		// malloc_trim(0);
 	});
 
-	struct stTest
-	{
-		int64_t t = 0;
-	};
+	// {{{ start task
+	_startPriorityTaskList->AddFinalTaskCallback([this]() {
+		auto gateInfo = GetServerInfo<stGateServerInfo>();
+#if defined(____CLIENT_USE_WS____) || defined(____CLIENT_USE_WSS____)
+		WSSession::InitWS(1, gateInfo->_client_port, _gateCfg->_crt, _gateCfg->_key);
+#else
+		auto proc = NetProcMgr::GetInstance()->Dist(0);
+		proc->StartListener("0.0.0.0", gateInfo->_client_port, _gateCfg->_crt, _gateCfg->_key, []() { return CreateSession<GateClientSession>(); });
+#endif
+	});
 
-	CREATE_ACTOR_CALL_MAIL(stTest, r, nullptr, 0, 0);
-	r.t = 123;
-	LOG_INFO("111111111111 t:{}", ACTOR_MAIL(r)->_data.t);
+	std::vector<std::string> preTaskList;
 
-	CREATE_ACTOR_CALL_MAIL(MsgResult, ret, nullptr, 0, 0);
-	ret.set_error_type(E_CET_CfgNotFound);
-	LOG_INFO("222222222222 t:{}", ACTOR_MAIL(ret)->_data.error_type());
+	preTaskList.clear();
+	_startPriorityTaskList->AddTask(preTaskList, GateGameSession::scPriorityTaskKey, [](const std::string& key) {
+		int64_t idx = 0;
+		ServerListCfgMgr::GetInstance()->Foreach<stGameServerInfo>([&idx](const stGameServerInfoPtr& sInfo) {
+			auto proc = NetProcMgr::GetInstance()->Dist(++idx);
+			proc->Connect(sInfo->_ip, sInfo->_gate_port, false, []() { return CreateSession<GateGameSession>(); });
+		});
+	});
 
+	preTaskList.clear();
+	preTaskList.emplace_back(GateGameSession::scPriorityTaskKey);
+	_startPriorityTaskList->AddTask(preTaskList, GateLobbySession::scPriorityTaskKey, [](const std::string& key) {
+		int64_t idx = 0;
+		ServerListCfgMgr::GetInstance()->Foreach<stLobbyServerInfo>([&idx](const stLobbyServerInfoPtr& sInfo) {
+			auto proc = NetProcMgr::GetInstance()->Dist(++idx);
+			proc->Connect(sInfo->_ip, sInfo->_gate_port, false, []() { return CreateSession<GateLobbySession>(); });
+		});
+	});
+	// }}}
+
+	// {{{ stop task
+	_stopPriorityTaskList->AddFinalTaskCallback([]() {
+		NetProcMgr::GetInstance()->Terminate();
+
+		NetProcMgr::GetInstance()->WaitForTerminate();
+	});
+	// }}}
+
+        LOG_INFO("RRRRRRRRRRRRRRRRRRRRRRRRRRelease");
+        DLOG_INFO("DDDDDDDDDDDDDDDDDDDDDDbug");
 
 	return true;
 }

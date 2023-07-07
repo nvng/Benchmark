@@ -1,10 +1,11 @@
 #!/bin/bash
 
 pg_list=(
-  GateServer.out
-  LobbyServer.out
-  GameServer.out
-  GameMgrServer.out
+  GateServer
+  LobbyServer
+  GameServer
+  GameMgrServer
+  DBServer
 )
 
 sig=${1}

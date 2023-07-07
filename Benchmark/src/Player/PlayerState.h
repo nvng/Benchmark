@@ -17,7 +17,7 @@ struct StateEventInfo
         bool      _bParam = false;
         int64_t   _param = 0;
         std::string_view _strParam;
-        MessageLitePtr _data;
+        ActorMailDataPtr _data;
         EClientErrorType _errorType = E_CET_Success;
 };
 

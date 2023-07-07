@@ -29,7 +29,7 @@ public :
 
 public :
         FORCE_INLINE void ChangeState(int stateType, StateEventInfo& evt) { _stateMgr.ChangeState(stateType, shared_from_this(), evt); }
-        FORCE_INLINE void OnEvent(int64_t mt, int64_t st, const MessageLitePtr& msg)
+        FORCE_INLINE void OnEvent(int64_t mt, int64_t st, const ActorMailDataPtr& msg)
         { StateEventInfo evt(ActorMail::MsgTypeMerge(mt, st)); evt._data = msg; OnEvent(evt); }
         FORCE_INLINE void OnEvent(StateEventInfo& evt) { _stateMgr.OnEvent(shared_from_this(), evt); }
 private :

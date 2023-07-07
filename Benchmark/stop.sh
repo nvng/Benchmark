@@ -1,3 +1,3 @@
 #!/bin/bash
 
-killall -2 Benchmark.out
+killall -2 Benchmark

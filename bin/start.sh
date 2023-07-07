@@ -1,10 +1,11 @@
 #!/bin/bash
 
 pg_list=(
-  GameMgrServer.out
-  LobbyServer.out
-  GateServer.out
-  GameServer.out
+  GameMgrServer
+  LobbyServer
+  GameServer
+  DBServer
+  GateServer
 )
 
 for pg in ${pg_list[@]}
@@ -13,7 +14,7 @@ do
   pgCnt=$oldPgCnt
   while true
   do
-    ./$pg -d
+    ./$pg --logmf=1 -s -d
     sleep 1
     pgCnt=`/bin/ls | grep $pg"_" | wc -l`
     if [ $oldPgCnt = $pgCnt ]; then

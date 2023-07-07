@@ -3,7 +3,6 @@
 #include "Player/PlayerMgr.h"
 #include "Region/RegionMgr.h"
 
-#include "MailSys.h"
 #include "DBMgr.h"
 
 AppBase* GetAppBase()
@@ -48,14 +47,6 @@ bool App::Init()
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "DBMgr init error!!!");
 
-#if 1
-	int64_t idx = 0;
-	ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([&idx](const auto& sInfo) {
-		auto proc = NetProcMgr::GetInstance()->Dist(++idx);
-		proc->Connect(sInfo->_ip, sInfo->_lobby_port, false, []() { return CreateSession<LobbyDBSession>(); });
-	});
-#endif
-
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
 		static int64_t oldCnt = 0;
 		(void)oldCnt;
@@ -91,7 +82,6 @@ bool App::Init()
 
 
 	// {{{ start task
-	std::vector<std::string> preTask;
         _startPriorityTaskList->AddFinalTaskCallback([this]() {
 		// Note: 多线程
 		// TODO: 监听端口
@@ -169,11 +159,33 @@ bool App::Init()
 		});
         });
 
+	std::vector<std::string> preTask;
+
 	preTask.clear();
 	_startPriorityTaskList->AddTask(preTask, LobbyGameMgrSession::_sPriorityTaskKey, [](const std::string& key) {
 		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
 		auto proc = NetProcMgr::GetInstance()->Dist(1);
 		proc->Connect(gameMgrInfo->_ip, gameMgrInfo->_lobby_port, false, []() { return CreateSession<LobbyGameMgrSession>(); });
+	});
+
+	preTask.clear();
+	preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);
+	_startPriorityTaskList->AddTask(preTask, LobbyDBSession::scPriorityTaskKey, [](const std::string& key) {
+		int64_t idx = 1;
+		ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([&idx](const auto& cfg) {
+			auto proc = NetProcMgr::GetInstance()->Dist(++idx);
+			proc->Connect(cfg->_ip, cfg->_lobby_port, false, []() { return CreateSession<LobbyDBSession>(); });
+		});
+	});
+
+	preTask.clear();
+	preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);
+	_startPriorityTaskList->AddTask(preTask, LobbyGameSession::scPriorityTaskKey, [](const std::string& key) {
+		auto proc = NetProcMgr::GetInstance()->Dist(0);
+		auto lobbyInfo = GetApp()->GetServerInfo<stLobbyServerInfo>();
+		proc->StartListener("0.0.0.0", lobbyInfo->_game_port, "", "", []() {
+			return CreateSession<LobbyGameSession>();
+		});
 	});
 
 	// }}}
@@ -255,7 +267,7 @@ ACTOR_MAIL_HANDLE(Player, 0x7f, 1)
 	// RedisCmd("SET a 1", false);
   // PLAYER_LOG_INFO(GetID(), "aaa{}bbb{}ccc{}", 1, 2, 3);
   // LOG_INFO("");
-	GetApp()->_cnt += 1;
+	GetApp()->_cnt += 4;
 	// Push();
 	// for (int64_t i=0; i<300; ++i)
 	{
@@ -265,7 +277,7 @@ ACTOR_MAIL_HANDLE(Player, 0x7f, 1)
 		// GetApp()->_i = GetApp()->_testList.Get(i);
 		// GetApp()->_i = RandInRange(1, 100);
 	}
-        for (int64_t i=0; i<1; ++i)
+        for (int64_t i=0; i<4; ++i)
                 Send2Client(0x7f, 1, nullptr);
 	return nullptr;
 }
