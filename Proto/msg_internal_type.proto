@@ -42,10 +42,9 @@ enum EMsgInternalLocalSubType
 {
   E_MILST_Disconnect = 0x0;
   E_MILST_Reconnect = 0x1;
-  E_MILST_Init = 0x2;
-  E_MILST_DayChange = 0x3;
-  E_MILST_DataResetNoneZero = 0x4;
-  E_MILST_Terminate = 0x5;
+  E_MILST_DayChange = 0x2;
+  E_MILST_DataResetNoneZero = 0x3;
+  E_MILST_Terminate = 0x4;
 }
 
 enum EMsgInternalInternalSubType

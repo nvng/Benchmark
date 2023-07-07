@@ -92,6 +92,7 @@ message MsgSwitchRegion
 message MsgLoadFinish
 {
   ERegionType region_type = 1;
+  sint64 player_guid = 2;
 }
 
 message MsgReqEnterRegion

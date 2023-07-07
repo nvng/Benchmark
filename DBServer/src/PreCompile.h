@@ -3,6 +3,8 @@
 
 // #define ____PRINT_ACTOR_MAIL_COST_TIME____
 
+#define ____BENCHMARK____
+
 #define BOOST_SP_DISABLE_THREADS
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -25,8 +27,8 @@
 
 #include <rapidjson/document.h>
 
-#include "Proto/msg_internal_type.pb.h"
-#include "Proto/msg_internal.pb.h"
+#include "msg_internal_type.pb.h"
+#include "msg_internal.pb.h"
 
 #include "nvngLib.h"
 #include "GlobalDef.h"

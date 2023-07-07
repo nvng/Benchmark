@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Bag.h"
 #include "Festival.h"
 
 class ActivityMgr : public ActivityMgrBase

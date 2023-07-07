@@ -36,9 +36,8 @@ enum ERegionStateType
 {
         E_RST_None = 0;
         E_RST_Prepare = 1;
-        E_RST_Timeout = 2;
-        E_RST_Play = 3;
-        E_RST_Conclude = 4;
+        E_RST_Play = 2;
+        E_RST_Conclude = 3;
 }
 
 message MsgRegionStateInfo

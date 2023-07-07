@@ -27,11 +27,11 @@
 #include <rapidjson/document.h>
 
 // 有些 pb 会在库中使用。
-#include "Proto/msg_internal_type.pb.h"
-#include "Proto/msg_internal.pb.h"
-#include "Proto/msg_client_type.pb.h"
-#include "Proto/msg_client.pb.h"
-#include "Proto/msg_db.pb.h"
+#include "msg_internal_type.pb.h"
+#include "msg_internal.pb.h"
+#include "msg_client_type.pb.h"
+#include "msg_client.pb.h"
+#include "msg_db.pb.h"
 
 #include "nvngLib.h"
 #include "GlobalDef.h"
