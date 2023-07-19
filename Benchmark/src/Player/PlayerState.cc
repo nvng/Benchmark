@@ -65,20 +65,11 @@ void PlayerNoneState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
 
 void PlayerLobbyState::Enter(const PlayerPtr& player, StateEventInfo& evt)
 {
-        // player->StartTimerWithRelativeTimeOnce(10.0, [player](TimerGuidType id) {
-                if (player->_msgPlayerInfo.has_queue_info())
-                {
-                        player->SendPB(E_MCMT_QueueCommon, E_MCQCST_ReqQueue);
-                }
-                else
-                {
-                        MsgReqQueue sendMsg;
-                        auto baseInfo = sendMsg.mutable_base_info();
-                        baseInfo->set_region_type(E_RT_PVE);
-                        baseInfo->set_queue_type(E_QT_Normal);
-                        player->SendPB(E_MCMT_QueueCommon, E_MCQCST_ReqQueue, &sendMsg);
-                }
-        // });
+        MsgReqQueue sendMsg;
+        auto baseInfo = sendMsg.mutable_base_info();
+        baseInfo->set_region_type(E_RT_PVE);
+        baseInfo->set_queue_type(E_QT_Normal);
+        player->SendPB(E_MCMT_QueueCommon, E_MCQCST_ReqQueue, &sendMsg);
 }
 
 void PlayerLobbyState::Exit(const PlayerPtr& player, StateEventInfo& evt)
@@ -133,6 +124,10 @@ void PlayerLobbyState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
                                         });
 #endif
                                 }
+                                break;
+                        case E_CET_QueueError :
+                        case E_CET_Fail :
+                                player->ChangeState(E_PST_Lobby, evt);
                                 break;
                         default :
                                 LOG_WARN("玩家[{}] 在 E_PST_Lobby 收到消息 E_MCMT_QueueCommon E_MCQCST_ReqQueue 时，error[{:#x}] rt[{}] qt[{}]",

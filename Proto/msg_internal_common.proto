@@ -60,6 +60,8 @@ enum EInternalErrorType
   E_IET_QueueOptError = 0x46;
   E_IET_CreateRegionAgentError = 0x47;
   E_IET_AlreadyExitQueue = 0x48;
+  E_IET_AddAgentError = 0x49;
+  E_IET_AlreadyRequest = 0x4a;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

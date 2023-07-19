@@ -13,6 +13,7 @@ public :
 
 public :
   std::atomic_int64_t _cnt;
+  std::atomic_int64_t _reqQueueCnt;
 };
 
 extern App* GetApp();

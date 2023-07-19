@@ -27,7 +27,7 @@ build_func(){
         cmake $build_flag ..
         make -j$build_jobs
         cd ../../bin
-        cp ../$pg/$pg ./
+        cp ../$pg/${pg}.out ./
         rm -rf ../$pg/$dir
 }
 

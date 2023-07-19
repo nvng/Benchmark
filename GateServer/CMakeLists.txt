@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.22)
 
 set(SRC_DIR
         ../Deps/libnvngLib/include/ActorFramework/Impl/Gate
@@ -6,7 +6,7 @@ set(SRC_DIR
 
 include($ENV{HOME}/git/config/cmake/project.cmake)
 
-project(GateServer)
+project(GateServer.out)
 
 # 第二个 Proto 参数用于指定外部文件夹在输出文件夹中的位置
 add_subdirectory(../Proto Proto)

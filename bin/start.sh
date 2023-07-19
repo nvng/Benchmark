@@ -1,8 +1,11 @@
 #!/bin/bash
 
 pg_list=(
-  DBServer
-  GateServer
+        GameMgrServer.out
+        GameServer.out
+        DBServer.out
+        LobbyServer.out
+        GateServer.out
 )
 
 start_server_func(){

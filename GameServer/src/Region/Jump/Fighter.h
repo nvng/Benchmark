@@ -104,7 +104,7 @@ public :
                         msg.set_ai_bind_guid(1);
         }
 
-        bool InitFromLobby(const SuperType::SyncMessageType& playerInfo) override
+        bool InitFromLobby(const typename SuperType::SyncMessageType& playerInfo) override
         {
                 if (!SuperType::InitFromLobby(playerInfo))
                         return false;

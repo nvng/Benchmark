@@ -76,7 +76,6 @@ bool App::Init()
 			 );
 #endif
 		oldCnt = GetApp()->_cnt;
-		malloc_trim(0);
 	});
 
 

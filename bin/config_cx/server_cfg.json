@@ -2,8 +2,8 @@
   "control_server": {},
   "login_server": {},
   "gate_server": {
-    "crt": "config_cx/server.crt",
-    "key": "config_cx/server.key"
+    "crt": "",
+    "key": ""
   },
   "lobby_server": {},
   "game_server": {},

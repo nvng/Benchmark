@@ -8,7 +8,7 @@ set(SRC_DIR
 
 include($ENV{HOME}/git/config/cmake/project.cmake)
 
-project(GameServer)
+project(GameServer.out)
 
 # 第二个 Proto 参数用于指定外部文件夹在输出文件夹中的位置
 add_subdirectory(../Proto Proto)

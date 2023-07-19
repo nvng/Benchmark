@@ -7,7 +7,7 @@
 	// "stopAtEntry": true,
 	"type": "cppdbg",
 	"request": "launch",
-	"program": "./LobbyServer.out",
+	"program": "./LobbyServer",
 	"args": [], 
 	"cmd": ".",
 	"environment": [], 

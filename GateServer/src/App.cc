@@ -1,7 +1,5 @@
 #include "App.h"
 
-#include <malloc.h>
-
 #ifdef ____USE_IMPL_GATE_LOBBY_SESSION_ONRECV___
 void GateLobbySession::OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf)
 {
@@ -256,7 +254,9 @@ bool App::Init()
 		});
 
                 static int64_t clientRecvCnt = 0;
+                (void)clientRecvCnt;
                 static int64_t serverRecvCnt = 0;
+                (void)serverRecvCnt;
 		LOG_INFO_IF(true, "sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] crc[{}] src[{}] avg[{}]",
 			    NetMgr::GetInstance()->GetSessionCnt(),
 			    PlayerMgr::GetInstance()->GetPlayerCnt(),
@@ -269,8 +269,6 @@ bool App::Init()
 
                 clientRecvCnt = GetApp()->_clientRecvCnt;
                 serverRecvCnt = GetApp()->_serverRecvCnt;
-
-		// malloc_trim(0);
 	});
 
 	// {{{ start task
@@ -313,9 +311,6 @@ bool App::Init()
 		NetProcMgr::GetInstance()->WaitForTerminate();
 	});
 	// }}}
-
-        LOG_INFO("RRRRRRRRRRRRRRRRRRRRRRRRRRelease");
-        DLOG_INFO("DDDDDDDDDDDDDDDDDDDDDDbug");
 
 	return true;
 }

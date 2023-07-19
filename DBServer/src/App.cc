@@ -37,6 +37,13 @@ bool App::Init()
                 static int64_t saveCnt = 0;
                 static int64_t saveSize = 0;
 
+                (void)loadVersionCnt;
+                (void)loadVersionSize;
+                (void)loadCnt;
+                (void)loadSize;
+                (void)saveCnt;
+                (void)saveSize;
+
                 LOG_INFO_IF(true, "avg[{}] actorCnt[{}] lvc[{}] lvs[{:.6f}] lc[{}] ls[{:.6f}] sc[{}] ss[{:.6f}]",
                             GetFrameController().GetAverageFrameCnt(),
                             SpecialActorMgr::GetInstance()->GetActorCnt(),

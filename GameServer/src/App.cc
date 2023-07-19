@@ -7,7 +7,6 @@
 #include "Jump/Region.h"
 #include "RegionMgr.h"
 #include "NetMgr.h"
-#include <memory>
 
 AppBase* GetAppBase()
 {
@@ -45,18 +44,31 @@ bool App::Init()
         LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 
         GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
-                LOG_INFO_IF(true, "actorCnt[{}] avg[{}]",
+                static int64_t oldRegionCreateCnt = 0;
+                static int64_t oldRegionDestroyCnt = 0;
+                static int64_t oldCnt = 0;
+                (void)oldRegionCreateCnt;
+                (void)oldRegionDestroyCnt;
+                (void)oldCnt;
+
+                LOG_INFO_IF(true, "cnt[{}] actorCnt[{}] rc[{}] rd[{}] avg[{}]",
+                            GetApp()->_cnt - oldCnt,
                             RegionMgr::GetInstance()->GetActorCnt(),
+                            GetApp()->_regionCreateCnt - oldRegionCreateCnt,
+                            GetApp()->_regionDestroyCnt - oldRegionDestroyCnt,
                             GetFrameController().GetAverageFrameCnt()
                             );
+
+                oldRegionCreateCnt = GetApp()->_regionCreateCnt;
+                oldRegionDestroyCnt = GetApp()->_regionDestroyCnt;
+                oldCnt = GetApp()->_cnt;
         });
 
         // {{{ start task
         _startPriorityTaskList->AddFinalTaskCallback([]() {
 
                 auto proc = NetProcMgr::GetInstance()->Dist(1);
-                auto gameInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameServerInfo>();
-                proc->StartListener("0.0.0.0", gameInfo->_gate_port, "", "", []() {
+                proc->StartListener("0.0.0.0", GetApp()->GetServerInfo<stGameServerInfo>()->_gate_port, "", "", []() {
                         return CreateSession<GameGateSession>();
                 });
 

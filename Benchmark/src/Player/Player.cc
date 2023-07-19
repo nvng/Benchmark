@@ -4,7 +4,7 @@
 #include "msg_client.pb.h"
 
 Player::Player(uint64_t guid)
-	: ActorImpl(guid)
+	: ActorImpl(guid, 128)
 {
 }
 
@@ -82,10 +82,12 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_DataResetNoneZero)
 ACTOR_MAIL_HANDLE(Player, E_MCMT_GameCommon, E_MCGCST_SwitchRegion, MsgSwitchRegion)
 {
         // LOG_INFO("玩家[{}] 收到 SwitchRegion type[{}]", GetID(), msg->region_type());
+        OnEvent(E_MCMT_GameCommon, E_MCGCST_SwitchRegion, msg);
+
+        // 必须要切完再发，LoadFinish 设计意义在于等待客户端加载完成。
         MsgLoadFinish sendMsg;
         sendMsg.set_region_type(msg->region_type());
         SendPB(E_MCMT_GameCommon, E_MCGCST_LoadFinish, &sendMsg);
-        OnEvent(E_MCMT_GameCommon, E_MCGCST_SwitchRegion, msg);
 
         return nullptr;
 }

@@ -1,8 +1,11 @@
 #!/bin/bash
 
 pg_list=(
-  GateServer
-  DBServer
+  GateServer.out
+  LobbyServer.out
+  DBServer.out
+  GameServer.out
+  GameMgrServer.out
 )
 
 stop_sig=$1
@@ -38,9 +41,12 @@ export -f stop_server_func
 
 for pg in ${pg_list[*]}
 do
-        echo "begin stop server :" $pg
         fileNames=`/bin/ls | grep $pg"_"`
-        parallel stop_server_func ::: $pg ::: $fileNames
+        if [ "$fileNames" != "" ]
+        then
+                echo "begin stop server :" $pg
+                parallel stop_server_func ::: $pg ::: $fileNames
+        fi
 done
 
 unset stop_server_func

@@ -36,13 +36,17 @@ bool App::Init()
 
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
                 static int64_t oldCnt = 0;
+                (void)oldCnt;
+                static int64_t oldReqQueueCnt = 0;
 
-		LOG_INFO_IF(true, "avg[{}] cnt[{}]",
-			 GetFrameController().GetAverageFrameCnt(),
-                         GetApp()->_cnt - oldCnt
-			 );
+                LOG_INFO_IF(true, "reqQ[{}] cnt[{}] avg[{}]",
+                            GetApp()->_reqQueueCnt - oldReqQueueCnt,
+                            GetApp()->_cnt - oldCnt,
+                            GetFrameController().GetAverageFrameCnt()
+                           );
 
                 oldCnt = GetApp()->_cnt;
+                oldReqQueueCnt = GetApp()->_reqQueueCnt;
 	});
 
 	// {{{ start task

@@ -7,7 +7,7 @@
 	// "stopAtEntry": true,
 	"type": "cppdbg",
 	"request": "launch",
-	"program": "./Benchmark.out",
+	"program": "./Benchmark",
 	"args": [], 
 	"cmd": ".",
 	"environment": [], 

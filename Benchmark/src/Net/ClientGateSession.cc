@@ -8,7 +8,7 @@ ClientGateSession::ClientGateSession()
 
 void ClientGateSession::OnConnect()
 {
-	// DLOG_INFO("连接成功!!!");
+	DLOG_INFO("连接成功!!!");
 	SuperType::OnConnect();
 	++GetApp()->_cnt;
 
@@ -37,6 +37,7 @@ void ClientGateSession::OnConnect()
 
 void ClientGateSession::OnClose(int32_t reasonType)
 {
+        LOG_INFO("OnClose reasonType:{}", reasonType);
         auto p = _player.lock();
         if (p)
                 p->OnDisconnect();

@@ -42,6 +42,7 @@ message MsgActivityPlayerDataItem
 {
   sint64 type = 10;
   MsgActivityPlayerDataCommon common = 20;
+  sint64 param = 30;
 }
 
 // 玩法数据。
