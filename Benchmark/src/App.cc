@@ -16,12 +16,14 @@ App* GetApp()
 App::App(const std::string& appName)
   : SuperType(appName, E_ST_None)
 {
+        TimerMgr::CreateInstance();
 	PlayerMgr::CreateInstance();
 }
 
 App::~App()
 {
 	PlayerMgr::DestroyInstance();
+        TimerMgr::DestroyInstance();
 }
 
 bool App::Init()
@@ -44,10 +46,10 @@ bool App::Init()
         _serverInfo = std::make_shared<stServerInfoBase>();
         _serverInfo->_sid = sid;
         _serverInfo->_workersCnt = 2;
-        _serverInfo->_timerProcCnt = 1;
         _serverInfo->_netProcCnt = 2;
 
 	LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
+	LOG_FATAL_IF(!TimerMgr::GetInstance()->Init(), "TimerMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 
 #if 1

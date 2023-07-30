@@ -6,20 +6,6 @@
 
 #define INVALID_MONEY_VAL INT64_MIN
 
-struct stTest
-{
-        stTest() : _ch(128) { }
-        void Run()
-        {
-                go [this]() {
-                        std::shared_ptr<int64_t> v;
-                        while (true)
-                                _ch >> v;
-                };
-        }
-        co_chan<std::shared_ptr<int64_t>> _ch;
-};
-
 class Player : public PlayerBase
 {
         typedef PlayerBase SuperType;
@@ -34,18 +20,7 @@ public :
         using SuperType::Push;
         void Push()
         {
-                for (auto t : testList)
-                {
-                        auto m = std::make_shared<int64_t>(1);
-                        if (!t->_ch.TryPush(m))
-                        {
-                                // LOG_INFO("111111111111111111111111111111111111111111");
-                                t->_ch << m;
-                        }
-                }
         }
-
-        std::vector<stTest*> testList;
 
 public :
         ActivityMgr _activityMgr;

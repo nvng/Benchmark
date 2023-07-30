@@ -39,16 +39,6 @@ void Player::OnCreateAccount()
         */
 }
 
-void InitTimer(const PlayerPtr& player)
-{
-        player->StartTimerWithRelativeTimeOnce(10.0, [player](TimerGuidType id) {
-                auto msg = std::make_shared<MsgClientLogin>();
-                PlayerMgr::GetInstance()->BroadCast(player, 0x7f, 0xf, msg);
-                InitTimer(player);
-                LOG_INFO("11111111111111111111111111111111111111111111111111111111111111111111111111111");
-        });
-}
-
 void Player::Online()
 {
         ++GetApp()->_cnt;
@@ -61,12 +51,6 @@ void Player::Online()
         auto msg = std::make_shared<MsgClientLoginRet>();
         Pack2Client(*(msg->mutable_player_info()));
         Send2Client(E_MCMT_ClientCommon, E_MCCCST_Login, msg);
-
-        static bool _ = []() {
-                // InitTimer(shared_from_this());
-                return true;
-        }();
-        (void)_;
 }
 
 ACTOR_MAIL_HANDLE(Player, E_MCMT_Client, E_MCCST_GM, MsgLobbyGM)

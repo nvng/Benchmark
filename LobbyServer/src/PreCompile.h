@@ -14,6 +14,7 @@
 #include <cmath>
 
 #include <boost/program_options.hpp>
+#include <boost/fiber/all.hpp>
 
 // multi_index_container
 #include <boost/multi_index_container.hpp>
@@ -43,6 +44,8 @@
 #include "Share/GlobalSetup.h"
 
 using namespace nl::af::impl;
+using namespace nl::db;
+using namespace nl::util;
 
 #include "App.h"
 

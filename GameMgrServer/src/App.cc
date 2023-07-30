@@ -19,6 +19,7 @@ App::App(const std::string& appName)
 	: SuperType(appName, E_ST_GameMgr)
 {
 	GlobalSetup_CH::CreateInstance();
+        TimerMgr::CreateInstance();
 	RegionMgr::CreateInstance();
 }
 
@@ -26,12 +27,14 @@ App::~App()
 {
 	RegionMgr::DestroyInstance();
 	GlobalSetup_CH::DestroyInstance();
+        TimerMgr::DestroyInstance();
 }
 
 bool App::Init()
 {
 	LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "GlobalSetup_CH init error!!!");
+	LOG_FATAL_IF(!TimerMgr::GetInstance()->Init(), "TimerMgr init error!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {

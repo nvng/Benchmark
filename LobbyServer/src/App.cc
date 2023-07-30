@@ -20,8 +20,10 @@ App::App(const std::string& appName)
 	  , _gateSesList("App_gateSesList")
 {
 	GlobalSetup_CH::CreateInstance();
+        TimerMgr::CreateInstance();
 	DBMgr::CreateInstance();
 	RegionMgr::CreateInstance();
+        RedisMgr::CreateInstance();
 
 	PlayerMgr::CreateInstance();
 }
@@ -34,15 +36,17 @@ App::~App()
 	PlayerMgr::DestroyInstance();
 
 	GlobalSetup_CH::DestroyInstance();
+        TimerMgr::DestroyInstance();
+        RedisMgr::DestroyInstance();
 }
 
-#include <sys/prctl.h>
-#include <malloc.h>
 bool App::Init()
 {
 	LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
 
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "初始化策划全局配置失败!!!");
+	LOG_FATAL_IF(!TimerMgr::GetInstance()->Init(), "TimerMgr init error!!!");
+	LOG_FATAL_IF(!RedisMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_redisCfg), "RedisMgr init error!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "DBMgr init error!!!");

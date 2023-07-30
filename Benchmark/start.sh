@@ -2,11 +2,11 @@
 
 for i in {1..3}
 do
-  ./Benchmark --logmf=1 -s -d
+  ./Benchmark.out --logmf=1 -s -d
   sleep 1
 done
 
 echo ""
 echo "#########################################################"
-ps x | grep Benchmark | grep -v grep
+ps x | grep Benchmark.out | grep -v grep
 echo "#########################################################"

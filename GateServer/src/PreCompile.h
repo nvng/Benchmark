@@ -15,6 +15,7 @@
 #include <cmath>
 
 #include <boost/program_options.hpp>
+#include <boost/fiber/all.hpp>
 
 /*
 // multi_index_container

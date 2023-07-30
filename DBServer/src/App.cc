@@ -16,18 +16,21 @@ App* GetApp()
 App::App(const std::string& appName)
 	: SuperType(appName, E_ST_DB)
 {
+        TimerMgr::CreateInstance();
 	DBMgr::CreateInstance();
 }
 
 App::~App()
 {
 	DBMgr::DestroyInstance();
+        TimerMgr::DestroyInstance();
 }
 
 bool App::Init()
 {
 	LOG_FATAL_IF(!SuperType::Init(), "super init fail!!!");
 	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "dbmgr proc mgr init fail!!!");
+	LOG_FATAL_IF(!TimerMgr::GetInstance()->Init(), "TimerMgr proc mgr init fail!!!");
 
         GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
                 static int64_t loadVersionCnt = 0;

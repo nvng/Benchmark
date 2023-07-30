@@ -41,7 +41,7 @@ export -f stop_server_func
 
 for pg in ${pg_list[*]}
 do
-        fileNames=`/bin/ls | grep $pg"_"`
+        fileNames=`/bin/ls -a | grep $pg"_"`
         if [ "$fileNames" != "" ]
         then
                 echo "begin stop server :" $pg

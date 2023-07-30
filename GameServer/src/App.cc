@@ -7,6 +7,7 @@
 #include "Jump/Region.h"
 #include "RegionMgr.h"
 #include "NetMgr.h"
+#include "Tools/TimerMgr.hpp"
 
 AppBase* GetAppBase()
 {
@@ -23,6 +24,7 @@ App::App(const std::string& appName)
 {
         GlobalSetup_CH::CreateInstance();
 
+        TimerMgr::CreateInstance();
         RegionMgr::CreateInstance();
         NetMgr::CreateInstance();
 }
@@ -33,11 +35,13 @@ App::~App()
         NetMgr::DestroyInstance();
 
         GlobalSetup_CH::DestroyInstance();
+        TimerMgr::DestroyInstance();
 }
 
 bool App::Init()
 {
         LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
+        LOG_FATAL_IF(!TimerMgr::GetInstance()->Init(), "TimerMgr init error!!!");
         LOG_FATAL_IF(!NetMgr::GetInstance()->Init(), "NetMgr init error!!!");
 
         LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "读取策划全局配置失败!!!");

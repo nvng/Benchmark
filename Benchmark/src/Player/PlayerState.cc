@@ -214,7 +214,7 @@ DEFINE_STATE_ACTOR_MAIL_HANDLE_EMPTY(E_MCMT_GameCommon, E_MCGCST_GameDisconnect)
 
 void PlayerGameState::Enter(const PlayerPtr& player, StateEventInfo& evt)
 {
-        player->SendPB(E_MCMT_GameCommon, E_MCGCST_ReqExitRegion);
+        // player->SendPB(E_MCMT_GameCommon, E_MCGCST_ReqExitRegion);
 }
 
 void PlayerGameState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)

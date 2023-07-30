@@ -22,12 +22,12 @@ RegionStateMgr::CreateStateByType(int stateType)
 void RegionStateBase::Enter(const RegionPtr& region, StateEventInfo& evt)
 {
         auto interval = region->GetStateInterval(GetStateType()) / 1000.0;
-        // REGION_DLOG_INFO(region->GetID(), "state[{}] interval[{}]", GetStateType(), interval);
+        REGION_DLOG_INFO(region->GetID(), "state[{}] interval[{}]", GetStateType(), interval);
         std::weak_ptr<Region> weakRegion = region;
         // Note: 因为 state 与 region 一一绑定，因此只需要检测 region 就可以了。
-        _overTimerGuid = region->StartTimerWithRelativeTimeOnce(interval, [this, weakRegion](TimerGuidType id) {
+        _timer.Start(weakRegion, std::chrono::milliseconds(region->GetStateInterval(GetStateType())), [weakRegion]() {
                 auto region = weakRegion.lock();
-                if (!region || _overTimerGuid != id)
+                if (!region)
                         return;
 
                 region->OnEvent(E_RSECT_OverTime);
@@ -39,7 +39,7 @@ void RegionStateBase::Enter(const RegionPtr& region, StateEventInfo& evt)
 
 void RegionStateBase::Exit(const RegionPtr& region, StateEventInfo& evt)
 {
-        _overTimerGuid = INVALID_TIMER_GUID;
+        _timer.Stop();
 }
 
 // {{{ RegionNoneState
@@ -59,7 +59,7 @@ void RegionNoneState::OnEvent(const RegionPtr& region, StateEventInfo& evt)
         switch (evt._eventType)
         {
         case E_RSECT_OnFighterExit :
-                // if (region->GetAllFighterCnt() <= 0)
+                if (region->GetAllFighterCnt() <= 0)
                         region->Destroy();
                 break;
         case E_RSECT_OnFighterEnter :
@@ -94,7 +94,7 @@ void RegionPrepareState::OnEvent(const RegionPtr& region, StateEventInfo& evt)
         switch (evt._eventType)
         {
         case E_RSECT_OnFighterExit :
-                // if (region->GetAllFighterCnt() <= 0)
+                if (region->GetAllFighterCnt() <= 0)
                         region->Destroy();
                 break;
         case E_RSECT_OverTime :
@@ -123,11 +123,11 @@ void RegionPlayState::OnEvent(const RegionPtr& region, StateEventInfo& evt)
         switch (evt._eventType)
         {
         case E_RSECT_OnFighterExit :
-                // if (region->GetAllFighterCnt() <= 0)
+                if (region->GetAllFighterCnt() <= 0)
                         region->Destroy();
                 break;
         case E_RSET_PlayerPlayEnd :
-                _overTimerGuid = INVALID_TIMER_GUID;
+                _timer.Stop();
                 break;
         case E_RSET_PlayEnd :
         case E_RSECT_OverTime :
@@ -159,7 +159,7 @@ void RegionConcludeState::OnEvent(const RegionPtr& region, StateEventInfo& evt)
         switch (evt._eventType)
         {
         case E_RSECT_OnFighterExit :
-                // if (region->GetAllFighterCnt() <= 0)
+                if (region->GetAllFighterCnt() <= 0)
                         region->Destroy();
                 break;
         case E_RSECT_OverTime : 

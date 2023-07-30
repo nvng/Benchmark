@@ -13,6 +13,7 @@
 #include <cmath>
 
 #include <boost/program_options.hpp>
+#include <boost/fiber/all.hpp>
 
 /*
 // multi_index_container
@@ -42,6 +43,7 @@
 #include "App.h"
 
 using namespace nl::af::impl;
+using namespace nl::util;
 
 #endif // __PRE_COMPILE_H__
 

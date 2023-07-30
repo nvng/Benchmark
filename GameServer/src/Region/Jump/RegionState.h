@@ -41,7 +41,7 @@ public :
         void Exit(const RegionPtr& region, StateEventInfo& evt) override;
 
 protected :
-	TimerGuidType _overTimerGuid = INVALID_TIMER_GUID;
+        SteadyTimer _timer;
 	double _curStateEndTime = 0.0;
 };
 

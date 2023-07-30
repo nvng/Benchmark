@@ -37,7 +37,7 @@ void ClientGateSession::OnConnect()
 
 void ClientGateSession::OnClose(int32_t reasonType)
 {
-        LOG_INFO("OnClose reasonType:{}", reasonType);
+        DLOG_INFO("OnClose reasonType:{}", reasonType);
         auto p = _player.lock();
         if (p)
                 p->OnDisconnect();
