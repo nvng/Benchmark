@@ -14,9 +14,8 @@ public :
         {
         }
 
-        FORCE_INLINE void close()
+        FORCE_INLINE void close(auto& ec)
         {
-                boost::system::error_code ec;
                 if constexpr (IsWebsocket())
                         _socket.close(boost::beast::websocket::close_code::normal, ec);
                 else
@@ -27,6 +26,9 @@ public :
         template <typename _Oy>
         FORCE_INLINE void set_option(_Oy o)
         { _socket.set_option(std::forward<_Oy>(o)); }
+
+        FORCE_INLINE auto get_executor()
+        { return _socket.get_executor(); }
 
         template <typename ... Args>
         FORCE_INLINE void async_connect(Args ... args)
@@ -116,15 +118,19 @@ public :
         }
 };
 
+struct stClientSessionTag;
+typedef NetMgrBase<stClientSessionTag> ClientNetMgr;
+
 template <typename _Iy, typename _Sy, bool _ISy, typename _Hy, Compress::ECompressType _Ct>
-class TcpSession : public SessionImpl<_Iy, _ISy, _Hy, _Ct>
+class TcpSession : public SessionImpl<_Iy, _ISy, _Hy, _Ct, stClientSessionTag>
 {
 protected :
-        typedef SessionImpl<_Iy, _ISy, _Hy, _Ct> SuperType;
+        typedef SessionImpl<_Iy, _ISy, _Hy, _Ct, stClientSessionTag> SuperType;
         typedef TcpSession<_Iy, _Sy, _ISy, _Hy, _Ct> ThisType;
         typedef _Iy ImplType;
         typedef _Sy SocketType;
         typedef typename SuperType::BuffTypePtr BuffTypePtr;
+        typedef typename SuperType::Tag Tag;
         constexpr static bool IsServer = _ISy;
 
 public :
@@ -141,7 +147,8 @@ public :
 
         ~TcpSession() override
         {
-                _socket.close();
+                // boost::system::error_code ec;
+                // _socket.close(ec);
         }
 
         void OnEstablish() override
@@ -155,49 +162,60 @@ public :
                 DoRecv();
         }
 
-private :
-        void DoSend(const typename SuperType::BuffTypePtr& bufRef = nullptr, typename BuffTypePtr::element_type* buf = nullptr, std::size_t size = 0)
+        void OnClose(int32_t reasonType) override
         {
-                std::lock_guard l(_bufListMutex);
+                SuperType::OnClose(reasonType);
+
+                auto thisPtr = shared_from_this();
+                // ::nl::util::SteadyTimer::StaticStart(_socket._socket.get_executor(), std::chrono::seconds(0), [thisPtr]() {
+                // boost::asio::post(boost::asio::make_strand(_socket._socket.get_executor()), [thisPtr]() {
+                        boost::system::error_code ec;
+                        thisPtr->_socket._socket.shutdown(boost::asio::socket_base::shutdown_both, ec);
+                // });
+        }
+
+private :
+        void DoSend(const typename SuperType::BuffTypePtr& bufRef = nullptr, typename SuperType::BuffTypePtr::element_type* buf = nullptr, std::size_t size = 0)
+        {
+                LOCK_GUARD(_bufListMutex, 0, "DoSend");
                 if (nullptr != buf || 0 != size)
                 {
                         _bufList.emplace_back(boost::asio::const_buffer{ buf, size });
                         _bufRefList.emplace_back(bufRef);
                 }
 
-                if (!FLAG_HAS(SuperType::_internalFlag, E_SFT_InSend))
+                if (!_bufList.empty() && !SuperType::IsInSend())
                 {
-                        FLAG_ADD(SuperType::_internalFlag, E_SFT_InSend);
+                        SuperType::SetInSend();
 
-                        std::weak_ptr<ThisType> weakSes = ThisType::shared_from_this();
-                        _socket.async_write(_bufList, [weakSes, refList{ std::move(_bufRefList) }](const auto& ec, std::size_t size) {
+                        // std::weak_ptr<ThisType> weakSes = shared_from_this();
+                        auto ses = shared_from_this();
+                        _socket.async_write(_bufList, [ses, refList{ std::move(_bufRefList) }](const auto& ec, std::size_t size) {
                                 /*
                                  * async_write 内部异步多部操作，因此不能同时存在多个 async_write 操作，
                                  * 必须等待返回后再次调用 async_write。
                                  */
 
-                                auto ses = weakSes.lock();
-                                if (!ses)
-                                        return;
-
-                                FLAG_DEL(ses->_internalFlag, E_SFT_InSend);
-                                if (!ec)
+                                // auto ses = weakSes.lock();
+                                if (ses)
                                 {
-                                        bool ret = true;
-                                        {
-                                                std::lock_guard l(ses->_bufListMutex);
-                                                ret = ses->_bufList.empty();
-                                        }
-
-                                        if (!ret)
+                                        ses->DelInSend();
+                                        if (!ec)
                                                 ses->DoSend();
-                                }
-                                else
-                                {
-                                        ses->OnError(ec);
+                                        else
+                                                ses->OnError(ec);
                                 }
                         });
-                        _bufList.clear();
+
+                        if (_bufList.capacity() <= 4)
+                        {
+                                _bufList.clear();
+                        }
+                        else
+                        {
+                                std::exchange(_bufList, decltype(_bufList){});
+                                _bufList.reserve(4);
+                        }
                         _bufRefList.reserve(4);
                 }
         }
@@ -206,11 +224,12 @@ private :
         {
                 if constexpr (!SocketType::IsWebsocket())
                 {
-                        std::weak_ptr<ThisType> weakSes = shared_from_this();
+                        // std::weak_ptr<ThisType> weakSes = shared_from_this();
+                        auto ses = shared_from_this();
                         _socket.async_read(boost::asio::buffer((char*)&_msgHead, sizeof(_msgHead)),
                                            // boost::asio::transfer_at_least(sizeof(_msgHead)),
-                                           [weakSes](const auto& ec, std::size_t size) {
-                                                   auto ses = weakSes.lock();
+                                           [ses](const auto& ec, std::size_t size) {
+                                                   // auto ses = weakSes.lock();
                                                    if (!ses)
                                                            return;
 
@@ -220,8 +239,8 @@ private :
                                                            *reinterpret_cast<MsgHeaderType*>(buf.get()) = ses->_msgHead;
                                                            ses->_socket.async_read(boost::asio::buffer(buf.get() + sizeof(MsgHeaderType), ses->_msgHead._size - sizeof(MsgHeaderType)),
                                                                                    // boost::asio::transfer_at_least(ses->_msgHead._size - sizeof(MsgHeaderType)),
-                                                                                   [weakSes, buf](const auto& ec, std::size_t size) {
-                                                                                           auto ses = weakSes.lock();
+                                                                                   [ses, buf](const auto& ec, std::size_t size) {
+                                                                                           // auto ses = weakSes.lock();
                                                                                            if (!ses)
                                                                                                    return;
 
