@@ -25,6 +25,7 @@ enum EMsgClientHeroSubType
   E_MCHST_SetPiFu = 0x0;
   E_MCHST_SetMainHero = 0x1;
   E_MCHST_UpdateCombatPower = 0x2;
+  E_MCHST_Synthesis = 0x3;
 
   E_MCHTST_Buy = 0x10;
   E_MCHTST_Upgrade = 0x11;
@@ -77,6 +78,14 @@ message MsgHeroSetMainHero
 {
   EClientErrorType error_type = 1;
   sint64 hero_id = 2;
+}
+
+message MsgHeroSynthesis
+{
+        EClientErrorType error_type = 1;
+        sint64 goods_id = 2;
+
+        MsgPlayerChange player_change = 10;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

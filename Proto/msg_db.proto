@@ -30,6 +30,7 @@ enum EMsgInternalDBSubType
   E_MIDBST_DBDataVersion = 0x0;
   E_MIDBST_SaveDBData = 0x1;
   E_MIDBST_LoadDBData = 0x3;
+  E_MIDBST_GenGuid = 0x4;
 }
 
 // 约定：凡是DB结构，每个字段初始序号间隔10，方便后面插入。
@@ -42,7 +43,8 @@ message DBPlayerInfo
   string icon = 40;
   string we_chat_icon = 50;
   repeated sint64 icon_idx_list = 60;
-  repeated sint64 attr_list = 70;
+  repeated sint64 icon_frame_idx_list = 70;
+  repeated sint64 attr_list = 80;
 
   repeated MsgGoodsItem goods_list = 100;
   DBPlayerMailSys mail_sys = 110;
@@ -53,6 +55,7 @@ message DBPlayerInfo
   MsgHeroMgr hero_mgr = 160;
   MsgAchievementMgr achievement_mgr = 170;
   MsgActivityMgr activity_mgr = 180;
+  repeated MsgBagBufInfoList bag_buf_list = 190;
 }
 
 message DBRobotInfo
@@ -85,6 +88,21 @@ message MsgDBData
   sint64 guid = 2;
   sint64 version = 3;
   bytes data = 5;
+}
+
+message DBGenGuid
+{
+        message DBGenGuidItem
+        {
+                sint64 idx = 1;
+                sint64 cur = 2;
+        }
+        repeated DBGenGuidItem item_list = 1;
+}
+
+message MsgDBGenGuid
+{
+        sint64 id = 1;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

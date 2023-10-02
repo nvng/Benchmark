@@ -36,7 +36,7 @@ void Player::UnPack(const MsgPlayerInfo& msg)
 	_msgPlayerInfo.CopyFrom(msg);
 }
 
-void Player::SendPB(uint16_t mainType, uint16_t subType, google::protobuf::MessageLite* pb/*=nullptr*/)
+void Player::SendPB(uint16_t mainType, uint16_t subType, const MessageLitePtr& pb/*=nullptr*/)
 {
         if (_ses)
                 _ses->SendPB(pb, mainType, subType);
@@ -85,9 +85,9 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_GameCommon, E_MCGCST_SwitchRegion, MsgSwitchReg
         OnEvent(E_MCMT_GameCommon, E_MCGCST_SwitchRegion, msg);
 
         // 必须要切完再发，LoadFinish 设计意义在于等待客户端加载完成。
-        MsgLoadFinish sendMsg;
-        sendMsg.set_region_type(msg->region_type());
-        SendPB(E_MCMT_GameCommon, E_MCGCST_LoadFinish, &sendMsg);
+        auto sendMsg = std::make_shared<MsgLoadFinish>();
+        sendMsg->set_region_type(msg->region_type());
+        SendPB(E_MCMT_GameCommon, E_MCGCST_LoadFinish, sendMsg);
 
         return nullptr;
 }

@@ -44,6 +44,8 @@ message MailRegionCreateInfo
   ERegionType region_type = 1;
   uint64 region_guid = 2;
   sint64 param = 3;
+  sint64 param_1 = 4;
+  sint64 param_2 = 5;
 }
 
 message RegionCfg
@@ -85,6 +87,7 @@ message MailReqEnterRegion
     sint64 param = 6;
   }
   repeated MsgReqFighterInfo fighter_list = 10;
+  repeated MailSyncPlayerInfo2Region robot_list = 11;
 }
 
 message MailReqEnterRegionRet
@@ -110,6 +113,8 @@ message MailReqQueue
   sint64 lobby_sid = 8;
   sint64 gate_sid = 9;
   sint64 param = 10;
+  sint64 param_1 = 11;
+  sint64 param_2 = 12;
 
   repeated MsgPlayerQueueInfo player_list = 20;
 }
@@ -149,8 +154,7 @@ message MsgServerInit
 
 message MsgMultiCastInfo
 {
-  sint64 except = 1;
-  map<sint64, bool> id_list = 2;
+  repeated sint64 id_list = 1;
 }
 
 message MailSwitchRegion
@@ -209,6 +213,7 @@ message MailSyncPlayerInfo2Region
   string nick_name = 3;
   string icon = 4;
   sint64 param = 5;
+  sint64 param_1 = 6;
 
   google.protobuf.Any extra = 10;
 }
@@ -232,6 +237,24 @@ message MailBackRobot
 {
   EInternalErrorType error_type = 1;
   repeated sint64 robot_list = 2;
+}
+
+message MailMatchReqRank
+{
+        EInternalErrorType error_type = 1;
+        sint64 selection_cnt = 2;
+        sint64 rank = 3;
+}
+
+message MailRegionDestroyInfo
+{
+        sint64 region_guid = 1;
+
+        message MsgPlayerInfo
+        {
+                sint64 id = 1;
+        }
+        repeated MsgPlayerInfo player_info_list = 2;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

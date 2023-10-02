@@ -2,8 +2,9 @@
 
 #include "GameMgrLobbySession.h"
 #include "GameMgrGameSession.h"
-#include "Net/NetProcMgr.h"
+#include "Net/SessionImpl.hpp"
 #include "RegionMgr.h"
+#include "RequestActor.h"
 
 AppBase* GetAppBase()
 {
@@ -19,32 +20,34 @@ App::App(const std::string& appName)
 	: SuperType(appName, E_ST_GameMgr)
 {
 	GlobalSetup_CH::CreateInstance();
-        TimerMgr::CreateInstance();
 	RegionMgr::CreateInstance();
+
+        RobotService::CreateInstance();
 }
 
 App::~App()
 {
 	RegionMgr::DestroyInstance();
 	GlobalSetup_CH::DestroyInstance();
-        TimerMgr::DestroyInstance();
+        RobotService::DestroyInstance();
 }
 
 bool App::Init()
 {
 	LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "GlobalSetup_CH init error!!!");
-	LOG_FATAL_IF(!TimerMgr::GetInstance()->Init(), "TimerMgr init error!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
+	LOG_FATAL_IF(!RobotService::GetInstance()->Init(), "RobotService init error!!!");
 
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
                 static int64_t oldCnt = 0;
                 (void)oldCnt;
                 static int64_t oldReqQueueCnt = 0;
 
-                LOG_INFO_IF(true, "reqQ[{}] cnt[{}] avg[{}]",
+                LOG_INFO_IF(true, "reqQ[{}] cnt[{}] ses[{}] avg[{}]",
                             GetApp()->_reqQueueCnt - oldReqQueueCnt,
                             GetApp()->_cnt - oldCnt,
+                            NetMgr::GetInstance()->_sesList.Size(),
                             GetFrameController().GetAverageFrameCnt()
                            );
 
@@ -68,28 +71,23 @@ bool App::Init()
 	preTask.clear();
 	_startPriorityTaskList->AddTask(preTask, GameMgrGameSession::scPriorityTaskKey, [](const std::string& key) {
 		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
-		auto proc = NetProcMgr::GetInstance()->Dist(1);
-		proc->StartListener("0.0.0.0", gameMgrInfo->_game_port, "", "", []() {
-			return CreateSession<GameMgrGameSession>();
-		});
+                NetMgr::GetInstance()->Listen(gameMgrInfo->_game_port, [](auto&& s, auto& ioCtx) {
+                        return std::make_shared<GameMgrGameSession>(std::move(s));
+                });
 	});
 
 	preTask.clear();
-	// preTask.emplace_back(GameMgrGameSession::scPriorityTaskKey);
+	preTask.emplace_back(GameMgrGameSession::scPriorityTaskKey);
 	_startPriorityTaskList->AddTask(preTask, GameMgrLobbySession::scPriorityTaskKey, [](const std::string& key) {
 		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
-		auto proc = NetProcMgr::GetInstance()->Dist(0);
-		proc->StartListener("0.0.0.0", gameMgrInfo->_lobby_port, "", "", []() {
-			return CreateSession<GameMgrLobbySession>();
-		});
+                NetMgr::GetInstance()->Listen(gameMgrInfo->_lobby_port, [](auto&& s, auto& ioCtx) {
+                        return std::make_shared<GameMgrLobbySession>(std::move(s));
+                });
 	});
 	// }}}
 
 	// {{{
 	_stopPriorityTaskList->AddFinalTaskCallback([]() {
-                NetProcMgr::GetInstance()->Terminate();
-                NetProcMgr::GetInstance()->WaitForTerminate();
-
 		RegionMgr::GetInstance()->Terminate();
 		RegionMgr::GetInstance()->WaitForTerminate();
 	});
@@ -108,6 +106,32 @@ int main(int argc, char* argv[])
 	App::DestroyInstance();
 
 	return 0;
+}
+
+ACTOR_MAIL_HANDLE(RequestActor, 0xff, 0xf)
+{
+        auto cfg = std::make_shared<MailRegionCreateInfo>();
+        auto ses = GetRegionMgrBase()->_gameSesArr[0].lock();
+        auto agent = std::make_shared<GameMgrGameSession::ActorAgentType>(cfg, ses, shared_from_this());
+        agent->BindActor(shared_from_this());
+        ses->AddAgent(agent);
+
+        /*
+        auto gameAgent = GetRegionMgrBase()->CreateRegionAgent(cfg, ses, shared_from_this());
+        gameAgent->BindActor(shared_from_this());
+        ses->AddAgent(gameAgent);
+        */
+        auto regionMgr = GetRegionMgrBase()->GetRegionMgrActor(E_RT_PVE);
+        while (agent)
+        {
+                ++GetApp()->_cnt;
+                Call(MailResult, regionMgr, scRegionMgrActorMailMainType, 0xe, nullptr);
+                Call(MailResult, agent, 0xff, 0xf, nullptr);
+                // boost::this_fiber::sleep_for(std::chrono::milliseconds(100));
+                // LOG_INFO("1111111111");
+        }
+
+        return nullptr;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

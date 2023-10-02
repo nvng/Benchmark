@@ -1,16 +1,30 @@
 #pragma once
 
 class Player;
-class ClientGateSession : public TcpSessionClient<ClientGateSession, MsgHeaderClient, Compress::ECompressType::E_CT_ZLib>
+class ClientGateSession : public ::nl::net::client::TcpSession<ClientGateSession
+                          , SocketWapper<boost::asio::ip::tcp::socket, false, false>
+                          , false
+                          , MsgHeaderClient
+                          , Compress::ECompressType::E_CT_ZLib>
 {
-	typedef TcpSessionClient<ClientGateSession, MsgHeaderClient, Compress::ECompressType::E_CT_ZLib> SuperType;
+        typedef ::nl::net::client::TcpSession<ClientGateSession
+                , SocketWapper<boost::asio::ip::tcp::socket, false, false>
+                , false
+                , MsgHeaderClient
+                , Compress::ECompressType::E_CT_ZLib> SuperType;
 public :
-	ClientGateSession();
+        typedef SuperType::Tag Tag;
+
+	ClientGateSession(typename SuperType::SocketType&& s)
+                : SuperType(std::move(s))
+        {
+                SuperType::DelAutoReconnect();
+        }
 
 	void OnConnect() override;
 	void OnClose(int32_t reasonType) override;
 
-        void OnRecv(const MsgHeaderType& msgHead, evbuffer* evbuf) override;
+        void OnRecv(SuperType::BuffTypePtr::element_type* buf, const SuperType::BuffTypePtr& bufRef) override;
 
 public :
 	std::weak_ptr<Player> _player;

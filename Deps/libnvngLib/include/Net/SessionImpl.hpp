@@ -180,16 +180,17 @@ template <typename _Ty
          , bool _Sy
          , typename _My = MsgHeaderDefault
          , Compress::ECompressType _Ct = Compress::ECompressType::E_CT_Zstd
-         , typename Flag = stDefaultFlag>
+         , typename _Tag = stDefaultTag>
 class SessionImpl
         : public ISession
-          , public std::enable_shared_from_this<SessionImpl<_Ty, _Sy, _My, _Ct, Flag>>
+          , public std::enable_shared_from_this<SessionImpl<_Ty, _Sy, _My, _Ct, _Tag>>
 {
 public:
         typedef ISession SuperType;
-        typedef SessionImpl<_Ty, _Sy, _My, _Ct, Flag> ThisType;
+        typedef SessionImpl<_Ty, _Sy, _My, _Ct, _Tag> ThisType;
         typedef _Ty ImplType;
         typedef _My MsgHeaderType;
+        typedef _Tag Tag;
         constexpr static Compress::ECompressType CompressType = _Ct;
         constexpr static bool IsServer = _Sy;
 
@@ -287,7 +288,7 @@ public :
                 ses->SetSID(msg->sid());
                 ses->SetRemoteID(msg->remote_id());
                 if (msg->is_crash())
-                        FLAG_ADD(ses->_internalFlag, E_SFT_RemoteIsCrash);
+                        ses->SetRemoteCrash();
         }
 
         void OnConnect() override
@@ -318,17 +319,16 @@ public :
         {
                 SuperType::Close(reasonType);
 
-                if (FLAG_HAS(_internalFlag, E_SFT_Closed))
-                        return;
-                FLAG_ADD(_internalFlag, E_SFT_Closed);
-
-                OnClose(reasonType);
-                NetMgrBase<stDefaultFlag>::GetInstance()->_sesList.Remove(GetID(), this);
-                if (FLAG_HAS(_internalFlag, E_SFT_AutoReconnect) && !GetAppBase()->IsStartStop())
+                auto t = NetMgrBase<Tag>::GetInstance()->_sesList.Remove(GetID(), this);
+                if (t)
                 {
-                        NetMgrBase<stDefaultFlag>::GetInstance()->Connect(_connectEndPoint.address().to_string(),
-                                                                          _connectEndPoint.port(),
-                                                                          std::move(_createSession));
+                        OnClose(reasonType);
+                        if (IsAutoReconnect() && !GetAppBase()->IsStartStop())
+                        {
+                                NetMgrBase<Tag>::GetInstance()->Connect(_connectEndPoint.address().to_string(),
+                                                                         _connectEndPoint.port(),
+                                                                         std::move(_createSession));
+                        }
                 }
         }
 
@@ -408,12 +408,16 @@ protected :
         virtual void InitSendHeartBeatTimer()
         { InitSendHeartBeatTimerInternal(3); }
 
-        void InitSendHeartBeatTimerInternal(double internal)
+        void InitSendHeartBeatTimerInternal(double interval)
         {
-                _sendHeartBeatTimer.StartForever(internal, [this]() {
-                        // LOG_INFO("22222222222222222222222222222 发送心跳包!!! now[{}]", GetClock().GetSteadyTime());
-                        ImplType::SendHeartBeat(nullptr);
-                        return true;
+                auto weakThis = ThisType::weak_from_this();
+                _sendHeartBeatTimer.Start(interval, [weakThis, interval]() {
+                        auto thisPtr = weakThis.lock();
+                        if (thisPtr)
+                        {
+                                std::reinterpret_pointer_cast<ImplType>(thisPtr)->SendHeartBeat(nullptr);
+                                thisPtr->InitSendHeartBeatTimerInternal(interval);
+                        }
                 });
         }
 
@@ -422,17 +426,22 @@ protected :
 
         void InitCheckHeartBeatTimerInternal(double baseInternal, double internal)
         {
-                _checkHeartBeatTimer.Start(internal, [this, baseInternal]() {
-                        const auto now = GetClock().GetSteadyTime();
-                        if (_lastHeartBeatTime + baseInternal > now)
+                auto weakThis = ThisType::weak_from_this();
+                _checkHeartBeatTimer.Start(internal, [weakThis, baseInternal]() {
+                        auto thisPtr = weakThis.lock();
+                        if (thisPtr)
                         {
-                                const double diff = baseInternal - (now - _lastHeartBeatTime);
-                                InitCheckHeartBeatTimerInternal(baseInternal, diff);
-                        }
-                        else
-                        {
-                                // LOG_INFO("11111111111111111111111111111 超时断开连接!!! _last[{}] internal[{}] now[{}]", _lastHeartBeatTime, baseInternal, now);
-                                Close(1001);
+                                const auto now = GetClock().GetSteadyTime();
+                                if (thisPtr->_lastHeartBeatTime + baseInternal > now)
+                                {
+                                        const double diff = baseInternal - (now - thisPtr->_lastHeartBeatTime);
+                                        thisPtr->InitCheckHeartBeatTimerInternal(baseInternal, diff);
+                                }
+                                else
+                                {
+                                        // LOG_INFO("11111111111111111111111111111 超时断开连接!!! _last[{}] internal[{}] now[{}]", _lastHeartBeatTime, baseInternal, now);
+                                        thisPtr->Close(1001);
+                                }
                         }
                 });
         }

@@ -7,7 +7,7 @@
                                 // "stopAtEntry": true,
                                 "type": "cppdbg",
                                 "request": "launch",
-                                "program": "./GameMgrServer",
+                                "program": "./GameMgrServer.out",
                                 "args": [], 
                                 "cmd": ".",
                                 "environment": [], 

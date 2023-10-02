@@ -13,7 +13,7 @@
 #include <fmt/printf.h>
 using namespace fmt::literals;
 
-struct stDefaultFlag;
+struct stDefaultTag;
 
 #include "LogHelper.h"
 

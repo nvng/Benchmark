@@ -31,6 +31,7 @@ enum ERankType
   E_RankT_None = 0x0;
   E_RankT_AreaRankScore = 0x1; // 段位排行榜。
   E_RankT_Normal = 0x2;
+  E_RankT_PVEEndLess = 0x3;
 }
 
 message MsgRankBriefInfo
@@ -39,10 +40,11 @@ message MsgRankBriefInfo
   sint64 lv = 20;
   string nick_name = 30;
   string icon = 40;
-  sint64 score = 50;
-  sint64 time = 60;
-  sint64 param = 70;
-  sint64 param_1 = 80;
+  sint64 icon_frame = 50;
+  sint64 score = 60;
+  sint64 time = 70;
+  sint64 param = 80;
+  sint64 param_1 = 90;
 }
 
 message MsgNormalRankInfo

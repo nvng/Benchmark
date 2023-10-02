@@ -2,6 +2,7 @@
 
 class Player;
 typedef std::shared_ptr<Player> PlayerPtr;
+#include "msg_jump.pb.h"
 
 // namespace Jump {
 
@@ -83,6 +84,8 @@ public :
         PlayerGameState() : PlayerStateBase(E_PST_Game) {}
         void Enter(const PlayerPtr& player, StateEventInfo& evt) override;
         void OnEvent(const PlayerPtr& player, StateEventInfo& evt) override;
+
+        std::shared_ptr<Jump::MsgSync> _sendMsg;
 };
 
 // } // end namespace Jump

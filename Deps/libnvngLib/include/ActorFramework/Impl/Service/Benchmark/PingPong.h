@@ -32,7 +32,6 @@ public :
         {
                 if (!SuperType::Init())
                         return false;
-                return true;
 
 #ifdef PING_PONG_SERVICE_SERVER
                 SuperType::Start(60000);

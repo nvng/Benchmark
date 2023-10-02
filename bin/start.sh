@@ -12,13 +12,13 @@ pg_list=(
 
 start_server_func(){
         pg=$1
-        oldPgCnt=`/bin/ls -a | grep $pg"_" | wc -l`
+        oldPgCnt=`/bin/ls -a | grep "."$pg"_" | wc -l`
         pgCnt=$oldPgCnt
         while true
         do
                 ./$pg --logmf=1 -s -d
                 sleep 1
-                pgCnt=`/bin/ls -a | grep $pg"_" | wc -l`
+                pgCnt=`/bin/ls -a | grep "."$pg"_" | wc -l`
                 if [ $oldPgCnt = $pgCnt ]; then
                         break
                 else
@@ -26,7 +26,7 @@ start_server_func(){
                 fi
         done
 
-        pgCnt=`/bin/ls -a | grep $pg"_" | wc -l`
+        pgCnt=`/bin/ls -a | grep "."$pg"_" | wc -l`
         if [ 0 = $pgCnt ]; then
                 echo -e "\033[31meeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee $pg start fail !!!\033[0m"
         else

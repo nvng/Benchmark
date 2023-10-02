@@ -25,25 +25,26 @@ public :
                 {
                 case MsgHeaderType::template MsgTypeMerge<E_MIMT_Internal, E_MIIST_MultiCast>() :
                         {
-                                const auto bodySize = msgMultiCastHead._size - sizeof(typename MsgHeaderType::MsgMultiCastHeader) - msgMultiCastHead._ssize;
+                                const auto bodySize = msgMultiCastHead._size - sizeof(typename MsgHeaderType::MsgMultiCastHeader) - sizeof(uint64_t) - msgMultiCastHead._ssize;
+                                const auto except = *reinterpret_cast<uint64_t*>(buf + sizeof(typename MsgHeaderType::MsgMultiCastHeader) + bodySize);
 
                                 MsgMultiCastInfo idListMsg;
                                 Compress::UnCompressAndParseAlloc(static_cast<Compress::ECompressType>(msgMultiCastHead._ct),
                                                                   idListMsg,
-                                                                  buf + sizeof(typename MsgHeaderType::MsgMultiCastHeader) + bodySize,
+                                                                  buf + sizeof(typename MsgHeaderType::MsgMultiCastHeader) + bodySize + sizeof(uint64_t),
                                                                   msgMultiCastHead._ssize);
 
                                 const uint64_t type = msgMultiCastHead._stype;
                                 const Compress::ECompressType ct = static_cast<Compress::ECompressType>(msgMultiCastHead._sct);
 
-                                for (auto& val : idListMsg.id_list())
+                                for (auto id : idListMsg.id_list())
                                 {
-                                        if (val.first != idListMsg.except())
+                                        if (id != except)
                                         {
-                                                auto p = GetPlayer(val.first);
+                                                auto p = GetPlayer(id);
                                                 if (p)
-                                                        p->template Send2Client<MsgHeaderType>(bufRef, buf, bodySize + sizeof(typename MsgHeaderType::MsgMultiCastHeader),
-                                                                                      ct, MsgHeaderType::MsgMainType(type), MsgHeaderType::MsgSubType(type));
+                                                        p->template Send2Client<MsgHeaderType>(bufRef, buf, bodySize + sizeof(MsgHeaderType),
+                                                                                               ct, MsgHeaderType::MsgMainType(type), MsgHeaderType::MsgSubType(type));
                                         }
                                 }
                         }

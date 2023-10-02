@@ -15,9 +15,6 @@ void LobbyGameMgrSession::OnConnect()
 {
 	LOG_WARN("房间管理服连接成功!!!");
 	SuperType::OnConnect();
-
-        if (RandInRange<int64_t>(0, 10) < 2)
-                SuperType::Close(999001);
 }
 
 void LobbyGameMgrSession::OnClose(int32_t reasonType)
@@ -36,20 +33,6 @@ void LobbyGameMgrSession::MsgHandleServerInit(const ISessionPtr& ses, typename I
         auto thisPtr = std::dynamic_pointer_cast<LobbyGameMgrSession>(ses);
         GetRegionMgrBase()->_gameMgrSes = thisPtr;
         GetAppBase()->_startPriorityTaskList->Finish(_sPriorityTaskKey);
-
-        if (RandInRange<int64_t>(0, 10) < 2)
-        {
-                ses->Close(999002);
-        }
-        else
-        {
-                std::weak_ptr<ISession> weakSes = ses;
-                ::nl::util::SteadyTimer::StaticStart(std::chrono::milliseconds(RandInRange<int64_t>(0, 10 * 1000)), [weakSes]() {
-                        auto ses = weakSes.lock();
-                        if (ses)
-                                ses->Close(999003);
-                });
-        }
 }
 
 }; // end of namespace nl::af::impl

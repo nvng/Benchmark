@@ -18,7 +18,6 @@ SERVICE_NET_HANDLE(PingPongService::SessionType, 0xfff, 0x0)
 ACTOR_MAIL_HANDLE(PingPongActor, 0xfff, 0x0)
 {
         boost::this_fiber::sleep_for(std::chrono::seconds(10));
-        return nullptr;
 
         for (int64_t i=0; i<PingPongService::scSessionCnt; ++i)
         {

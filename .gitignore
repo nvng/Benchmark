@@ -37,4 +37,5 @@
 .ccls-cache
 .cache
 cmake-build*
+.cmake-build*
 log

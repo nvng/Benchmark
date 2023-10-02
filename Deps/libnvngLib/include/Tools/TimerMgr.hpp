@@ -51,7 +51,7 @@ private :
         std::thread _thread;
 };
 
-typedef TimerMgrBase<stDefaultFlag> TimerMgr;
+typedef TimerMgrBase<stDefaultTag> TimerMgr;
 
 template <typename Flag>
 class SteadyTimerBase
@@ -67,10 +67,7 @@ public :
         {
         }
 
-        ~SteadyTimerBase()
-        {
-                Stop();
-        }
+        ~SteadyTimerBase() = default;
 
         void Start(const std::weak_ptr<af::IActor>& weakAct, double interval, const auto& cb)
         {
@@ -96,16 +93,6 @@ public :
                 });
         }
 
-        static void StaticStart(const auto& duration, const auto& cb)
-        {
-                auto timer = std::make_shared<boost::asio::steady_timer>(TimerMgrBase<Flag>::GetInstance()->_ioCtx);
-                timer->expires_after(duration);
-                timer->async_wait([cb{ std::move(cb) }, timer](const auto& ec) {
-                        if (boost::system::errc::success == ec.value())
-                                cb();
-                });
-        }
-
         void Stop()
         {
                 // Note: 会立即执行 handler。
@@ -116,30 +103,49 @@ public :
                             "退出 timer 错误!!! ec[{}]", ec.what());
         }
 
-        FORCE_INLINE void StartForever(double interval, const auto& cb)
-        { StartForeverInternal(interval, interval, std::move(cb)); }
-
-        FORCE_INLINE void StartForever(double startTime, double interval, const auto& cb)
-        { StartForeverInternal(startTime, interval, std::move(cb)); }
-
 private :
-        void StartForeverInternal(double startTime, double interval, const auto& cb)
+        boost::asio::steady_timer _timer;
+
+public :
+        static FORCE_INLINE void StaticStart(const auto& duration, const auto& cb)
+        { StaticStart(TimerMgrBase<Flag>::GetInstance()->_ioCtx, duration, std::move(cb)); }
+
+        static FORCE_INLINE void StaticStart(auto& ctx, const auto& duration, const auto& cb)
         {
-                _timer.expires_from_now(std::chrono::milliseconds((time_t)(startTime * 1000)));
-                _timer.async_wait([this, interval, cb{ std::move(cb) }](const auto& ec) {
+                auto timer = std::make_shared<boost::asio::steady_timer>(ctx);
+                timer->expires_after(duration);
+                timer->async_wait([timer, cb{ std::move(cb) }](const auto& ec) {
                         if (boost::system::errc::success == ec.value())
-                        {
-                                if (cb())
-                                        StartForeverInternal(interval, interval, std::move(cb));
-                        }
+                                cb();
                 });
         }
 
+        FORCE_INLINE static void StartForever(double interval, const auto& cb)
+        { StartForeverInternal(interval, interval, std::move(cb)); }
+
+        FORCE_INLINE static void StartForever(double startTime, double interval, const auto& cb)
+        { StartForeverInternal(startTime, interval, std::move(cb)); }
+
 private :
-        boost::asio::steady_timer _timer;
+        static void StartForeverInternal(double startTime
+                                         , double interval
+                                         , const auto& cb
+                                         , std::shared_ptr<boost::asio::steady_timer>&& timer = nullptr)
+        {
+                if (!timer)
+                        timer = std::make_shared<boost::asio::steady_timer>(TimerMgrBase<Flag>::GetInstance()->_ioCtx);
+                timer->expires_from_now(std::chrono::milliseconds((time_t)(startTime * 1000)));
+                timer->async_wait([t{std::move(timer)}, interval, cb{ std::move(cb) }](const auto& ec) mutable {
+                        if (boost::system::errc::success == ec.value())
+                        {
+                                if (cb())
+                                        StartForeverInternal(interval, interval, std::move(cb), std::move(t));
+                        }
+                });
+        }
 };
 
-typedef SteadyTimerBase<stDefaultFlag> SteadyTimer;
+typedef SteadyTimerBase<stDefaultTag> SteadyTimer;
 
 template <typename Flag>
 class SystemTimerBase
@@ -155,10 +161,7 @@ public :
         {
         }
 
-        ~SystemTimerBase()
-        {
-                Stop();
-        }
+        ~SystemTimerBase() = default;
 
         void StartAt(const std::weak_ptr<af::IActor>& weakAct, double t, const auto& cb)
         {
@@ -198,7 +201,7 @@ private :
         boost::asio::system_timer _timer;
 };
 
-typedef SystemTimerBase<stDefaultFlag> SystemTimer;
+typedef SystemTimerBase<stDefaultTag> SystemTimer;
 
 }; // end of namespace nl::util
 

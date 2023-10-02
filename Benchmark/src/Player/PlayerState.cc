@@ -65,11 +65,11 @@ void PlayerNoneState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
 
 void PlayerLobbyState::Enter(const PlayerPtr& player, StateEventInfo& evt)
 {
-        MsgReqQueue sendMsg;
-        auto baseInfo = sendMsg.mutable_base_info();
+        auto sendMsg = std::make_shared<MsgReqQueue>();
+        auto baseInfo = sendMsg->mutable_base_info();
         baseInfo->set_region_type(E_RT_PVE);
         baseInfo->set_queue_type(E_QT_Normal);
-        player->SendPB(E_MCMT_QueueCommon, E_MCQCST_ReqQueue, &sendMsg);
+        player->SendPB(E_MCMT_QueueCommon, E_MCQCST_ReqQueue, sendMsg);
 }
 
 void PlayerLobbyState::Exit(const PlayerPtr& player, StateEventInfo& evt)
@@ -212,6 +212,9 @@ DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_GameCommon, E_MCGCST_OnFighterExit, MsgFig
 DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_GameCommon, E_MCGCST_UpdateRegionStateInfo, Jump::MsgRegionStateInfo);
 DEFINE_STATE_ACTOR_MAIL_HANDLE_EMPTY(E_MCMT_GameCommon, E_MCGCST_GameDisconnect);
 
+DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_Game, Jump::E_MCGST_Sync, Jump::MsgSync);
+// DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_Game, Jump::E_MCGST_SyncCommon, Jump::MsgSync);
+
 void PlayerGameState::Enter(const PlayerPtr& player, StateEventInfo& evt)
 {
         // player->SendPB(E_MCMT_GameCommon, E_MCGCST_ReqExitRegion);
@@ -238,6 +241,13 @@ void PlayerGameState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_RegionInfo>() :
                 // LOG_INFO("玩家[{}] 收到 RegionInfo!!!", player->GetID());
                 player->SendPB(E_MCMT_GameCommon, E_MCGCST_ReqExitRegion);
+                /*
+                _sendMsg = std::make_shared<Jump::MsgSync>();
+                _sendMsg->set_player_guid(player->GetID());
+                player->SendPB(E_MCMT_Game, Jump::E_MCGST_Sync, _sendMsg);
+                for (int64_t i=0; i<200; ++i)
+                        player->SendPB(E_MCMT_Game, Jump::E_MCGST_SyncCommon, _sendMsg);
+                        */
                 break;
                 // case E_PSET_ReqQueue :
                 // 	{
@@ -250,6 +260,15 @@ void PlayerGameState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
                 // 		}
                 // 	}
                 // 	break;
+        case Player::ActorMailType::MsgTypeMerge<E_MCMT_Game, Jump::E_MCGST_Sync>() :
+                /*
+                player->SendPB(E_MCMT_Game, Jump::E_MCGST_Sync, _sendMsg);
+                for (int64_t i=0; i<100; ++i)
+                        player->SendPB(E_MCMT_Game, Jump::E_MCGST_SyncCommon, nullptr);
+                        */
+                break;
+        // case Player::ActorMailType::MsgTypeMerge<E_MCMT_Game, Jump::E_MCGST_SyncCommon>() :
+
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_OnFighterEnter>() :
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_OnFighterExit>() :
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_UpdateRegionStateInfo>() :

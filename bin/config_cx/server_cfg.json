@@ -6,23 +6,31 @@
     "key": ""
   },
   "lobby_server": {},
+  "db_server": {
+          "gen_guid":[
+                  { "idx":0, "min_guid":20000000, "max_guid":99999999 }
+          ]
+  },
   "game_server": {},
   "redis": {
     "game_db": {
-      "ip": "10.0.0.93",
+      "ip": "10.0.0.94",
       "port": 6379,
       "pwd": "",
-      "db": -1
+      "db": "0",
+      "conn_cnt": 16,
+      "thread_cnt": 1
     }
   },
   "mysql": {
     "game_db": {
-      "host": "10.0.0.93",
+      "host":"122.112.246.164",
       "port": 3306,
       "user": "root",
-      "pwd":"123456",
+      "pwd":"274905258",
       "db": "-1",
-      "conn_cnt": 10
+      "conn_cnt": 16,
+      "thread_cnt": 1
     }
   },
   "cfg_dir": "./config_ch"

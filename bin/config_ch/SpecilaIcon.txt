@@ -1,0 +1,7 @@
+#	ID	名称	小图标	大图标	展示图标	描述	<end>
+#	int	string	string	string	string	string	<end>
+#	idx	name	icon	bigIcon	showIcon	describe	<end>
+#	1206000001	钻石	huobi0001	huobi1001	huobi2001	高级货币，可通过奖励、活动、充值等途径获取	<end>
+#	1206000002	金币	huobi0002	huobi1002	huobi2002	常用货币，可通过比赛、奖励、活动等途径获取	<end>
+#	1206000003	经验	huobi0003	huobi1003	huobi2003	用于提升等级，可通过比赛获取	<end>
+#	1206000004	比赛积分	huobi0004	huobi1004	huobi2004	用于兑换奖励	<end>

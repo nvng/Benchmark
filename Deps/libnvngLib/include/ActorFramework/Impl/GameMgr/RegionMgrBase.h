@@ -20,12 +20,12 @@ struct stPlayerInfo
 
         stPlayerInfo()
         {
-                LOG_INFO("stPlayerInfo::stPlayerInfo id[{}]", GetID());
+                DLOG_INFO("stPlayerInfo::stPlayerInfo id[{}]", GetID());
         }
 
         ~stPlayerInfo()
         {
-                LOG_INFO("stPlayerInfo::~stPlayerInfo id[{}]", GetID());
+                DLOG_INFO("stPlayerInfo::~stPlayerInfo id[{}]", GetID());
         }
 
         void Pack(auto& msg)
@@ -99,7 +99,7 @@ public :
 
         ~CompetitionKnockoutRegionMgrActor()
         {
-                LOG_INFO("111111111111 CompetitionKnockoutRegionMgrActor::~CompetitionKnockoutRegionMgrActor");
+                DLOG_INFO("111111111111 CompetitionKnockoutRegionMgrActor::~CompetitionKnockoutRegionMgrActor");
         }
 
         ActorMailDataPtr DelRegion(const IActorPtr& from, const std::shared_ptr<MailRegionDestroyInfo>& msg) override;
@@ -135,12 +135,12 @@ public :
         stQueueInfo(uint64_t id, ERegionType regionType, EQueueType queueType)
                 : _id(id), _regionType(regionType), _queueType(queueType)
         {
-                LOG_INFO("stQueueInfo::stQueueInfo id[{}]", _id);
+                DLOG_INFO("stQueueInfo::stQueueInfo id[{}]", _id);
         }
 
         ~stQueueInfo() override
         {
-                LOG_INFO("stQueueInfo::~stQueueInfo id[{}]", _id);
+                DLOG_INFO("stQueueInfo::~stQueueInfo id[{}]", _id);
         }
 
         uint64_t GetID() const override { return _id; }

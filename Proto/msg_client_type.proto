@@ -36,6 +36,7 @@ enum EMsgClientMainType
   E_MCMT_Achievement = 0xa;
   E_MCMT_Activity = 0xb;
 
+  E_MCMT_Pay = 0xf9;
   E_MCMT_QueueCommon = 0xfa;
   E_MCMT_Queue = 0xfb;
   E_MCMT_GameCommon = 0xfc; // 场景基本操作。
@@ -69,13 +70,17 @@ enum EMsgClientClientSubType
   E_MCCST_SyncIcon = 0x1;
   E_MCCST_ChangeNickName = 0x2;
   E_MCCST_ChangeIcon = 0x3;
+  E_MCCST_ChangeIconFrame = 0x4;
 
   E_MCCST_SegmentLevelReward = 0x5;
   E_MCCST_GameSeasonJourneyReward = 0x6; // 领取段位奖励。
   E_MCCST_GameSeasonReward = 0x7; // 领取赛季奖励。
   E_MCCST_ReqGameSeasonInfo = 0x8; // 请求玩家赛季信息。
 
-  E_MCCCST_VIPReward = 0x9;
+  E_MCCST_VIPReward = 0x9;
+  E_MCCST_BagUse = 0xa;
+  E_MCCST_BagRemove = 0xb;
+  E_MCCST_BagSelect = 0xc;
 }
 
 enum EMsgClientQueueCommonSubType
@@ -98,8 +103,16 @@ enum EMsgClientGameCommonSubType
   E_MCGCST_RegionInfo = 0x7; // 同步场景信息给玩家。
   E_MCGCST_Conclude = 0x8;
 
-  E_MCGCST_GM = 0xe; // GM
-  E_MCGCST_GameDisconnect = 0xf; // 大厅或网关与 GameServer 断开连接。
+  E_MCGCST_GM = 0x9; // GM
+  E_MCGCST_GameDisconnect = 0xa; // 大厅或网关与 GameServer 断开连接。
+}
+
+enum EMsgClientMatchCommonSubType
+{
+        E_MCMCST_Info = 0x0;
+        E_MCMCST_SetGameZone = 0x1;
+        E_MCMCST_ReqRank = 0x2;
+        E_MCMCST_ReqQueueInfo = 0x3;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

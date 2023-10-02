@@ -23,11 +23,11 @@ struct stHttpReqReply : public stActorMailBase
                 } \
         } while (0)
 
-template <typename ImplType, typename ServiceType, typename _My=ActorMail, typename Flag=stDefaultFlag>
-class ActorImpl : public IActor, public std::enable_shared_from_this<ActorImpl<ImplType, ServiceType, _My, Flag>>
+template <typename ImplType, typename ServiceType, typename _My=ActorMail, typename _Tag=stDefaultTag>
+class ActorImpl : public IActor, public std::enable_shared_from_this<ActorImpl<ImplType, ServiceType, _My, _Tag>>
 {
         typedef IActor SuperType;
-        typedef ActorImpl<ImplType, ServiceType, _My, Flag> ThisType;
+        typedef ActorImpl<ImplType, ServiceType, _My, _Tag> ThisType;
 
 public :
         typedef _My ActorMailType;
@@ -76,6 +76,7 @@ public :
                 GetAppBase()->_mainChannel.push([thisPtr, stackSize]() {
                         boost::fibers::fiber(std::allocator_arg,
                                              boost::fibers::fixedsize_stack{ stackSize },
+                                             // boost::fibers::segmented_stack{},
                                              [thisPtr]() {
                                                      if (thisPtr->Init())
                                                      {
@@ -259,7 +260,7 @@ public :
         std::shared_ptr<db::stReplayMailInfo> RedisCmd(const Args& ... args)
         {
                 EMPTY_CALL_RET();
-                db::RedisMgrBase<Flag>::GetInstance()->Exec(ThisType::shared_from_this(), std::forward<const Args&>(args)...);
+                db::RedisMgrBase<_Tag>::GetInstance()->Exec(ThisType::shared_from_this(), std::forward<const Args&>(args)...);
                 PauseCostTime();
                 auto ret = _ch.value_pop();
                 ResumeCostTime();
@@ -273,7 +274,7 @@ public :
                 EMPTY_CALL_RET();
 
                 std::weak_ptr<ThisType> weakAct = thisPtr;
-                ::nl::net::NetMgrBase<Flag>::GetInstance()->HttpReq(url, body, [weakAct, guid](std::string_view body, const auto& ec) {
+                ::nl::net::NetMgrBase<_Tag>::GetInstance()->HttpReq(url, body, [weakAct, guid](std::string_view body, const auto& ec) {
                         if (!ec)
                         {
                                 auto act = weakAct.lock();

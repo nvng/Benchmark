@@ -36,8 +36,9 @@ enum ERegionStateType
 {
         E_RST_None = 0;
         E_RST_Prepare = 1;
-        E_RST_Play = 2;
-        E_RST_Conclude = 3;
+        E_RST_Timeout = 2;
+        E_RST_Play = 3;
+        E_RST_Conclude = 4;
 }
 
 message MsgRegionStateInfo
@@ -79,6 +80,12 @@ enum EFighterFlagType
         E_FFT_Speed = 0;
 }
 
+enum EFighterAttrType
+{
+        E_FAT_VipFlag = 0x0;
+        E_FAT_GoodsCnt = 0x1;
+}
+
 message MsgFighterInfo
 {
         sint64 guid = 1;
@@ -88,17 +95,19 @@ message MsgFighterInfo
         sint64 flag = 5;
         sint64 camp = 6;
         sint64 hero_id = 7;
+        repeated sint64 attr_list = 8;
 
-        sint64 ai_bind_guid = 8;
-        sint64 ai_action = 9;
+        sint64 ai_bind_guid = 9;
+        sint64 ai_action = 10;
 
-        MsgFighterPosInfo pos_info = 10;
-        sint64 end_time = 11;
-        sint64 shield_end_time = 12;
-        repeated sint64 battle_item_list = 13;
-        sint64 speed_pos_cnt = 14;
-        sint64 continue_center_cnt = 15;
-        sint64 add_coins = 16;
+        MsgFighterPosInfo pos_info = 20;
+        sint64 end_time = 21;
+        sint64 shield_end_time = 22;
+        repeated sint64 battle_item_list = 23;
+        sint64 speed_pos_cnt = 24;
+        sint64 continue_center_cnt = 25;
+        sint64 add_coins = 26;
+        repeated sint64 pi_fu_list = 27;
 }
 
 message MsgFighterEnter
@@ -140,6 +149,7 @@ message MsgConcludeFighterInfo
         bool is_du_zhan_ao_tou = 6;
         sint64 di_kang_gan_rao_cnt = 7;
         sint64 add_coins = 8;
+        sint64 param = 9;
 
         message MsgBattleItemInfo
         {
@@ -155,6 +165,8 @@ message MsgConcludeFighterInfo
 message MsgConcludeInfo
 {
         map<sint64, MsgConcludeFighterInfo> fighter_list = 1;
+        sint64 param = 2;
+        sint64 param_1 = 3;
 
         MsgPlayerChange player_change = 10;
 }
@@ -178,6 +190,7 @@ enum ESyncStateType
         E_SST_14 = 14; // 水柱。
         E_SST_15 = 15; // 水柱击中。
         E_SST_16 = 16; // 传送带滑落。
+        E_SST_17 = 17; // 同步分数。
 }
 
 message MsgSync
@@ -204,6 +217,7 @@ message MailSyncPlayerInfo2RegionExtra
         sint64 rank_lv = 2;
         sint64 rank_star = 3;
         sint64 ai_id = 4;
+        repeated sint64 attr_list = 5;
 }
 
 message MsgSyncClientInfo // 同步机器信息。

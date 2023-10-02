@@ -17,7 +17,7 @@ public :
         void UnPack(const MsgPlayerInfo& msg);
 
 public :
-        void SendPB(uint16_t mainType, uint16_t subType, google::protobuf::MessageLite* pb=nullptr);
+        void SendPB(uint16_t mainType, uint16_t subType, const MessageLitePtr& pb=nullptr);
         bool UseGMGoods();
         void DealPlayerChange(const MsgPlayerChange& msg);
         void OnDisconnect();

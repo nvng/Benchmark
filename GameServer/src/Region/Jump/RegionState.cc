@@ -13,6 +13,7 @@ RegionStateMgr::CreateStateByType(int stateType)
 	case E_RST_Prepare: return new RegionPrepareState(); break;
 	case E_RST_Play: return new RegionPlayState(); break;
 	case E_RST_Conclude: return new RegionConcludeState(); break;
+        case E_RST_Timeout: return nullptr; break;
 	default: DLOG_FATAL("Region 状态没有注册 stateType[{}]", stateType); break;
 	}
 
@@ -25,7 +26,7 @@ void RegionStateBase::Enter(const RegionPtr& region, StateEventInfo& evt)
         REGION_DLOG_INFO(region->GetID(), "state[{}] interval[{}]", GetStateType(), interval);
         std::weak_ptr<Region> weakRegion = region;
         // Note: 因为 state 与 region 一一绑定，因此只需要检测 region 就可以了。
-        _timer.Start(weakRegion, std::chrono::milliseconds(region->GetStateInterval(GetStateType())), [weakRegion]() {
+        _timer.Start(weakRegion, interval, [weakRegion]() {
                 auto region = weakRegion.lock();
                 if (!region)
                         return;

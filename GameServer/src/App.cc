@@ -3,10 +3,11 @@
 #include "GameLobbySession.h"
 #include "GameGateSession.h"
 #include "GameMgrSession.h"
-#include "GameRobotMgrSession.h"
 #include "Jump/Region.h"
+#include "Net/ISession.hpp"
 #include "RegionMgr.h"
-#include "NetMgr.h"
+#include "NetMgrImpl.h"
+#include "Tools/ServerList.hpp"
 #include "Tools/TimerMgr.hpp"
 
 AppBase* GetAppBase()
@@ -24,25 +25,21 @@ App::App(const std::string& appName)
 {
         GlobalSetup_CH::CreateInstance();
 
-        TimerMgr::CreateInstance();
         RegionMgr::CreateInstance();
-        NetMgr::CreateInstance();
+        NetMgrImpl::CreateInstance();
 }
 
 App::~App()
 {
         RegionMgr::DestroyInstance();
-        NetMgr::DestroyInstance();
+        NetMgrImpl::DestroyInstance();
 
         GlobalSetup_CH::DestroyInstance();
-        TimerMgr::DestroyInstance();
 }
 
 bool App::Init()
 {
         LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
-        LOG_FATAL_IF(!TimerMgr::GetInstance()->Init(), "TimerMgr init error!!!");
-        LOG_FATAL_IF(!NetMgr::GetInstance()->Init(), "NetMgr init error!!!");
 
         LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "读取策划全局配置失败!!!");
         LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
@@ -70,10 +67,8 @@ bool App::Init()
 
         // {{{ start task
         _startPriorityTaskList->AddFinalTaskCallback([]() {
-
-                auto proc = NetProcMgr::GetInstance()->Dist(1);
-                proc->StartListener("0.0.0.0", GetApp()->GetServerInfo<stGameServerInfo>()->_gate_port, "", "", []() {
-                        return CreateSession<GameGateSession>();
+                NetMgr::GetInstance()->Listen(GetApp()->GetServerInfo<stGameServerInfo>()->_gate_port, [](auto&& s, auto& sslCtx) {
+                        return std::make_shared<GameGateSession>(std::move(s));
                 });
 
                 LOG_INFO("server start success");
@@ -82,10 +77,9 @@ bool App::Init()
         std::vector<std::string> preTask;
         preTask.clear();
         _startPriorityTaskList->AddTask(preTask, GameMgrSession::scPriorityTaskKey, [](const std::string& key) {
-                auto proc = NetProcMgr::GetInstance()->Dist(0);
                 auto gameMgrServerInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
-                proc->Connect(gameMgrServerInfo->_ip, gameMgrServerInfo->_game_port, false, []() {
-                        return CreateSession<GameMgrSession>();
+                NetMgr::GetInstance()->Connect(gameMgrServerInfo->_ip, gameMgrServerInfo->_game_port, [](auto&& s) {
+                        return std::make_shared<GameMgrSession>(std::move(s));
                 });
         });
 
@@ -93,11 +87,9 @@ bool App::Init()
         preTask.clear();
         preTask.emplace_back(GameMgrSession::scPriorityTaskKey);
         _startPriorityTaskList->AddTask(preTask, GameLobbySession::scPriorityTaskKey, [](const std::string& key) {
-                int64_t idx = 0;
-                ServerListCfgMgr::GetInstance()->Foreach<stLobbyServerInfo>([&idx](const stLobbyServerInfoPtr& sInfo) {
-                        auto proc = NetProcMgr::GetInstance()->Dist(++idx);
-                        proc->Connect(sInfo->_ip, sInfo->_game_port, false, []() {
-                                return CreateSession<GameLobbySession>();
+                ServerListCfgMgr::GetInstance()->Foreach<stLobbyServerInfo>([](const stLobbyServerInfoPtr& sInfo) {
+                        NetMgr::GetInstance()->Connect(sInfo->_ip, sInfo->_game_port, [](auto&& s) {
+                                return std::make_shared<GameLobbySession>(std::move(s));
                         });
                 });
         });
@@ -106,10 +98,7 @@ bool App::Init()
         // {{{ stop task
         _stopPriorityTaskList->AddFinalTaskCallback([]() {
                 RegionMgr::GetInstance()->Terminate();
-                NetMgr::GetInstance()->Terminate();
-
                 RegionMgr::GetInstance()->WaitForTerminate();
-                NetMgr::GetInstance()->WaitForTerminate();
         });
         // }}}
 
@@ -126,6 +115,13 @@ int main(int argc, char* argv[])
         App::DestroyInstance();
 
         return 0;
+}
+
+NET_MSG_HANDLE(GameMgrSession, 0xff, 0xf)
+{
+        ++GetApp()->_cnt;
+        static auto ret = std::make_shared<MailResult>();
+        SendPB(ret, 0xff, 0xf, MsgHeaderType::E_RMT_CallRet, msgHead._guid, msgHead._to, msgHead._from);
 }
 
 // vim: fenc=utf8:expandtab:ts=8

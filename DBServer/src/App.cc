@@ -3,6 +3,9 @@
 #include "DBLobbySession.h"
 #include "DBMgr.h"
 
+#include "Tools/LogHelper.h"
+#include "Tools/ServerList.hpp"
+
 AppBase* GetAppBase()
 {
 	return App::GetInstance();
@@ -16,21 +19,18 @@ App* GetApp()
 App::App(const std::string& appName)
 	: SuperType(appName, E_ST_DB)
 {
-        TimerMgr::CreateInstance();
 	DBMgr::CreateInstance();
 }
 
 App::~App()
 {
 	DBMgr::DestroyInstance();
-        TimerMgr::DestroyInstance();
 }
 
 bool App::Init()
 {
 	LOG_FATAL_IF(!SuperType::Init(), "super init fail!!!");
 	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "dbmgr proc mgr init fail!!!");
-	LOG_FATAL_IF(!TimerMgr::GetInstance()->Init(), "TimerMgr proc mgr init fail!!!");
 
         GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
                 static int64_t loadVersionCnt = 0;
@@ -67,19 +67,24 @@ bool App::Init()
         });
         
 	_startPriorityTaskList->AddFinalTaskCallback([]() {
-		auto proc = NetProcMgr::GetInstance()->Dist(1);
-		proc->StartListener("0.0.0.0", GetApp()->GetServerInfo<stDBServerInfo>()->_lobby_port, "", "", []() { return CreateSession<DBLobbySession>(); });
+                nl::net::NetMgr::GetInstance()->Listen(GetAppBase()->GetServerInfo<stDBServerInfo>()->_lobby_port, [](auto&& s, auto& ioCtx) {
+                        return std::make_shared<DBLobbySession>(std::move(s));
+                });
 	});
 
         _stopPriorityTaskList->AddFinalTaskCallback([]() {
-                NetProcMgr::GetInstance()->Terminate();
-                NetProcMgr::GetInstance()->WaitForTerminate();
-
                 DBMgr::GetInstance()->Terminate();
                 DBMgr::GetInstance()->WaitForTerminate();
         });
 
 	return true;
+}
+
+#include "msg_client_type.pb.h"
+#include "msg_client.pb.h"
+NET_MSG_HANDLE(DBLobbySession, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClientLogin)
+{
+        SendPB(msg, E_MCMT_ClientCommon, E_MCCCST_Login, MsgHeaderType::ERemoteMailType::E_RMT_Send, 0, 0, 0);
 }
 
 int main(int argc, char* argv[])

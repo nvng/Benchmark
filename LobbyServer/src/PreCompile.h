@@ -4,6 +4,10 @@
 // #define ____PRINT_ACTOR_MAIL_COST_TIME____
 #define ____BENCHMARK____
 
+#define PING_PONG_SERVICE_CLIENT
+#define PING_PONG_BIG_SERVICE_CLIENT
+#define REDIS_SERVICE_CLIENT
+
 #define BOOST_SP_DISABLE_THREADS
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -35,6 +39,12 @@
 #include "msg_db.pb.h"
 
 #include "nvngLib.h"
+
+using namespace nl::db;
+using namespace nl::util;
+using namespace nl::net;
+using namespace nl::net::server;
+
 #include "GlobalDef.h"
 #include "GlobalVarActor.h"
 #include "LobbyGateSession.h"
@@ -44,8 +54,6 @@
 #include "Share/GlobalSetup.h"
 
 using namespace nl::af::impl;
-using namespace nl::db;
-using namespace nl::util;
 
 #include "App.h"
 

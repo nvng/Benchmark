@@ -3,8 +3,8 @@
 if [[ "$1" == "d" || "$1" == "debug" ]]; then
         export build_flag=-DCMAKE_BUILD_TYPE=Debug
 else
-        export build_flag=-DCMAKE_BUILD_TYPE=Release
         ccache --clear
+        export build_flag=-DCMAKE_BUILD_TYPE=RelWithDebInfo
 fi
 
 cpus=`grep -c ^processor /proc/cpuinfo`
@@ -12,6 +12,9 @@ export build_jobs=$[ $cpus / 2 ]
 
 dirs=`ls -d ../*Server ../Benchmark | awk -F/ '{print $2}'`
 rm -f $dirs
+find ../ -name "*Server.out" -exec rm -rf {} \;
+rm -rf ./Benchmark.out
+rm -rf ../Benchmark/Benchmark.out
 
 echo "##################################################"
 echo "cpus       : " $cpus

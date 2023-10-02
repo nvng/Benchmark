@@ -1,0 +1,6 @@
+#	ID	名称	赛季	开始时间	结束时间	<end>
+#	int	string	int	int	int	<end>
+#	idx	name	season	startTime	endTime	<end>
+#	1304000001	S1	1	1649383200	1686292924	<end>
+#	1304000002	S2	2	1652061600	1686292924	<end>
+#	1304000003	S3	3	1654819200	1686292924	<end>

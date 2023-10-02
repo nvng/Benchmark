@@ -5,6 +5,9 @@
 #define ____BENCHMARK____
 // #define ____USE_IMPL_GATE_LOBBY_SESSION_ONRECV___
 
+// #define ____CLIENT_USE_WS____
+// #define ____CLIENT_USE_WSS____
+
 #define BOOST_SP_DISABLE_THREADS
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -39,11 +42,15 @@
 
 #include "nvngLib.h"
 
+using namespace nl::util;
+using namespace nl::net;
+using namespace nl::net::server;
+
 #include "GlobalDef.h"
 #include "GateClientSession.h"
 #include "GateLobbySession.h"
 #include "GateGameSession.h"
-#include "NetMgr.h"
+#include "NetMgrImpl.h"
 
 #include "Share/GlobalDef.h"
 

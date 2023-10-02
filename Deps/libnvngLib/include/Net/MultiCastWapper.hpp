@@ -4,7 +4,7 @@ template <typename _Sy>
 class MultiCastWapper
 {
 public :
-        bool Add(int64_t id, const std::shared_ptr<_Sy>& ses)
+        bool Add(uint64_t id, const std::shared_ptr<_Sy>& ses)
         {
                 if (!ses)
                         return false;
@@ -13,46 +13,46 @@ public :
                 if (_itemList.end() != it)
                 {
                         auto item = it->second;
-                        item->_msgIdsList->mutable_id_list()->insert({id, false});
+                        item->_idList.emplace(id);
+                        item->_idsMsg.reset();
                 }
                 else
                 {
                         auto item = std::make_shared<stMultiCastWapperItem>();
                         item->_ses = ses;
-                        item->_msgIdsList->mutable_id_list()->insert({id, false});
+                        item->_idList.emplace(id);
                         _itemList.emplace(ses->GetID(), item);
                 }
                 return true;
         }
 
-        void Remove(int64_t id)
+        void Remove(uint64_t id)
         {
+                // TODO:
                 for (auto& val : _itemList)
                 {
                         auto info = val.second;
-                        auto idList = info->_msgIdsList->mutable_id_list();
-                        auto it = idList->find(id);
-                        if (idList->end() != it)
+                        auto it = info->_idList.find(id);
+                        if (info->_idList.end() != it)
                         {
-                                idList->erase(it);
-                                if (info->_msgIdsList->id_list_size() <= 0)
+                                info->_idList.erase(it);
+                                if (info->_idList.empty())
                                         _itemList.erase(val.first);
+                                else
+                                        info->_idsMsg.reset();
                                 break;
                         }
                 }
                 return;
         }
 
-        void RemoveSes(int64_t id)
+        void RemoveSes(uint64_t id)
         {
                 _itemList.erase(id);
         }
 
-        void MultiCast(int64_t from, uint64_t mt, uint64_t st, const nl::af::ActorMailDataPtr& msg, int64_t except=0)
+        void MultiCast(uint64_t from, uint64_t mt, uint64_t st, const std::shared_ptr<google::protobuf::MessageLite>& msg, uint64_t except=0)
         {
-                if (_itemList.empty())
-                        return;
-
                 for (auto& val : _itemList)
                 {
                         auto item = val.second;
@@ -60,16 +60,21 @@ public :
                         if (!ses)
                                 continue;
 
-                        if (1 == item->_msgIdsList->id_list_size())
+                        if (1 == item->_idList.size())
                         {
-                                auto id = item->_msgIdsList->id_list().begin()->first;
+                                auto id = *item->_idList.begin();
                                 if (id != except)
                                         ses->SendPB(msg, mt, st, _Sy::MsgHeaderType::E_RMT_Send, 0, from, id);
                         }
                         else
                         {
-                                item->_msgIdsList->set_except(except);
-                                ses->MultiCast(msg, item->_msgIdsList, mt, st, from);
+                                if (!item->_idsMsg)
+                                {
+                                        item->_idsMsg = std::make_shared<MsgMultiCastInfo>();
+                                        for (auto id : item->_idList)
+                                                item->_idsMsg->add_id_list(id);
+                                }
+                                ses->MultiCast(msg, item->_idsMsg, mt, st, from, except);
                         }
                 }
         }
@@ -80,9 +85,10 @@ private :
         struct stMultiCastWapperItem
         {
                 std::weak_ptr<_Sy> _ses;
-                std::shared_ptr<MsgMultiCastInfo> _msgIdsList = std::make_shared<MsgMultiCastInfo>();
+                std::shared_ptr<MsgMultiCastInfo> _idsMsg;
+                std::unordered_set<uint64_t> _idList;
         };
-        std::unordered_map<int64_t, std::shared_ptr<stMultiCastWapperItem>> _itemList;
+        std::unordered_map<uint64_t, std::shared_ptr<stMultiCastWapperItem>> _itemList;
 };
 
 template <typename _Sy, typename _Ry>
@@ -96,13 +102,13 @@ public :
         FORCE_INLINE void RemoveRobot(const std::shared_ptr<_Ry>& robot)
         { if (robot) _robotList.erase(robot->GetID()); }
 
-        void MultiCast(int64_t from, uint64_t mt, uint64_t st, const nl::af::ActorMailDataPtr& msg, int64_t except=0)
+        void MultiCast(uint64_t from, uint64_t mt, uint64_t st, const std::shared_ptr<google::protobuf::MessageLite>& msg, uint64_t except=0)
         {
                 SuperType::MultiCast(from, mt, st, msg, except);
                 for (auto& val : _robotList)
                 {
                         auto r = val.second.lock();
-                        if (r)
+                        if (r && r->GetID() != except)
                                 r->Send2Client(mt, st, msg); // robot 只模拟客户端。
                 }
         }

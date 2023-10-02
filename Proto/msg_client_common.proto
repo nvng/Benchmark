@@ -71,15 +71,23 @@ enum EPlayerAttrType
   E_PAT_Diamonds = 1;
   E_PAT_Coins = 2;
   E_PAT_Exp = 3;
-  E_PAT_LV = 4;
-  E_PAT_TiLiStartRecoverTime = 5;
-  E_PAT_Location = 6;
+  E_PAT_ZhanLinExp = 4;
+  E_PAT_MatchScore = 5; // 比赛积分。
+  E_PAT_LV = 6;
+  E_PAT_TiLiStartRecoverTime = 7;
+  E_PAT_FirstBuyTime = 8; // 首充时间。
+  E_PAT_OrderGuid = 9; // 订单号。
+  E_PAT_MatchGameZoneLastReset = 10; // 比赛赛区最后刷新时间。
+  E_PAT_MatchGameZone = 11; // 比赛赛区。
+  E_PAT_HeadFrame = 12;
+  E_PAT_Location = 13;
+  E_PAT_ChangeNickNameCnt = 14;
 
-  E_PAT_CreateTime = 7;
-  E_PAT_LastLoginTime = 8;
-  E_PAT_LastLogoutTime = 9;
-  E_PAT_LastDayChangeResetTime = 10;
-  E_PAT_LastNotZeroResetTime = 11;
+  E_PAT_CreateTime = 15;
+  E_PAT_LastLoginTime = 16;
+  E_PAT_LastLogoutTime = 17;
+  E_PAT_LastDayChangeResetTime = 18;
+  E_PAT_LastNotZeroResetTime = 19;
 }
 
 message MsgUpdatePlayerAttr
@@ -89,14 +97,30 @@ message MsgUpdatePlayerAttr
   sint64 val_1 = 3;
 }
 
+message MsgVIPItem
+{
+  sint64 id = 10;
+  sint64 over_time = 20;
+  sint64 flag = 30;
+}
+
+message MsgVIPMgr
+{
+  repeated MsgVIPItem item_list = 10;
+  repeated sint64 cnt_list = 20;
+}
+
 message MsgPlayerChange
 {
   repeated MsgUpdatePlayerAttr change_attr_list = 1;
   repeated sint64 icon_idx_list = 2;
+  MsgBagBufInfo bag_buf_info = 3;
 
   MsgPlayerGameSeasonInfo game_season = 10;
   repeated MsgGoodsItem change_goods_list = 11;
   repeated MsgHero change_hero_list = 12;
+  repeated sint64 param_list = 13;
+  MsgVIPMgr vip_mgr = 14;
 }
 
 message MsgBattleInfo
@@ -127,6 +151,7 @@ message MsgPlayerGameSeasonInfo
   repeated sint64 segment_level_reward_list = 21;
   MsgGameSeasonBattleStatisticsInfo cur_info = 22;
   MsgGameSeasonBattleStatisticsInfo total_info = 23;
+  sint64 pve_end_less_score = 24;
 }
 
 message MsgGameSeasonBattleStatisticsInfo
@@ -180,6 +205,7 @@ message MsgHeroMgr
 {
   sint64 main_hero = 10;
   repeated MsgHero hero_list = 20;
+  repeated sint64 additional_pifu_list = 30;
 }
 
 // {{{ Queue
@@ -188,8 +214,9 @@ enum EQueueType
 {
   E_QT_Normal = 0x0;
   E_QT_Manual = 0x1; // 手动创建，手动开始。
+  E_QT_CompetitionKnokout = 0x2; // 淘汰赛。
 
-  E_QT_None = 0x2;
+  E_QT_None = 0x3;
 }
 
 message MsgQueueBaseInfo

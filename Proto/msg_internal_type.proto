@@ -42,9 +42,10 @@ enum EMsgInternalLocalSubType
 {
   E_MILST_Disconnect = 0x0;
   E_MILST_Reconnect = 0x1;
-  E_MILST_DayChange = 0x2;
-  E_MILST_DataResetNoneZero = 0x3;
-  E_MILST_Terminate = 0x4;
+  E_MILST_Init = 0x2;
+  E_MILST_DayChange = 0x3;
+  E_MILST_DataResetNoneZero = 0x4;
+  E_MILST_Terminate = 0x5;
 }
 
 enum EMsgInternalInternalSubType
@@ -70,6 +71,11 @@ enum EMsgInternalQueueCommonSubType
 {
   E_MIQCST_ReqQueue = 0x0; // 请求排队。
   E_MIQCST_ExitQueue = 0x1;
+}
+
+enum EMsgInternalMatchCommonSubType
+{
+        E_MIMCST_Info = 0x0;
 }
 
 enum EMsgInternalGameCommonSubType

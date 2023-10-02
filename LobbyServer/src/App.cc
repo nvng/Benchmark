@@ -1,9 +1,11 @@
 #include "App.h"
 
+#include "Net/ISession.hpp"
 #include "Player/PlayerMgr.h"
 #include "Region/RegionMgr.h"
 
 #include "DBMgr.h"
+#include "Tools/LogHelper.h"
 
 AppBase* GetAppBase()
 {
@@ -20,12 +22,12 @@ App::App(const std::string& appName)
 	  , _gateSesList("App_gateSesList")
 {
 	GlobalSetup_CH::CreateInstance();
-        TimerMgr::CreateInstance();
 	DBMgr::CreateInstance();
 	RegionMgr::CreateInstance();
         RedisMgr::CreateInstance();
 
 	PlayerMgr::CreateInstance();
+        nl::net::NetMgr::CreateInstance();
 }
 
 App::~App()
@@ -36,8 +38,8 @@ App::~App()
 	PlayerMgr::DestroyInstance();
 
 	GlobalSetup_CH::DestroyInstance();
-        TimerMgr::DestroyInstance();
         RedisMgr::DestroyInstance();
+        nl::net::NetMgr::DestroyInstance();
 }
 
 bool App::Init()
@@ -45,7 +47,6 @@ bool App::Init()
 	LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
 
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "初始化策划全局配置失败!!!");
-	LOG_FATAL_IF(!TimerMgr::GetInstance()->Init(), "TimerMgr init error!!!");
 	LOG_FATAL_IF(!RedisMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_redisCfg), "RedisMgr init error!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
@@ -89,13 +90,10 @@ bool App::Init()
 		// Note: 多线程
 		// TODO: 监听端口
 
-		auto proc = NetProcMgr::GetInstance()->Dist(0);
-		LOG_FATAL_IF(nullptr == proc, "proc dist fail!!!");
-
 		auto lobbyInfo = GetServerInfo<stLobbyServerInfo>();
-		proc->StartListener("0.0.0.0", lobbyInfo->_gate_port, "", "", []() {
-			return CreateSession<LobbyGateSession>();
-		});
+                NetMgr::GetInstance()->Listen(lobbyInfo->_gate_port, [](auto&& s, auto& sslCtx) {
+                        return std::make_shared<LobbyGateSession>(std::move(s));
+                });
 
                 /*
                 std::set<std::string> keyList =
@@ -167,28 +165,29 @@ bool App::Init()
 	preTask.clear();
 	_startPriorityTaskList->AddTask(preTask, LobbyGameMgrSession::_sPriorityTaskKey, [](const std::string& key) {
 		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
-		auto proc = NetProcMgr::GetInstance()->Dist(1);
-		proc->Connect(gameMgrInfo->_ip, gameMgrInfo->_lobby_port, false, []() { return CreateSession<LobbyGameMgrSession>(); });
+                LOG_INFO("777777777 ip[{}] port[{}]", gameMgrInfo->_ip, gameMgrInfo->_lobby_port);
+                NetMgr::GetInstance()->Connect(gameMgrInfo->_ip, gameMgrInfo->_lobby_port, [](auto&& s) {
+                        return std::make_shared<LobbyGameMgrSession>(std::move(s));
+                });
 	});
 
 	preTask.clear();
-	preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);
-	_startPriorityTaskList->AddTask(preTask, LobbyDBSession::scPriorityTaskKey, [](const std::string& key) {
-		int64_t idx = 1;
-		ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([&idx](const auto& cfg) {
-			auto proc = NetProcMgr::GetInstance()->Dist(++idx);
-			proc->Connect(cfg->_ip, cfg->_lobby_port, false, []() { return CreateSession<LobbyDBSession>(); });
-		});
-	});
+        preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);
+        _startPriorityTaskList->AddTask(preTask, LobbyDBSession::scPriorityTaskKey, [](const std::string& key) {
+                ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([](const auto& cfg) {
+                        nl::net::NetMgr::GetInstance()->Connect(cfg->_ip, cfg->_lobby_port, [](auto&& s) {
+                                return std::make_shared<LobbyDBSession>(std::move(s));
+                        });
+                });
+        });
 
 	preTask.clear();
 	preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);
 	_startPriorityTaskList->AddTask(preTask, LobbyGameSession::scPriorityTaskKey, [](const std::string& key) {
-		auto proc = NetProcMgr::GetInstance()->Dist(0);
 		auto lobbyInfo = GetApp()->GetServerInfo<stLobbyServerInfo>();
-		proc->StartListener("0.0.0.0", lobbyInfo->_game_port, "", "", []() {
-			return CreateSession<LobbyGameSession>();
-		});
+                NetMgr::GetInstance()->Listen(lobbyInfo->_game_port, [](auto&& s, auto& sslCtx) {
+			return std::make_shared<LobbyGameSession>(std::move(s));
+                });
 	});
 
 	// }}}
@@ -235,95 +234,5 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
-
-template <> constexpr uint64_t GetLogModuleParallelCnt<E_LOG_MT_Player>() { return 8; }
-#include "Player/Player.h"
-ACTOR_MAIL_HANDLE(Player, 0x7f, 0, MsgClientLogin)
-// ACTOR_MAIL_HANDLE(Player, 0x7f, 0)
-{
-  // for (int64_t i=0; i<10; ++i)
-	// RedisCmd("SET a 1", false);
-  // PLAYER_LOG_INFO(GetID(), "aaa{}bbb{}ccc{}", 1, 2, 3);
-  // LOG_INFO("");
-	GetApp()->_cnt += 1;
-	// Push();
-	// for (int64_t i=0; i<300; ++i)
-	{
-	  // co_yield;
-	  // static char buf[100];
-	  // memcpy(buf, msg->nick_name().c_str(), 100);
-		// GetApp()->_i = GetApp()->_testList.Get(i);
-		// GetApp()->_i = RandInRange(1, 100);
-	}
-
-
-	Send2Client(0x7f, 0, msg);
-	for (int64_t i=0; i<0; ++i)
-	  Send2Client(0x7f, 1, msg);
-	return nullptr;
-}
-
-// ACTOR_MAIL_HANDLE(Player, 0x7f, 1, MsgClientLogin)
-ACTOR_MAIL_HANDLE(Player, 0x7f, 1)
-{
-  // for (int64_t i=0; i<10; ++i)
-	// RedisCmd("SET a 1", false);
-  // PLAYER_LOG_INFO(GetID(), "aaa{}bbb{}ccc{}", 1, 2, 3);
-  // LOG_INFO("");
-	GetApp()->_cnt += 4;
-	// Push();
-	// for (int64_t i=0; i<300; ++i)
-	{
-	  // co_yield;
-	  // static char buf[100];
-	  // memcpy(buf, msg->nick_name().c_str(), 100);
-		// GetApp()->_i = GetApp()->_testList.Get(i);
-		// GetApp()->_i = RandInRange(1, 100);
-	}
-        for (int64_t i=0; i<4; ++i)
-                Send2Client(0x7f, 1, nullptr);
-	return nullptr;
-}
-
-/*
-NET_MSG_HANDLE(LobbyGateSessionBase, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClientLogin)
-{
-        // LOG_INFO("from:{} to:{}", msgHead.from_, msgHead.to_);
-        const auto playerGuid = msg->player_guid();
-        if (0 == playerGuid)
-        {
-                LOG_WARN("玩家[{}] 登录时出错，playerGuid 不能为0!!!", playerGuid);
-                return;
-        }
-
-        LOG_FATAL_IF(!(0!=msgHead.from_ && playerGuid == static_cast<decltype(playerGuid)>(msgHead.to_)),
-                     "playerGuid[{}] msgHead.to_[{}]",
-                     playerGuid, msgHead.to_);
-
-        auto createPlayerFunc = [this, &msgHead, &msg](int64_t playerGuid) {
-		auto tMsg = std::make_shared<MsgClientLogin>();
-		tMsg->CopyFrom(*msg);
-		tMsg->set_player_guid(playerGuid);
-                auto loginInfo = std::make_shared<stLoginInfo>();
-                if (GetPlayerMgrBase()->_loginInfoList.Add(playerGuid, loginInfo))
-                {
-                        loginInfo->_from = msgHead.from_;
-                        loginInfo->_ses = shared_from_this();
-                        GetPlayerMgrBase()->GetPlayerMgrActor(playerGuid)->SendPush(0, tMsg);
-                }
-                else
-                {
-                        DLOG_WARN("玩家[{}] 在登录时，已经有别的端在登录!!!", playerGuid);
-                        MsgClientLoginRet sendMsg;
-                        sendMsg.set_error_type(E_CET_InLogin);
-                        SendPB(&sendMsg, E_MCMT_ClientCommon, E_MCCCST_Login, MsgHeaderType::E_RMT_Send, E_CET_InLogin, msgHead.to_, msgHead.from_);
-                }
-        };
-
-        createPlayerFunc(playerGuid);
-        for (int64_t i=0; i<500 * 1000; ++i)
-                createPlayerFunc(playerGuid + i + 1);
-}
-*/
 
 // vim: fenc=utf8:expandtab:ts=8

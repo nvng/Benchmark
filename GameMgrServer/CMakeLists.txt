@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.22)
 set(SRC_DIR
         ./src/Region
         ../Deps/libnvngLib/include/ActorFramework/Impl/GameMgr
+        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Benchmark
+        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Robot
         )
 
 include($ENV{HOME}/git/config/cmake/project.cmake)

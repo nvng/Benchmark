@@ -1,5 +1,6 @@
 #include "Region.h"
 
+#include "GameGateSession.h"
 #include "RegionMgr.h"
 
 namespace Jump {
@@ -9,7 +10,7 @@ REGION_GAME_COMMON_HANDLE(Region);
 Region::Region(const std::shared_ptr<MailRegionCreateInfo>& cInfo,
                const std::shared_ptr<RegionCfg>& cfg,
                const GameMgrSession::ActorAgentTypePtr& agent)
-        : SuperType(cInfo, cfg, agent)
+        : SuperType(cInfo, cfg, agent, 1024)
 {
 }
 
@@ -73,17 +74,16 @@ void Region::Conclude()
 ACTOR_MAIL_HANDLE(Region, E_MCMT_Game, E_MCGST_Sync, MsgSync)
 {
         // TimeCost t("E_MCGST_Sync");
-        auto f = GetFighter(msg->player_guid());
+        auto f = std::dynamic_pointer_cast<PlayerFighter<Fighter>>(GetFighter(msg->player_guid()));
         if (!f)
                 return nullptr;
 
-        switch (msg->state())
-        {
-        default :
-                break;
-        }
-
+        // f->Send2Client(E_MCMT_Game, E_MCGST_Sync, msg);
         Send2Client(E_MCMT_Game, E_MCGST_Sync, msg);
+        /*
+        for (int64_t i=0; i<100; ++i)
+                Send2Client(E_MCMT_Game, E_MCGST_SyncCommon, msg);
+                */
         return nullptr;
 }
 

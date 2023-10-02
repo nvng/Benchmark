@@ -17,8 +17,8 @@
 
 #include "Tools/Singleton.hpp"
 
-#define CHECK_2N(x)      ((x)>0 && 0 == ((x)&((x)-1)))
-#define FORCE_INLINE __attribute__((always_inline))
+#define CHECK_2N(x)     ((x)>0 && 0 == ((x)&((x)-1)))
+#define FORCE_INLINE    BOOST_FORCEINLINE
 
 enum ELogModuleType
 {

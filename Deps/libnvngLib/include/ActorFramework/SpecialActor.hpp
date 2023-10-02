@@ -25,7 +25,7 @@ class SpecialActor : public ActorImpl<SpecialActor, SpecialActorMgr>
 {
         typedef ActorImpl<SpecialActor, SpecialActorMgr> SuperType;
 protected :
-        SpecialActor(std::size_t queueSize = 1 << 16)
+        SpecialActor(std::size_t queueSize = 1 << 15)
                 : SuperType(SpecialActorMgr::GenActorID(), queueSize)
         {
         }

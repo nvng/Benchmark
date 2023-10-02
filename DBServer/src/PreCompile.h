@@ -30,6 +30,7 @@
 
 #include "msg_internal_type.pb.h"
 #include "msg_internal.pb.h"
+#include "msg_client.pb.h"
 
 #include "nvngLib.h"
 #include "GlobalDef.h"
@@ -38,6 +39,8 @@
 
 using namespace nl::af::impl;
 using namespace nl::db;
+using namespace nl::net;
+using namespace nl::net::server;
 using namespace nl::util;
 
 #include "App.h"

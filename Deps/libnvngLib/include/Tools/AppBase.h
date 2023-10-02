@@ -39,13 +39,32 @@ public :
         bool Start() override
         {
                 // LOG_INFO("proc {} start success!!!", GetProcName());
-                _flushTimer->StartForever(1, []() {
+                ::nl::util::SteadyTimer::StartForever(1.0, []() {
                         LogHelper::GetInstance()->Flush();
                         return true;
                 });
 
+                ::nl::util::SteadyTimer::StartForever(0.01, []() {
+                        GetClock().UpdateTime();
+                        return true;
+                });
+
                 _startPriorityTaskList->CheckAndExecute();
-                InitCheckStartTimer();
+                ::nl::util::SteadyTimer::StartForever(10.0, 1.0, []() {
+                        const auto taskKeyList = GetAppBase()->_startPriorityTaskList->GetRunButNotFinishedTask();
+                        if (!taskKeyList.empty())
+                        {
+                                std::string printStr;
+                                for (auto& taskKey : taskKeyList)
+                                {
+                                        printStr += taskKey;
+                                        printStr += " ";
+                                }
+                                LOG_WARN("init task not finish : {}", printStr);
+                                return true;
+                        }
+                        return false;
+                });
                 return SuperType::Start();
         }
 
@@ -54,6 +73,7 @@ public :
         {
                 SetStartStop();
 
+                /*
                 // 全部线程需要统一时间，由主线程统一更新，
                 // 但在 stop 后，由于 WaitForTerminate 导致
                 // 无法更新时间，从而有些 timer 相关的逻辑可能无法退出。
@@ -64,9 +84,24 @@ public :
                                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                         }
                 }).detach();
+                */
 
                 _stopPriorityTaskList->CheckAndExecute();
-                InitCheckStopTimer();
+                ::nl::util::SteadyTimer::StartForever(10.0, 1.0, []() {
+                        std::vector<std::string> taskKeyList = GetAppBase()->_stopPriorityTaskList->GetRunButNotFinishedTask();
+                        if (!taskKeyList.empty())
+                        {
+                                std::string printStr;
+                                for (auto& taskKey : taskKeyList)
+                                {
+                                        printStr += taskKey;
+                                        printStr += " ";
+                                }
+                                LOG_WARN("stop task not finish : {}", printStr);
+                                return true;
+                        }
+                        return false;
+                });
         }
 
         template <typename _Ty>
@@ -91,44 +126,6 @@ protected :
         stServerInfoBasePtr _serverInfo;
 
 public :
-        void InitCheckStartTimer(int64_t s = 10)
-        {
-                nl::util::SteadyTimer::StaticStart(std::chrono::seconds(s), []() {
-                        const auto taskKeyList = GetAppBase()->_startPriorityTaskList->GetRunButNotFinishedTask();
-                        if (!taskKeyList.empty())
-                        {
-                                std::string printStr;
-                                for (auto& taskKey : taskKeyList)
-                                {
-                                        printStr += taskKey;
-                                        printStr += " ";
-                                }
-                                LOG_WARN("init task not finish : {}", printStr);
-                                GetAppBase()->InitCheckStartTimer(1);
-                        }
-                });
-        }
-
-        void InitCheckStopTimer(int64_t s = 10)
-        {
-                nl::util::SteadyTimer::StaticStart(std::chrono::seconds(s), []() {
-                        std::vector<std::string> taskKeyList = GetAppBase()->_stopPriorityTaskList->GetRunButNotFinishedTask();
-                        if (!taskKeyList.empty())
-                        {
-                                std::string printStr;
-                                for (auto& taskKey : taskKeyList)
-                                {
-                                        printStr += taskKey;
-                                        printStr += " ";
-                                }
-                                LOG_WARN("stop task not finish : {}", printStr);
-                                GetAppBase()->InitCheckStopTimer(1);
-                        }
-                });
-        }
-
-public :
-        std::shared_ptr<nl::util::SteadyTimer> _flushTimer;
         boost::fibers::buffered_channel<std::function<void()>> _mainChannel;
         std::vector<std::thread> _threadList;
         PriorityTaskFinishListPtr _startPriorityTaskList = std::make_shared<PriorityTaskFinishList>();

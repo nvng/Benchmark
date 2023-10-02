@@ -1,0 +1,8 @@
+#	ID	名称	资源名	特效名	描述	类型	第1名权重	第2名权重	第3名权重	第4名权重	第5名权重	第6名权重	第7名权重	第8名权重	<end>
+#	int	string	string	string	string	int	int	int	int	int	int	int	int	int	<end>
+#	idx	name	icon	effect	desc	type	first	second	third	fourth	fifth	sixth	seventh	eighth	<end>
+#	1004000001	导弹	bitem0001	eitem0001	攻击敌方名次最高的玩家	1	2000	2000	2000	2000	2000	2000	2000	1000	<end>
+#	1004000002	飞弹	bitem0002	eitem0002	攻击距离自身最近的玩家，相同距离优先攻击前方的玩家	2	2000	2000	2000	2000	2000	2000	2000	1000	<end>
+#	1004000003	香蕉皮	bitem0003	0	使用后放置在后方的格子上，玩家落地或起跳会滑倒	3	2000	2000	2000	2000	2000	2000	2000	0	<end>
+#	1004000004	护盾	bitem0004	0	抵挡任何攻击，持续3秒	4	3000	2000	2000	2000	2000	2000	2000	2000	<end>
+#	1004000005	加速	bitem0005	0	自动前进3格	5	1000	2000	2000	2000	2000	2000	2000	6000	<end>

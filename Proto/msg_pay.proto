@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// package PokerProto;
+
+import "msg_client_common.proto";
+
+enum EMsgClientPaySubType
+{
+        E_MCPST_ReqOrderGuid = 0x0;
+        E_MCPST_ReqShip = 0x1;
+        E_MCPST_ClientShip = 0x2;
+}
+
+message MsgPayOrderGuid
+{
+        EClientErrorType error_type = 1;
+        uint64 guid = 2;
+}
+
+message MsgPayReqShip
+{
+        EClientErrorType error_type = 1;
+
+        string orderno = 0x10;
+        string orderno_cp = 0x11;
+        sint64 userid = 0x12;
+        sint64 game_id = 0x13;
+        sint64 order_amt = 0x14;
+        sint64 pay_amt = 0x15;
+        sint64 pay_time = 0x16;
+        sint64 player_guid = 0x17;
+        sint64 cfg_id = 0x18;
+        sint64 reward = 0x19;
+        string sign = 0x20;
+
+        sint64 code = 0x30;
+        string msg = 0x31;
+}
+
+message MsgPayClientShip
+{
+        EClientErrorType error_type = 1;
+        sint64 cfg_id = 2;
+        MsgPlayerChange player_change = 10;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

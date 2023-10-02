@@ -1,8 +1,9 @@
 #include "PlayerMgr.h"
 
+#include "Net/ISession.hpp"
 #include "Player.h"
-#include "Net/NetProcMgr.h"
 #include "Net/ClientGateSession.h"
+#include "boost/fiber/fiber.hpp"
 
 PlayerMgr::PlayerMgr()
         : SuperType("PlayerMgr")
@@ -36,8 +37,9 @@ bool PlayerMgr::Init()
                 LOG_INFO("gggggggggate ip:{} port:{}", gateInfo->_ip, gateInfo->_client_port);
                 for (int i=0; i<perCnt; ++i)
                 {
-                        auto proc = NetProcMgr::GetInstance()->Dist(i);
-                        proc->Connect(gateInfo->_ip, gateInfo->_client_port, false, []() { return CreateSession<ClientGateSession>(); });
+                        NetMgrBase<ClientGateSession::Tag>::GetInstance()->Connect(gateInfo->_ip, gateInfo->_client_port, [](auto&& s) {
+                                return std::make_shared<ClientGateSession>(std::move(s));
+                        });
                 }
         });
 
@@ -46,8 +48,7 @@ bool PlayerMgr::Init()
 
 NET_MSG_HANDLE(ClientGateSession, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClientLoginRet)
 {
-	// LOG_INFO("玩家登录成功返回!!!");
-        
+	DLOG_INFO("玩家登录成功返回!!!");
         const auto& playerInfo = msg->player_info();
         auto p = std::dynamic_pointer_cast<Player>(PlayerMgr::GetInstance()->GetActor(playerInfo.player_guid()));
         if (!p)
@@ -60,6 +61,17 @@ NET_MSG_HANDLE(ClientGateSession, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClient
                         _player = p;
                         p->Start();
                 }
+
+#if 0
+                std::shared_ptr<MsgClientLogin> msg;
+                // auto msg = std::make_shared<MsgClientLogin>();
+                // msg->set_nick_name("abcdef123456abcdef123456abcdef123456abcdef123456abcdef123456abcdef123456abcdef123456abcdef123456");
+                p->SendPB(0x7f, 0, msg);
+                /*
+                for (int64_t i=0; i<200; ++i)
+                        p->SendPB(0x7f, 1, msg);
+                        */
+#endif
         }
         else
         {

@@ -44,10 +44,13 @@ message MsgPlayerInfo
   string icon = 3;
   string we_chat_icon = 4;
   repeated sint64 icon_idx_list = 5;
-  repeated sint64 attr_list = 6;
+  repeated sint64 icon_frame_idx_list = 6;
+  repeated sint64 attr_list = 7;
 
   MsgQueueInfo queue_info = 10;
-  repeated MsgPlayerChange player_change_list = 11;
+  MsgMatchInfo match_info = 11;
+  repeated MsgPlayerChange player_change_list = 12;
+  sint64 server_day_zero_timestamp = 13;
 
   repeated MsgGoodsItem goods_list = 30;
   MsgPlayerMailSysBrief mail = 31;
@@ -58,6 +61,7 @@ message MsgPlayerInfo
   MsgHeroMgr hero_mgr = 36;
   MsgAchievementMgr achievement_mgr = 37;
   MsgActivityMgr activity_mgr = 38;
+  repeated MsgBagBufInfoList bag_buf_list = 39;
 }
 
 message MsgDataResetNoneZero
@@ -75,6 +79,33 @@ message MsgCommitLocation
 {
   EClientErrorType error_type = 1;
   sint64 val = 2;
+}
+
+message MsgMatchSetGameZone
+{
+        EClientErrorType error_type = 1;
+        sint64 val = 2;
+}
+
+message MsgMatchInfo
+{
+        sint64 cfg_id = 1;
+        sint64 cur_round = 2;
+        sint64 prompotion_cnt = 3;
+        sint64 left_region_cnt = 4;
+        sint64 next_round_start_time = 5;
+}
+
+message MsgMatchQueueInfo
+{
+        EQueueType queue_type = 1;
+
+        message MsgInfo
+        {
+                sint64 cfg_id = 1;
+                sint64 player_cnt = 2;
+        }
+        repeated MsgInfo info_list = 10;
 }
 
 message MsgClientKickout
@@ -116,7 +147,9 @@ message MsgSyncQueueInfo
 {
   MsgQueueBaseInfo base_info = 1;
   sint64 param = 2;
-  repeated MsgPlayerQueueInfo player_list = 3;
+  sint64 param_1 = 3;
+  sint64 param_2 = 4;
+  repeated MsgPlayerQueueInfo player_list = 5;
 }
 
 message MsgReqQueue
@@ -124,6 +157,9 @@ message MsgReqQueue
   EClientErrorType error_type = 1;
   MsgQueueBaseInfo base_info = 2;
   sint64 param = 3;
+  sint64 param_1 = 4;
+
+  MsgPlayerChange player_change = 10;
 }
 
 message MsgExitQueue
@@ -131,6 +167,8 @@ message MsgExitQueue
   EClientErrorType error_type = 1;
   MsgQueueBaseInfo base_info = 2;
   sint64 player_guid = 3;
+
+  MsgPlayerChange player_change = 10;
 }
 
 enum EQueueOptType
@@ -152,6 +190,7 @@ message MsgQueueOpt
   sint64 param = 4;
   sint64 player_guid = 5;
 }
+
 // }}}
 
 message MsgResult
@@ -201,6 +240,7 @@ message DBGameSeasonInfo
   repeated sint64 segment_level_reward_list = 220;
   MsgGameSeasonBattleStatisticsInfo cur_info = 230;
   MsgGameSeasonBattleStatisticsInfo total_info = 240;
+  sint64 pve_end_less_score = 250;
 }
 
 message MsgReqPlayerGameSeasonInfo
@@ -236,24 +276,16 @@ message MsgGameSeasonReward
 enum EVIPAttrType
 {
   E_VIP_AT_Reward = 0x0;
-  E_VIP_AT_DailyStageCnt = 0x1;
-  E_VIP_AT_SaoDang = 0x2;
-  E_VIP_AT_GlobalCoinsAdd = 0x3;
-  E_VIP_AT_GlobalExpAdd = 0x4;
-  E_VIP_AT_NormalShopAddtionalDiscount = 0x5;
-  E_VIP_AT_None = 0x6;
-}
-
-message MsgVIPItem
-{
-  sint64 id = 10;
-  sint64 over_time = 20;
-  repeated sint64 flag_list = 30;
-}
-
-message MsgVIPMgr
-{
-  repeated MsgVIPItem item_list = 10;
+  E_VIP_AT_RankGameCoinsAddRatio = 0x1; // 比赛金币加成。
+  E_VIP_AT_RankGameExpAddRatio = 0x2; // 比赛经验加成。
+  E_VIP_AT_GameGoodsCnt = 0x3; // 额外道具栏数量。
+  E_VIP_AT_Hero = 0x4; // 专属角色。
+  E_VIP_AT_Head = 0x5; // 专属头像。
+  E_VIP_AT_HeadFrame = 0x6; // 专属头像框。
+  E_VIP_AT_PiFu = 0x7; // 专属道具皮肤。
+  E_VIP_AT_RankGameAvoidDecScore = 0x8; // 排位额外免扣分次数。
+  E_VIP_AT_RankGameAddScoreDailyCnt = 0x9; // 排位赛额外加成场次。
+  E_VIP_AT_RankGameAddScore = 0xa; // 排位赛额外加成积分。
 }
 
 message MsgVIPReward
@@ -265,16 +297,51 @@ message MsgVIPReward
   MsgPlayerChange player_change = 10;
 }
 
+message MsgBagUse
+{
+  EClientErrorType error_type = 1;
+  sint64 id = 2;
+  sint64 cnt = 3;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgBagRemove
+{
+  EClientErrorType error_type = 1;
+  EBagBuffType type = 2;
+  sint64 id = 3;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgBagSelect
+{
+  EClientErrorType error_type = 1;
+  EBagBuffType type = 2;
+  sint64 id = 3;
+
+  MsgPlayerChange player_change = 10;
+}
+
 message MsgChangeNickName
 {
   EClientErrorType error_type = 1;
   string nick_name = 2;
+
+  MsgPlayerChange player_change = 10;
 }
 
 message MsgChangeIcon
 {
   EClientErrorType error_type = 1;
   string icon = 2;
+}
+
+message MsgChangeIconFrame
+{
+  EClientErrorType error_type = 1;
+  sint64 icon_frame_idx = 2;
 }
 
 message MsgSyncIcon

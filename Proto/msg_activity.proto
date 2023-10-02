@@ -29,6 +29,16 @@ enum EMsgClientActivitySubType
   E_MCATST_Active = 0x3;
 }
 
+enum EActivityEventType
+{
+        E_AET_None = 0;
+        E_AET_DataReset = 35;
+        E_AET_FirstRecharge = 36;
+        E_AET_Recharge = 37;
+        E_AET_BuyZhanLin = 38;
+        E_AET_ZhanLinExp = 39;
+};
+
 message MsgActivityPlayerDataCommon
 {
   sint64 task_id = 10;

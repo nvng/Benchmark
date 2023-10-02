@@ -57,13 +57,16 @@ struct stMailHttpReq : public stActorMailBase
 enum ESessionFlagType
 {
         E_SFT_AutoReconnect = 1L << 0,
-        E_SFT_Closed = 1L << 1,
-        E_SFT_RemoteIsCrash = 1L << 2,
+        E_SFT_RemoteCrash = 1L << 2,
         E_SFT_AutoRebind = 1L << 3,
-        E_SFT_AlreadyRebind = 1L << 4,
-        E_SFT_InSend = 1L << 5,
-        E_SFT_Terminate = 1L << 6,
+        E_SFT_InSend = 1L << 4,
+        E_SFT_Terminate = 1L << 5,
 };
+
+#define DEFINE_SESSION_FLAG(flag) \
+        FORCE_INLINE void Set##flag() { FLAG_ADD(_internalFlag, E_SFT_##flag); } \
+        FORCE_INLINE void Del##flag() { FLAG_DEL(_internalFlag, E_SFT_##flag); } \
+        FORCE_INLINE bool Is##flag() const { return FLAG_HAS(_internalFlag, E_SFT_##flag); }
 
 class ISession
 {
@@ -74,7 +77,7 @@ public :
         ISession() = default;
         virtual ~ISession()
         {
-                LOG_INFO("ISession::~ISession this:{} id:{}", fmt::ptr(this), GetID());
+                LOG_WARN_IF(0 != GetID(), "ISession::~ISession this:{} id:{}", fmt::ptr(this), GetID());
         }
 
         virtual bool Init()
@@ -88,7 +91,7 @@ public :
         virtual void OnConnect() { }
         virtual void Close(int32_t reasonType)
         {
-                FLAG_ADD(_internalFlag, E_SFT_Terminate);
+                SetTerminate();
         }
 
         virtual void OnClose(int32_t reasonType) { }
@@ -110,8 +113,12 @@ public :
                 Close(ec.value());
         }
 
-        FORCE_INLINE bool IsTerminate() const { return FLAG_HAS(_internalFlag, E_SFT_Terminate); }
-        FORCE_INLINE bool RemoteIsCrash() const { return FLAG_HAS(_internalFlag, E_SFT_RemoteIsCrash); }
+        DEFINE_SESSION_FLAG(AutoReconnect);
+        DEFINE_SESSION_FLAG(RemoteCrash);
+        DEFINE_SESSION_FLAG(AutoRebind);
+        DEFINE_SESSION_FLAG(InSend);
+        DEFINE_SESSION_FLAG(Terminate);
+
         FORCE_INLINE bool IsCrash() const { return GetAppBase()->IsInitSuccess() ? false : GetAppBase()->IsCrash(); }
 
 public :
@@ -122,19 +129,19 @@ public :
         FORCE_INLINE uint64_t GetID() const { return _id; }
 
 public :
-        std::atomic_uint64_t _internalFlag = 0;
         uint32_t _sid = 0;
         uint32_t _remoteID = 0;
 
 private :
         uint64_t _id = 0;
+        std::atomic_uint64_t _internalFlag = 0;
 };
 
 typedef std::shared_ptr<ISession> ISessionPtr;
 typedef std::weak_ptr<ISession> ISessionWeakPtr;
 
-template <typename Flag>
-class NetMgrBase : public Singleton<NetMgrBase<Flag>>
+template <typename _Tag>
+class NetMgrBase : public Singleton<NetMgrBase<_Tag>>
 {
         typedef boost::asio::ip::tcp::acceptor AcceptorType;
         typedef std::shared_ptr<AcceptorType> AcceptorTypePtr;
@@ -181,31 +188,24 @@ public :
 
         void Connect(const std::string& ip, uint16_t port, const auto& cb)
         {
-                auto ses = cb(boost::asio::ip::tcp::socket(*DistCtx(++_distIOCtxIdx)));
+                auto ses = cb(boost::asio::ip::tcp::socket(boost::asio::make_strand(*DistCtx(++_distIOCtxIdx))));
                 ses->_createSession = std::move(cb);
                 ses->_connectEndPoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(ip), port);
                 ses->_socket.async_connect(ses->_connectEndPoint, [ses](const auto& ec) {
-                        if (ec)
+                        if (ec
+                            || !ses->Init()
+                            || !NetMgrBase::GetInstance()->_sesList.Add(ses->GetID(), ses))
                         {
-                                switch (ec.value())
-                                {
-                                case boost::asio::error::connection_refused :
-                                        ::nl::util::SteadyTimer::StaticStart(std::chrono::milliseconds(100), [ses]() {
-                                                NetMgrBase::GetInstance()->Connect(ses->_connectEndPoint.address().to_string(), ses->_connectEndPoint.port(), std::move(ses->_createSession));
-                                        });
-                                        return;
-                                        break;
-                                default :
-                                        break;
-                                }
-
-                                return;
+                                auto ctx = ses->_socket.get_executor();
+                                ::nl::util::SteadyTimer::StaticStart(ctx, std::chrono::milliseconds(100), [ses]() {
+                                        NetMgrBase::GetInstance()->Connect(ses->_connectEndPoint.address().to_string()
+                                                                           , ses->_connectEndPoint.port()
+                                                                           , std::move(ses->_createSession));
+                                });
                         }
-
-                        LOG_INFO("NetMgrBase::Connect async_connect ec[{}] what[{}]", ec.value(), ec.what());
-                        if (ses->Init())
+                        else
                         {
-                                NetMgrBase::GetInstance()->_sesList.Add(ses->GetID(), ses);
+                                // LOG_INFO("NetMgrBase::Connect async_connect ec[{}] what[{}]", ec.value(), ec.what());
                                 ses->OnEstablish();
                         }
                 });
@@ -262,15 +262,12 @@ private :
         void DoAccept(const AcceptorTypePtr& acceptor, const auto& cb)
         {
                 AcceptorTypeWeakPtr weakAcceptor = acceptor;
-                acceptor->async_accept(*DistCtx(++_distIOCtxIdx), [weakAcceptor, cb{std::move(cb)}](const auto& ec, auto&& s) {
+                acceptor->async_accept(boost::asio::make_strand(*DistCtx(++_distIOCtxIdx)), [weakAcceptor, cb{std::move(cb)}](const auto& ec, auto&& s) {
                         if (!ec)
                         {
                                 auto ses = cb(std::move(s), NetMgrBase::GetInstance()->_sslCtx);
-                                if (ses->Init())
-                                {
-                                        NetMgrBase::GetInstance()->_sesList.Add(ses->GetID(), ses);
+                                if (ses->Init() && NetMgrBase::GetInstance()->_sesList.Add(ses->GetID(), ses))
                                         ses->OnEstablish();
-                                }
                         }
 
                         auto acceptor = weakAcceptor.lock();
@@ -450,6 +447,6 @@ private :
         Map<std::pair<std::string, uint64_t>, AcceptorTypePtr> _acceptorList;
 };
 
-typedef NetMgrBase<stDefaultFlag> NetMgr;
+typedef NetMgrBase<stDefaultTag> NetMgr;
 
 }; // end of namespace nl::net

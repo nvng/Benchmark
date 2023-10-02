@@ -45,6 +45,8 @@
 
 using namespace nl::af::impl;
 using namespace nl::util;
+using namespace nl::net;
+using namespace nl::net::server;
 
 #include "Share/GlobalDef.h"
 #include "Share/GlobalSetup.h"

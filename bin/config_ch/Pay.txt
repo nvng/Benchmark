@@ -1,0 +1,12 @@
+#	ID	名称	商品图标	商品底板	商品类型	计费点	商品id	首充奖励	额外奖励	价格	<end>
+#	int	string	string	string	int	string	int	int	int	int	<end>
+#	idx	name	icon	background	good_type	pay	goodid	firstBuy	extrareward	price	<end>
+#	1205010001	60钻石	pay0001	shangpin0005	1	pay.diamond.6	1201022101	1201022201	0	6	<end>
+#	1205010002	300钻石	pay0002	shangpin0005	1	pay.diamond.30	1201022102	1201022202	1201022302	30	<end>
+#	1205010003	980钻石	pay0003	shangpin0005	1	pay.diamond.98	1201022103	1201022203	1201022303	98	<end>
+#	1205010004	1280钻石	pay0004	shangpin0005	1	pay.diamond.128	1201022104	1201022204	1201022304	128	<end>
+#	1205010005	328钻石	pay0005	shangpin0005	1	pay.diamond.328	1201022105	1201022205	1201022305	328	<end>
+#	1205010006	6480钻石	pay0006	shangpin0005	1	pay.diamond.648	1201022106	1201022206	1201022306	648	<end>
+#	1205020001	白银月卡	0	0	2	pay.gvip.30	1201022401	0	0	30	<end>
+#	1205020002	黄金月卡	0	0	3	pay.dvip.68	1201022402	0	0	68	<end>
+#	1205020003	战令	0	0	4	pay.zhanling.648	1201022403	0	0	30	<end>

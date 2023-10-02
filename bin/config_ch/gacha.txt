@@ -1,0 +1,4 @@
+#	id	名称	卡池背景	开放时间	结束时间	购买方式	购买价格	卡池id组	卡池权重	显示概率	保底次数	保底文本	保底项在卡池数组中的位置	<end>
+#	int	string	string	int	int	int[]	int[]	int[]	int[]	string[]	int[]	string[]	int[]	<end>
+#	idx	name	icon	open_date	end_date	buy_type	buy_value	pool_lootrandom_id	pool_lootrandom_weight	weight_display	protect_time	protect_text	protect_position	<end>
+#	51000000	常驻探索	gacha_common1	1667290379	0	1|10	20|180	69010000|69011000|69012000|69013000|69014000	1500|1500|1500|200|10	35|30|21|12|2	10|50	次内必出紫色及以上品质|次内必出橙色品质	4|5	<end>

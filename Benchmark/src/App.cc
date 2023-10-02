@@ -16,14 +16,14 @@ App* GetApp()
 App::App(const std::string& appName)
   : SuperType(appName, E_ST_None)
 {
-        TimerMgr::CreateInstance();
 	PlayerMgr::CreateInstance();
+        ::nl::net::client::ClientNetMgr::CreateInstance();
 }
 
 App::~App()
 {
 	PlayerMgr::DestroyInstance();
-        TimerMgr::DestroyInstance();
+        ::nl::net::client::ClientNetMgr::DestroyInstance();
 }
 
 bool App::Init()
@@ -40,7 +40,7 @@ bool App::Init()
 	f.close();
 
 	std::ofstream f1("sid.txt", std::ios_base::trunc);
-	f1 << ((sid+1>=100) ? 10 : sid + 1);
+	f1 << ((sid+1>=20) ? 10 : sid + 1);
         f1.close();
 
         _serverInfo = std::make_shared<stServerInfoBase>();
@@ -49,7 +49,7 @@ bool App::Init()
         _serverInfo->_netProcCnt = 2;
 
 	LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
-	LOG_FATAL_IF(!TimerMgr::GetInstance()->Init(), "TimerMgr init error!!!");
+	LOG_FATAL_IF(!::nl::net::client::ClientNetMgr::GetInstance()->Init(_serverInfo->_netProcCnt, "client"), "ClientNetMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 
 #if 1

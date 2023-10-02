@@ -106,24 +106,6 @@ union stPos3D
         }
 };
 
-template <typename _Ty>
-struct stRandomInfo
-{
-        stRandomInfo() = default;
-        explicit stRandomInfo(int64_t w, _Ty& v)
-                : _w(w), _v(v)
-        {
-        }
-
-        int64_t _w = 0;
-        _Ty _v = _Ty();
-
-	DISABLE_COPY_AND_ASSIGN(stRandomInfo);
-};
-
-template <typename _Ty>
-using stRandomSelectType = RandomSelect2<stRandomInfo<_Ty>, int64_t, NullMutex>;
-
 enum EPlayerLogModuleType
 {
         E_LOG_MT_PVE = E_LOG_MT_UserDefine,

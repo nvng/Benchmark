@@ -136,8 +136,8 @@ struct OuterExtractor : public boost::static_visitor<stReplayMailInfo::markers_r
         }
 };
 
-template <typename Flag>
-class RedisMgrBase : public DBMgrBase<bredis::Connection<boost::asio::ip::tcp::socket>>, public Singleton<RedisMgrBase<Flag>>
+template <typename _Tag>
+class RedisMgrBase : public DBMgrBase<bredis::Connection<boost::asio::ip::tcp::socket>>, public Singleton<RedisMgrBase<_Tag>>
 {
         typedef bredis::Connection<boost::asio::ip::tcp::socket> ConnType;
         typedef DBMgrBase<ConnType> SuperType;
@@ -174,12 +174,13 @@ public :
                 _cmdQueueArr = new std::shared_ptr<CmdQueueType>[_cfg._connCnt];
                 for (int64_t i=0; i<_cfg._connCnt; ++i)
                 {
-                _cmdQueueArr[i] = std::make_shared<CmdQueueType>(1 << 16);
+                _cmdQueueArr[i] = std::make_shared<CmdQueueType>(1 << 15);
 
                 GetAppBase()->_mainChannel.push([idx{i}]() {
                 boost::fibers::fiber(
                      std::allocator_arg,
                      boost::fibers::fixedsize_stack{ 32 * 1024 },
+                     // boost::fibers::segmented_stack{},
                      [idx]() {
                         std::vector<stReplayMailInfoPtr> mailList;
                         mailList.reserve(1024);
@@ -322,10 +323,10 @@ private :
         static std::atomic_flag sRedisMgrInit;
 };
 
-template <typename Flag>
-std::atomic_flag RedisMgrBase<Flag>::sRedisMgrInit = ATOMIC_FLAG_INIT;
+template <typename _Tag>
+std::atomic_flag RedisMgrBase<_Tag>::sRedisMgrInit = ATOMIC_FLAG_INIT;
 
-typedef RedisMgrBase<stDefaultFlag> RedisMgr;
+typedef RedisMgrBase<stDefaultTag> RedisMgr;
 
 }; // end of namespace nl::db
 

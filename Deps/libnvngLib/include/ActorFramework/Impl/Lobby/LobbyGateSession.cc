@@ -7,8 +7,7 @@ std::string LobbyGateSession::scPriorityTaskKey = "lobby_gate_load";
 void LobbyGateSession::OnConnect()
 {
 	SuperType::OnConnect();
-        auto ep = _socket.remote_endpoint();
-	LOG_WARN("网关连上来了!!! ip[{}] port[{}]", ep.address().to_string(), ep.port());
+	LOG_WARN("网关连上来了!!!");
 
         GetApp()->_gateSesList.Add(GetID(), shared_from_this());
 }

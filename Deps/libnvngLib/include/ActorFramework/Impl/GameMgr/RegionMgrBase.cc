@@ -7,6 +7,8 @@
 
 // except 用于避免 queueGuid 和 regionGuid 碰撞，导致 agent 添加失败，
 // 只能发送无法接收消息，LobbyServer 的 Player 可能永远无法回到大厅。
+//
+// Note: 禁止使用 void* 代替 guid，当机需要恢复的时候，会出问题。
 template <typename _Ty>
 static int64_t GenGuid(_Ty& l, ERegionType rt)
 {

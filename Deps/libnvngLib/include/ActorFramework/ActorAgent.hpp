@@ -4,7 +4,6 @@
 
 #include "Tools/Util.h"
 #include "ActorFramework/IActor.h"
-#include "Net/ISession.hpp"
 
 namespace nl::net
 {
@@ -423,19 +422,20 @@ template <template<typename, bool, typename, Compress::ECompressType, typename> 
          typename _Iy,
          bool _Sy,
          Compress::ECompressType _Ct=Compress::ECompressType::E_CT_Zstd,
-         typename Flag = stDefaultFlag,
+         typename _Tag = stDefaultTag,
          uint8_t _Offset=12>
-class ActorAgentSession : public _Ty<_Iy, _Sy, MsgActorAgentHeader<_Offset>, _Ct, Flag>
+class ActorAgentSession : public _Ty<_Iy, _Sy, MsgActorAgentHeader<_Offset>, _Ct, _Tag>
 {
 protected :
-        typedef _Ty<_Iy, _Sy, MsgActorAgentHeader<_Offset>, _Ct, Flag> SuperType;
+        typedef _Ty<_Iy, _Sy, MsgActorAgentHeader<_Offset>, _Ct, _Tag> SuperType;
 public :
-        typedef ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, Flag, _Offset> ThisType;
+        typedef ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, _Tag, _Offset> ThisType;
         typedef _Iy ImplType;
         typedef _Ay<ImplType> ActorAgentType;
         typedef std::shared_ptr<ActorAgentType> ActorAgentTypePtr;
         typedef std::weak_ptr<ActorAgentType> ActorAgentTypeWeakPtr;
         typedef typename SuperType::MsgHeaderType MsgHeaderType;
+        typedef typename SuperType::Tag Tag;
         constexpr static Compress::ECompressType CompressType = _Ct;
 
         struct stAgentListInfo
@@ -451,7 +451,7 @@ public :
                 : SuperType(std::move(s), scSize, rcSize)
                   , _agentList("ActorAgentSession_agentList")
         {
-                FLAG_ADD(SuperType::_internalFlag, E_SFT_AutoRebind);
+                SuperType::SetAutoRebind();
         }
 
         ~ActorAgentSession() override
@@ -467,8 +467,7 @@ public :
                 // 只要重连够快，就会导致相同 SID ses 还没析构情况下，新的已经连上来，会在 ServerInit 中死锁。
                 // 若有其它问题，请想其它办法解决。
 
-                if (FLAG_HAS(SuperType::_internalFlag, E_SFT_AutoRebind)
-                    && FLAG_HAS(SuperType::_internalFlag, E_SFT_AlreadyRebind))
+                if (SuperType::IsAutoRebind())
                 {
                         stAgentListInfoPtr info;
                         {
@@ -516,12 +515,11 @@ public :
         {
                 SuperType::MsgHandleServerInit(ses, buf, bufRef);
 
-                if (FLAG_HAS(ses->_internalFlag, E_SFT_AutoRebind))
+                if (ses->IsAutoRebind())
                 {
-                        FLAG_ADD(ses->_internalFlag, E_SFT_AlreadyRebind);
                         auto thisPtr = std::dynamic_pointer_cast<ImplType>(ses);
                         auto m = std::make_shared<MailResult>();
-                        m->set_error_type(thisPtr->RemoteIsCrash() ? E_IET_RemoteCrash : E_IET_None);
+                        m->set_error_type(ses->IsRemoteCrash() ? E_IET_RemoteCrash : E_IET_None);
 
                         stAgentListInfoPtr info;
                         {
@@ -594,12 +592,13 @@ public :
                 {
                 case MsgHeaderType::template MsgTypeMerge<E_MIMT_Internal, E_MIIST_MultiCast>() :
                         {
-                                const auto bodySize = msgMultiCastHead._size - sizeof(typename MsgHeaderType::MsgMultiCastHeader) - msgMultiCastHead._ssize;
+                                const auto bodySize = msgMultiCastHead._size - sizeof(typename MsgHeaderType::MsgMultiCastHeader) - sizeof(uint64_t) - msgMultiCastHead._ssize;
+                                const auto except = *reinterpret_cast<uint64_t*>(buf + sizeof(typename MsgHeaderType::MsgMultiCastHeader) + bodySize);
 
                                 MsgMultiCastInfo idListMsg;
                                 Compress::UnCompressAndParseAlloc(static_cast<Compress::ECompressType>(msgMultiCastHead._sct),
                                                                   idListMsg,
-                                                                  buf + sizeof(typename MsgHeaderType::MsgMultiCastHeader) + bodySize,
+                                                                  buf + sizeof(typename MsgHeaderType::MsgMultiCastHeader) + bodySize + sizeof(uint64_t),
                                                                   msgMultiCastHead._ssize);
 
                                 new (buf) MsgHeaderType(sizeof(MsgHeaderType)+bodySize
@@ -611,11 +610,11 @@ public :
                                                         , msgMultiCastHead._from
                                                         , 0);
                                 auto msgHead = *reinterpret_cast<MsgHeaderType*>(buf);
-                                for (auto& val : idListMsg.id_list())
+                                for (auto id : idListMsg.id_list())
                                 {
-                                        if (val.first != idListMsg.except())
+                                        if (id != except)
                                         {
-                                                auto agent = GetAgent(msgHead._from, val.first);
+                                                auto agent = GetAgent(msgHead._from, id);
                                                 if (agent)
                                                 {
                                                         auto mail = std::make_shared<ActorNetMail<ActorMail, MsgHeaderType>>(agent, msgHead, buf, bufRef);
@@ -754,7 +753,6 @@ public :
         FORCE_INLINE std::size_t GetAgentCnt() { return _agentList.Size(); }
 
 protected :
-        static std::atomic_uint64_t sInternalFlag;
         ThreadSafeUnorderedMap<__uint128_t, ActorAgentTypeWeakPtr> _agentList;
 
 public :
@@ -767,27 +765,18 @@ template <template<typename, bool, typename, Compress::ECompressType, typename> 
          typename _Iy,
          bool _Sy,
          Compress::ECompressType _Ct,
-         typename Flag,
+         typename _Tag,
          uint8_t _Offset>
-std::atomic_uint64_t ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, Flag, _Offset>::sInternalFlag;
+SpinLock ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, _Tag, _Offset>::_agentListBySIDMutex_;
 
 template <template<typename, bool, typename, Compress::ECompressType, typename> typename _Ty,
          template <typename> typename _Ay,
          typename _Iy,
          bool _Sy,
          Compress::ECompressType _Ct,
-         typename Flag,
+         typename _Tag,
          uint8_t _Offset>
-SpinLock ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, Flag, _Offset>::_agentListBySIDMutex_;
-
-template <template<typename, bool, typename, Compress::ECompressType, typename> typename _Ty,
-         template <typename> typename _Ay,
-         typename _Iy,
-         bool _Sy,
-         Compress::ECompressType _Ct,
-         typename Flag,
-         uint8_t _Offset>
-std::unordered_map<int64_t, typename ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, Flag, _Offset>::stAgentListInfoPtr> ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, Flag, _Offset>::_agentListBySID;
+std::unordered_map<int64_t, typename ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, _Tag, _Offset>::stAgentListInfoPtr> ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, _Tag, _Offset>::_agentListBySID;
 
 }; // end of namespace nl::net
 

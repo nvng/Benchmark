@@ -23,16 +23,40 @@ option optimize_for = LITE_RUNTIME;
 
 enum EMsgClientLoginSubType
 {
-  E_MCLST_Login = 0x0;
+        E_MCLST_Login = 0x0;
+}
+
+enum EClientLoginFlag
+{
+        E_CLF_New = 0;
 }
 
 message MsgClientLoginCheck
 {
-  string uuid = 1;
-  string channel = 2;
+        string app_key = 1;
+        sint64 app_id = 2;
+        sint64 user_id = 3;
+        sint64 times = 4;
+        string token = 5;
+        string sign = 6;
+
+        sint64 flag = 10;
 }
 
 message MsgClientLoginCheckRet
 {
-  string user_name = 2;
+        sint64 code = 1;
+        string msg = 2;
+
+        sint64 id = 10;
+}
+
+message DBLoginInfo
+{
+        sint64 app_id = 1;
+        sint64 user_id = 2;
+        string token = 4;
+        string sign = 5;
+
+        sint64 player_guid = 10;
 }

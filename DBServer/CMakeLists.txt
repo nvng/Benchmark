@@ -4,6 +4,8 @@ set(SRC_DIR
         ../Deps/libnvngLib/include/ActorFramework/Impl/DB
         )
 
+include_directories(../Deps/libnvngLib/include/DB)
+
 include($ENV{HOME}/git/config/cmake/project.cmake)
 
 project(DBServer.out)

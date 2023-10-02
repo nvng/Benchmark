@@ -29,6 +29,7 @@ enum EMsgClientShopSubType
   E_MCSST_BuyOther = 0x3;
   E_MCSST_Sell = 0x4;
   E_MCSST_ChouKa = 0x5;
+  E_MCSST_Unlock = 0x6;
 }
 
 message MsgShopBuy
@@ -64,6 +65,7 @@ message MsgShopRefresh
 {
   EClientErrorType error_type = 1;
   sint64 id = 2;
+  sint64 param = 3;
 
   MsgShop shop = 10;
   MsgShopPlayerData shop_player_data = 11;
@@ -78,6 +80,13 @@ message MsgShopChouKa
 
   repeated MsgPlayerChange player_change_list = 10;
   repeated MsgShopPlayerData.MsgParamItem param_item_list = 11;
+}
+
+message MsgShopUnlock
+{
+  EClientErrorType error_type = 1;
+  sint64 shop_cfg_id = 2;
+  sint64 id = 3;
 }
 
 message MsgShopPlayerDataItem
@@ -98,6 +107,9 @@ message MsgShopPlayerData
   }
   repeated MsgParamItem param_item_list = 40;
   repeated MsgShopPlayerDataItem item_list = 50;
+  repeated sint64 unlocked_id_list = 60;
+  sint64 refresh_cnt = 70;
+  sint64 refresh_total_cnt_daily = 80;
 }
 
 message MsgShopItem

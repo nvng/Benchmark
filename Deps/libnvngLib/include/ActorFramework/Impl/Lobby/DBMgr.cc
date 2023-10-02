@@ -13,6 +13,7 @@ bool DBMgr::Init()
 
 bool DBMgr::LoadPlayer(const PlayerBasePtr& p)
 {
+        return true;
 	auto ses = DistSession(p->GetID());
 	if (!ses)
         {
@@ -129,6 +130,7 @@ bool DBMgr::LoadPlayer(const PlayerBasePtr& p)
 
 bool DBMgr::SavePlayer(const PlayerBasePtr& p, bool isDelete)
 {
+        return true;
 	auto ses = DistSession(p->GetID());
 	if (!ses)
         {

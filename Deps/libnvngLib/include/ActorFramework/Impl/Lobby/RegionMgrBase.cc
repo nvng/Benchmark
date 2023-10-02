@@ -425,7 +425,7 @@ void RegionMgrBase::WaitForTerminate()
 // {{{ MainCityActor
 
 MainCityActor::MainCityActor()
-        : ActorImpl(GenGuid(), 1 << 16)
+        : ActorImpl(GenGuid(), 1 << 15)
 {
 }
 

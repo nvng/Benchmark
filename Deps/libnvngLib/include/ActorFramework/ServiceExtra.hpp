@@ -18,23 +18,28 @@ enum EServiceType
 constexpr bool CalServiceTypeIsServer(EServiceType st)
 { return E_ServiceType_Server == st; }
 
-template <typename ServiceType, bool IsServer>
+template <typename ServiceType, bool IsServer, typename _Tag = stDefaultTag>
 class ServiceSession
         : public ActorAgentSession<TcpSession
                 , ActorAgent
-                , ServiceSession<ServiceType, IsServer>
-                , IsServer>
+                , ServiceSession<ServiceType, IsServer, _Tag>
+                , IsServer
+                , Compress::ECompressType::E_CT_ZLib
+                , _Tag>
 {
 public :
         typedef ActorAgentSession<TcpSession
                 , ActorAgent
-                , ServiceSession<ServiceType, IsServer>
+                , ServiceSession<ServiceType, IsServer, _Tag>
                 , IsServer
+                , Compress::ECompressType::E_CT_ZLib
+                , _Tag
                 > SuperType;
-        typedef ServiceSession<ServiceType, IsServer> ThisType;
+        typedef ServiceSession<ServiceType, IsServer, _Tag> ThisType;
 
         typedef typename SuperType::MsgHeaderType MsgHeaderType;
         typedef typename SuperType::ActorAgentType ActorAgentType;
+        typedef typename SuperType::Tag Tag;
 
         struct stServiceMessageWapper : public stActorMailBase
         {
@@ -44,10 +49,9 @@ public :
         };
 
 public :
-        ServiceSession(typename SuperType::SocketType&& s)
+        explicit ServiceSession(typename SuperType::SocketType&& s)
                 : SuperType(std::move(s))
         {
-                FLAG_DEL(SuperType::_internalFlag, E_SFT_AutoRebind);
         }
 
         void OnConnect() override
@@ -77,7 +81,7 @@ public :
         DECLARE_SHARED_FROM_THIS(ServiceSession);
 };
 
-template <typename SessionType, typename ServerInfoType>
+template <typename ServiceType, typename SessionType, typename ServerInfoType>
 class SessionDistributeNull
 {
 public :
@@ -87,7 +91,7 @@ public :
         FORCE_INLINE void RemoveSession(const std::shared_ptr<SessionType>& ses) { assert(false); }
 };
 
-template <typename SessionType, typename ServerInfoType>
+template <typename ServiceType, typename SessionType, typename ServerInfoType>
 class SessionDistributeMod
 {
 public :
@@ -128,7 +132,7 @@ private :
         std::vector<std::weak_ptr<SessionType>> _sesArr;
 };
 
-template <typename SessionType, typename ServerInfoType>
+template <typename ServiceType, typename SessionType, typename ServerInfoType>
 class SessionDistributeSID
 {
 public :
@@ -138,9 +142,9 @@ public :
 
                 if constexpr (!SessionType::IsServer)
                 {
-                        _checkFinishTimer.StartForever(10, 1, [this, taskKey{ std::string(taskKey) }]() {
+                        ::nl::util::SteadyTimer::StartForever(10, 1, [taskKey{ std::string(taskKey) }]() {
                                 int64_t cnt = 0;
-                                for (auto& ws : _sesArr)
+                                for (auto& ws : ServiceType::GetInstance()->_sesDistribute._sesArr)
                                 {
                                         auto s = ws.lock();
                                         if (s)
@@ -154,7 +158,8 @@ public :
                                 }
                                 else
                                 {
-                                        LOG_WARN("SessionDistributeSID need all session connected!!! need[{}] cur[{}] taskKey[{}]", _sesArr.size(), cnt, taskKey);
+                                        LOG_WARN("SessionDistributeSID need all session connected!!! need[{}] cur[{}] taskKey[{}]"
+                                                 , ServiceType::GetInstance()->_sesDistribute._sesArr.size(), cnt, taskKey);
                                         return true;
                                 }
                         });
@@ -200,7 +205,6 @@ public :
         }
 
 private :
-        ::nl::util::SteadyTimer _checkFinishTimer;
         SpinLock _sesArrMutex;
         std::vector<std::weak_ptr<SessionType>> _sesArr;
 };
@@ -249,7 +253,7 @@ public :
                 }
                 else if constexpr (E_ServiceType_Client == ServiceType)
                 {
-                        ::nl::net::NetMgr::GetInstance()->Connect(std::forward<Args>(args)..., [](auto&& s) {
+                        ::nl::net::NetMgrBase<typename SessionType::Tag>::GetInstance()->Connect(std::forward<Args>(args)..., [](auto&& s) {
                                 return std::make_shared<SessionType>(std::move(s));
                         });
                 }
@@ -268,7 +272,7 @@ public :
         template <typename ... Args>
         bool StartServer(uint16_t port, Args ... args)
         {
-                ::nl::net::NetMgr::GetInstance()->Listen(port, [](auto&& s, const auto& sslCtx) {
+                ::nl::net::NetMgrBase<typename SessionType::Tag>::GetInstance()->Listen(port, [](auto&& s, const auto& sslCtx) {
                         return std::make_shared<SessionType>(std::move(s));
                 });
 
@@ -346,7 +350,7 @@ private :
         class ServiceName##ServiceBase : public ServiceExtra<ServiceName##Actor \
                                , ServiceName##ServiceBase<_St, ServerInfo> \
                                , st<ServiceName##ServiceBase<_St, ServerInfo>, CalServiceTypeIsServer(_St)> \
-                               , dt<st<ServiceName##ServiceBase<_St, ServerInfo>, CalServiceTypeIsServer(_St)>, ServerInfo> \
+                               , dt<ServiceName##ServiceBase<_St, ServerInfo>, st<ServiceName##ServiceBase<_St, ServerInfo>, CalServiceTypeIsServer(_St)>, ServerInfo> \
                                , _St> \
                            , public Singleton<ServiceName##ServiceBase<_St, ServerInfo>> { \
         private : \
@@ -355,7 +359,7 @@ private :
                  typedef ServiceExtra<ServiceName##Actor \
                                    , ServiceName##ServiceBase<_St, ServerInfo> \
                                    , st<ServiceName##ServiceBase<_St, ServerInfo>, CalServiceTypeIsServer(_St)> \
-                                   , dt<st<ServiceName##ServiceBase<_St, ServerInfo>, CalServiceTypeIsServer(_St)>, ServerInfo> \
+                                   , dt<ServiceName##ServiceBase<_St, ServerInfo>, st<ServiceName##ServiceBase<_St, ServerInfo>, CalServiceTypeIsServer(_St)>, ServerInfo> \
                                    , _St> SuperType; \
                 typedef ServiceName##ServiceBase<_St, ServerInfo> ThisType; \
                 typedef typename SuperType::SessionType SessionType; \

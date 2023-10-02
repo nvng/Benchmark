@@ -44,7 +44,7 @@ public :
         LobbyGateSession(typename SuperType::SocketType&& s)
                 : SuperType(std::move(s))
         {
-                FLAG_DEL(_internalFlag, E_SFT_AutoRebind);
+                DelAutoRebind();
         }
 
 	void OnConnect() override;

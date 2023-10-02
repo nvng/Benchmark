@@ -1,0 +1,8 @@
+#	ID	玩法名	描述	类型	人数限制	机器人限制	机器人请求刷频率(多少秒请求一个)	旁观人数限制	场景状态时限	玩家状态时限	自定义参数1	自定义参数2	<end>
+#	int	string	string	int	int[]	int[]	int[]	int[]	int[]	int[]	int[]	int[]	<end>
+#	idx	name	desc	type	player_limit	robot_limit	robot_req_rate	watcher_limit	region_state_time_limit	fighter_state_time_limit	Param_1	Param_2	<end>
+#	1003000001	大厅	主场景	1	-1	-1	-1	-1	-1	-1	20	0	<end>
+#	1003000002	排位赛	PVP	200	1|8	0|7	-1	-1	30000|20000|3000|900000|1000	-1	1	1	<end>
+#	1003000003	自定义模式	多人单机	100	2|8	-1	-1	-1	30000|20000|3000|900000|1000	-1	1	2	<end>
+#	1003000004	每日比赛	比赛PVP	201	8|8	-1	-1	-1	30000|20000|3000|900000|1000	-1	1	3	<end>
+#	1003000005	无尽模式	单人单机	101	1|1	-1	-1	-1	30000|20000|3000|80000000|1000	-1	2	4	<end>

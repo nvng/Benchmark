@@ -34,21 +34,23 @@ template <typename _Ty
         , bool _Sy = true
         , typename _My = MsgActorAgentHeaderType
         , Compress::ECompressType _Ct = Compress::ECompressType::E_CT_Zstd
-        , typename Flag = stDefaultFlag>
-class TcpSession : public SessionImpl<_Ty, _Sy, _My, _Ct, Flag>
+        , typename _Tag = stDefaultTag>
+class TcpSession : public SessionImpl<_Ty, _Sy, _My, _Ct, _Tag>
 {
-        typedef SessionImpl<_Ty, _Sy, _My, _Ct, Flag> SuperType;
-        typedef TcpSession<_Ty, _Sy, _My, _Ct, Flag> ThisType;
+        typedef SessionImpl<_Ty, _Sy, _My, _Ct, _Tag> SuperType;
+        typedef TcpSession<_Ty, _Sy, _My, _Ct, _Tag> ThisType;
         typedef _Ty ImplType;
 
 public :
         typedef boost::asio::ip::tcp::socket SocketType;
         typedef boost::asio::ip::tcp::endpoint EndPointType;
         typedef _My MsgHeaderType;
+        typedef typename SuperType::Tag Tag;
         constexpr static Compress::ECompressType CompressType = _Ct;
         constexpr static bool IsServer = _Sy;
-        constexpr static std::size_t cRecvChannelSize = 1 << 10;
-        constexpr static std::size_t cSendChannelSize = 1 << 16;
+        constexpr static std::size_t cRecvChannelSize = 1 << 9;
+        constexpr static std::size_t cSendChannelSize = 1 << 15; // 上限，超过效率明显降低。
+        // constexpr static std::size_t cSendChannelSize = 1 << 12; // 下限
 
 public :
         TcpSession(SocketType&& s
@@ -60,27 +62,35 @@ public :
                   , _sendChannel(scSize)
         {
                 if constexpr (!IsServer)
-                        FLAG_ADD(SuperType::_internalFlag, E_SFT_AutoReconnect);
+                        SuperType::SetAutoReconnect();
         }
 
         ~TcpSession() override
         {
-                boost::system::error_code ec;
-                _socket.close(ec);
+        }
+
+        void OnEstablish() override
+        {
+                SuperType::OnEstablish();
         }
 
         void OnConnect() override
         {
                 SuperType::OnConnect();
-                LOG_WARN("连接成功!!! local[{}:{}] remote[{}:{}]",
-                         _socket.local_endpoint().address().to_string(),
-                         _socket.local_endpoint().port(),
-                         _socket.remote_endpoint().address().to_string(),
-                         _socket.remote_endpoint().port());
 
                 boost::system::error_code ec;
                 _socket.set_option(boost::asio::socket_base::reuse_address(true), ec);
                 _socket.set_option(boost::asio::ip::tcp::no_delay(true), ec);
+
+                boost::asio::ip::tcp::endpoint localEndPoint = _socket.local_endpoint(ec);
+                boost::asio::ip::tcp::endpoint remoteEndPoint = _socket.remote_endpoint(ec);
+
+                LOG_WARN("连接成功!!! local[{}:{}] remote[{}:{}] ec[{}]",
+                         localEndPoint.address().to_string(),
+                         localEndPoint.port(),
+                         remoteEndPoint.address().to_string(),
+                         remoteEndPoint.port(),
+                         boost::system::errc::success == ec.value() ? "success" : ec.what());
 
                 DoRecv();
                 std::weak_ptr<ThisType> weakSes = ThisType::shared_from_this();
@@ -92,6 +102,7 @@ public :
                         boost::fibers::fiber(
                              std::allocator_arg,
                              boost::fibers::fixedsize_stack{ 32 * 1024 },
+                             // boost::fibers::segmented_stack{},
                              [weakSes]() {
                                 auto ses = weakSes.lock();
                                 if (!ses)
@@ -130,29 +141,31 @@ public :
                         boost::fibers::fiber(
                              std::allocator_arg,
                              boost::fibers::fixedsize_stack{ 32 * 1024 },
+                             // boost::fibers::segmented_stack{},
                              [weakSes]() {
                                 auto ses = weakSes.lock();
                                 if (!ses)
                                         return;
 
                                 constexpr std::size_t cSendBufInitSize = 1024 * 1024;
-                                auto sendBufBase = new typename ISession::BuffTypePtr::element_type[cSendBufInitSize];
-                                auto sendBuf = sendBufBase + sizeof(MsgTotalHeadType);
+                                auto sendBufRef = std::make_shared<char[]>(cSendBufInitSize);
+                                auto sendBuf = sendBufRef.get() + sizeof(MsgTotalHeadType);
                                 std::size_t _bufSize = cSendBufInitSize;
                                 std::size_t _end = sizeof(MsgTotalHeadType);
                                 std::size_t _totalMsgSize = _end;
 
                                 auto allocCacheBufferFunc = [&](std::size_t needSize) {
-                                        reinterpret_cast<MsgTotalHeadType*>(sendBufBase)->_size = _totalMsgSize;
-                                        ses->DoSend(sendBufBase, _totalMsgSize);
+                                        // LOG_FATAL_IF(_totalMsgSize > _bufSize, "222222222222222222222 _totalMsgSize[{}] _bufSize[{}]", _totalMsgSize, _bufSize);
+                                        reinterpret_cast<MsgTotalHeadType*>(sendBufRef.get())->_size = _totalMsgSize;
+                                        ses->DoSend(sendBufRef, sendBufRef.get(), _totalMsgSize);
 
                                         // 网络压力很大的情况下，一次性分配8M。
-                                        if (0 != needSize && needSize < cSendBufInitSize / 2)
-                                                needSize = cSendBufInitSize * 8;
+                                        if (0 != needSize)
+                                                needSize = std::max<int64_t>(needSize, cSendBufInitSize * 8);
                                         _bufSize = cSendBufInitSize > needSize ? cSendBufInitSize : needSize;
-                                        sendBufBase = new typename ISession::BuffTypePtr::element_type[_bufSize];
-                                        sendBuf = sendBufBase + sizeof(MsgTotalHeadType);
-                                        _end = sendBuf - sendBufBase;
+                                        sendBufRef = std::make_shared<char[]>(_bufSize);
+                                        sendBuf = sendBufRef.get() + sizeof(MsgTotalHeadType);
+                                        _end = sendBuf - sendBufRef.get();
                                         _totalMsgSize = _end;
                                 };
 
@@ -162,7 +175,7 @@ public :
                                         if (boost::fibers::channel_op_status::success == ses->_sendChannel.try_pop(bufInfo))
                                         {
 __direct_deal__ :
-                                                const auto& msgHead = bufInfo._head;
+                                                const auto msgHead = bufInfo._head;
                                                 if (_bufSize - _end < msgHead._size)
                                                         allocCacheBufferFunc(msgHead._size + sizeof(MsgTotalHeadType));
 
@@ -213,8 +226,9 @@ __direct_deal__ :
                                                                 Compress::ECompressType ct = Compress::ECompressType::E_CT_None;
                                                                 if (pbInfo->_msg)
                                                                         std::tie(msgSendSize, ct) = SuperType::SerializeAndCompress(*pbInfo->_msg, sendBuf+sizeof(typename MsgHeaderType::MsgMultiCastHeader));
-                                                                auto [idsMsgSendSize, sct] = SuperType::SerializeAndCompress(*std::reinterpret_pointer_cast<google::protobuf::MessageLite>(pbInfo->_msgExtra), sendBuf+sizeof(typename MsgHeaderType::MsgMultiCastHeader)+msgSendSize);
-                                                                realSendSize = sizeof(typename MsgHeaderType::MsgMultiCastHeader) + msgSendSize + idsMsgSendSize;
+                                                                auto [idsMsgSendSize, sct] = SuperType::SerializeAndCompress(*std::reinterpret_pointer_cast<google::protobuf::MessageLite>(pbInfo->_msgExtra), sendBuf+sizeof(typename MsgHeaderType::MsgMultiCastHeader)+msgSendSize+sizeof(uint64_t));
+                                                                *reinterpret_cast<uint64_t*>(sendBuf + sizeof(typename MsgHeaderType::MsgMultiCastHeader) + msgSendSize) = msgHead._to;
+                                                                realSendSize = sizeof(typename MsgHeaderType::MsgMultiCastHeader) + msgSendSize + sizeof(uint64_t) + idsMsgSendSize;
                                                                 new (sendBuf) typename MsgHeaderType::MsgMultiCastHeader(realSendSize,
                                                                                                                          E_MIMT_Internal, E_MIIST_MultiCast, msgHead.MainType(), msgHead.SubType(),
                                                                                                                          ct, sct, idsMsgSendSize, msgHead._from);
@@ -256,8 +270,6 @@ __direct_deal__ :
                                         }
                                 }
 __end__ :
-                                delete[] sendBufBase;
-
                                 ses.reset();
                                 while (true)
                                 {
@@ -272,55 +284,69 @@ __end__ :
                 });
         }
 
-        void Close(int32_t reasonType) override
+        void OnClose(int32_t reasonType) override
         {
-                SuperType::Close(reasonType);
+                SuperType::OnClose(reasonType);
+
+                /*
+                std::weak_ptr<ThisType> weakPtr = shared_from_this();
+                boost::asio::post(_socket.get_executor(), [weakPtr]() {
+                        auto thisPtr = weakPtr.lock();
+                        if (thisPtr)
+                        {
+                                boost::system::error_code ec;
+                                thisPtr->_socket.shutdown(boost::asio::socket_base::shutdown_both, ec);
+                                thisPtr->_socket.close(ec);
+                        }
+                });
+                */
 
                 _recvChannel.push(nullptr);
                 _sendChannel.push(stSessionSendBufInfo<MsgHeaderType>{});
         }
 
-        void DoSend(typename SuperType::BuffTypePtr::element_type* buf = nullptr, std::size_t size = 0)
+        void DoSend(const typename SuperType::BuffTypePtr& bufRef = nullptr, typename SuperType::BuffTypePtr::element_type* buf = nullptr, std::size_t size = 0)
         {
-                std::lock_guard l(_bufListMutex);
+                LOCK_GUARD(_bufListMutex, 0, "DoSend");
                 if (nullptr != buf && 0 != size)
-                        _bufList.emplace_back(boost::asio::const_buffer{ buf, size });
-
-                if (!FLAG_HAS(SuperType::_internalFlag, E_SFT_InSend))
                 {
-                        FLAG_ADD(SuperType::_internalFlag, E_SFT_InSend);
+                        _bufList.emplace_back(boost::asio::const_buffer{ buf, size });
+                        _bufRefList.emplace_back(bufRef);
+                }
+
+                // TODO:
+                if (!_bufList.empty() && !SuperType::IsInSend())
+                {
+                        SuperType::SetInSend();
                         std::weak_ptr<TcpSession> weakSes = ThisType::shared_from_this();
-                        auto bufList = std::make_shared<std::vector<boost::asio::const_buffer>>(std::move(_bufList));
-                        boost::asio::async_write(_socket, *bufList, [weakSes, bufList](const auto& ec, std::size_t size) {
+                        // _bufList 使用 std::move 无效。
+                        boost::asio::async_write(_socket, _bufList, [weakSes, brl{ std::move(_bufRefList) }](const auto& ec, std::size_t size) {
                                 /*
                                  * async_write 内部异步多部操作，因此不能同时存在多个 async_write 操作，
                                  * 必须等待返回后再次调用 async_write。
                                  */
 
-                                for (auto& val : *bufList)
-                                        delete[] (typename ISession::BuffTypePtr::element_type*)val.data();
-
                                 auto ses = weakSes.lock();
-                                if (!ses)
-                                        return;
-
-                                FLAG_DEL(ses->_internalFlag, E_SFT_InSend);
-                                if (!ec)
+                                if (ses)
                                 {
-                                        bool ret = true;
-                                        {
-                                                std::lock_guard l(ses->_bufListMutex);
-                                                ret = ses->_bufList.empty();
-                                        }
-
-                                        if (!ret)
+                                        ses->DelInSend();
+                                        if (!ec)
                                                 ses->DoSend();
-                                }
-                                else
-                                {
-                                        ses->OnError(ec);
+                                        else
+                                                ses->OnError(ec);
                                 }
                         });
+
+                        if (_bufList.capacity() <= 4)
+                        {
+                                _bufList.clear();
+                        }
+                        else
+                        {
+                                std::exchange(_bufList, decltype(_bufList){});
+                                _bufList.reserve(4);
+                        }
+                        _bufRefList.reserve(4);
                 }
         }
 
@@ -417,7 +443,7 @@ __end__ :
 
         FORCE_INLINE void MultiCast(const std::shared_ptr<google::protobuf::MessageLite>& msg,
                                     const std::shared_ptr<MsgMultiCastInfo>& idsMsg,
-                                    uint64_t mt, uint64_t st, uint64_t from)
+                                    uint64_t mt, uint64_t st, uint64_t from, uint64_t to)
         {
                 if (!idsMsg || idsMsg->id_list_size() <= 0)
                         return;
@@ -429,8 +455,8 @@ __end__ :
                 info->_msg = msg;
                 info->_msgExtra = idsMsg;
                 _sendChannel.push({
-                        MsgHeaderType(sizeof(typename MsgHeaderType::MsgMultiCastHeader) + msgByteSize + Compress::CompressedSize<CompressType>(msgByteSize) + idsMsgByteSize + Compress::CompressedSize<CompressType>(idsMsgByteSize),
-                                      Compress::ECompressType::E_CT_None, mt, st, MsgHeaderType::E_RMT_Send, 0, from, 0),
+                        MsgHeaderType(sizeof(typename MsgHeaderType::MsgMultiCastHeader) + msgByteSize + Compress::CompressedSize<CompressType>(msgByteSize) + sizeof(uint64_t) + idsMsgByteSize + Compress::CompressedSize<CompressType>(idsMsgByteSize),
+                                      Compress::ECompressType::E_CT_None, mt, st, MsgHeaderType::E_RMT_Send, 0, from, to),
                                 E_SSBT_MultiCast,
                                 nullptr,
                                 info
@@ -449,7 +475,8 @@ __end__ :
                 });
         }
 
-public :
+private :
+        friend class ::nl::net::NetMgrBase<_Tag>;
         SocketType _socket;
 
         boost::fibers::buffered_channel<ISession::BuffTypePtr> _recvChannel;
@@ -457,6 +484,7 @@ public :
 
         SpinLock _bufListMutex;
         std::vector<boost::asio::const_buffer> _bufList;
+        std::vector<typename SuperType::BuffTypePtr> _bufRefList;
         
         MsgTotalHeadType _msgTotalHead;
 

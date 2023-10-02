@@ -1,5 +1,5 @@
-#	id	名称	每次持续时间	持续时间软上限	每天领取的掉落id	每日关卡次数增加	扫荡次数增加	全局金币加成	全局经验加成	固定商店额外折扣	免广告领奖	刷新次数增加	描述文本	<end>
-#	int	string	int	int	int	int	int	int	int	int	int	int	string[]	<end>
-#	idx	name	days	days_limit	dayli_loot	dayli_stage	dayli_clean	gold_bouns	exp_bouns	shop_sale	close_ad	refresh_grow	descripe	<end>
-#	75000000	月卡	30	90	65600101	1	1	0	0	0	0	1	每日关卡挑战次数<color=#7FFF00>+1</color>|扫荡次数<color=#7FFF00>+1</color>|升级选项刷新次数<color=#7FFF00>+1</color>	<end>
-#	75000001	至尊月卡	30	90	65600102	0	2	2000	2000	0	1	0	扫荡次数<color=#7FFF00>+2</color>|金币加成<color=#7FFF00>+20%</color>|经验值加成<color=#7FFF00>+20%</color>|可不看广告直接领奖	<end>
+#	id	名称	每次持续时间	持续时间软上限	每天领取的掉落id	比赛金币加成	比赛经验加成	额外道具栏数量	专属角色	专属头像	专属头像框	专属道具皮肤	排位额外免扣分次数	排位赛额外加成场次	排位赛额外加成积分	免广告领奖	<end>
+#	int	string	int	int	int	int	int	int	int	int	int	int	int	int	int	bool	<end>
+#	idx	name	days	daysLimit	dayLoot	addGold	addExp	itemField	hero	head	headSculpture	itemSkin	deductiblePoints	additionalNumber	additionalPoints	close_ad	<end>
+#	1210000001	白银VIP	30	35	1201000101	300	300	0	1102000014	1208000014	1208010002	1201000103	0	0	0	0	<end>
+#	1210000002	黄金VIP	30	35	1201000102	500	500	1	0	0	0	1201000104	0	0	0	1	<end>

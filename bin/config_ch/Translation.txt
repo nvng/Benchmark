@@ -1,0 +1,673 @@
+#	ID	名称	中文文本	繁体文本	美式英语	<end>
+#	int	string	string	string	string	<end>
+#	idx	name	zh_CN	zh_TN	en_US	<end>
+#	1504000001	策划文本1	工程师阿修	工程師阿修	Ashu	<end>
+#	1504000002	策划文本2	阿修是工程师，他听说腾跃岛有永恒能源。为了赢得它，阿修穿弹簧鞋来了。	阿修是工程師，他聽說騰躍島有永恆能源。為了贏得它，阿修穿彈簧鞋來了。	Ashiu is an engineer who heard about the Eternal Energy on Leap Island.	<end>
+#	1504000003	策划文本3	威利船长	威利船長	Willy	<end>
+#	1504000004	策划文本4	威利船长是海盗。在一次开辟新商路的探索航行中，他发现了腾跃岛。	威利船長是海盜。在一次開闢新商路的探索航行中，他發現了騰躍島。	He found Leap Isle while explorin' on a voyage aimin' to make trade routes.	<end>
+#	1504000005	策划文本5	柴旋风	柴旋風	Xuanfeng	<end>
+#	1504000006	策划文本6	柴旋风是从东方旅行来的狗狗。在东方，大家会使用轻功来增强跳跃力。	柴旋風是從東方旅行來的狗狗。在東方，大家會使用輕功來增強跳躍力。	He is a dog from the East. He use kungfu to enhance jumping ability.	<end>
+#	1504000007	策划文本7	薇尔	薇爾	Veil	<end>
+#	1504000008	策划文本8	薇尔是村雨研究所的新猫类实验体4号，具有空间感知能力。她要找回记忆。	薇爾是村雨研究所的新貓類實驗體4號，具有空間感知能力。她要找回記憶。	She is the new type cat experimental subject of the Research Institute.	<end>
+#	1504000009	策划文本9	航天员玛丽	航天員瑪麗	Mary	<end>
+#	1504000010	策划文本10	玛丽是航天实习生，宇航服能制造和太空相似的低重力，但需要大量的训练。	瑪麗是航天實習生，宇航服能製造和太空相似的低重力，但需要大量的訓練。	Mary is astronaut. Her Spacesuit mimic low gravity but need lots train.	<end>
+#	1504000011	策划文本11	护士特蕾莎	護士特蕾莎	Teresa	<end>
+#	1504000012	策划文本12	特蕾莎是跳跃比赛的医疗人员，在换班后的休息时间也会参与一些比赛。	特蕾莎是跳躍比賽的醫療人員，在換班後的休息時間也會參與一些比賽。	Teresa is a medical staff member for the jumping competition.	<end>
+#	1504000013	策划文本13	孙安娴	孫安嫻	Anxian	<end>
+#	1504000014	策划文本14	孙安娴是东方的杂技演员，为了宣传剧团，她利用假期参加比赛来了。	孫安嫻是東方的雜技演員，為了宣傳劇團，她利用假期參加比賽來了。	She is an acrobat from the East. She participated to promote her troupe.	<end>
+#	1504000015	策划文本15	闪电骑手	閃電騎手	Thunder	<end>
+#	1504000016	策划文本16	闪电骑手擅长跑酷送餐，比赛正合他的心意，出于兴趣，他立马报了名。	閃電騎手擅長跑酷送餐，比賽正合他的心意，出於興趣，他立馬報了名。	He is good at parkour to delivery. The competition suits his interests.	<end>
+#	1504000017	策划文本17	默认获得	默認獲得	Default Rewards	<end>
+#	1504000018	策划文本18	商店购买获取	商店購買獲取	Store Rewards	<end>
+#	1504000019	策划文本19	首充礼包获取	首充禮包獲取	First Pay Rewards	<end>
+#	1504000020	策划文本20	开服3日登陆活动获取	開服3日登陸活動獲取	3 days server opening event Rewards	<end>
+#	1504000021	策划文本21	段位首次达到大师Ⅴ获得	段位首次達到大師Ⅴ獲得	Master V rank Rewards at the first time	<end>
+#	1504000022	策划文本22	小袋金币	小袋金幣	10k Gold	<end>
+#	1504000023	策划文本23	可获得10000金币	可獲得10000金幣	Can obtain 10,000 gold.	<end>
+#	1504000024	策划文本24	大袋金币	大袋金幣	30k Gold	<end>
+#	1504000025	策划文本25	可获得30000金币	可獲得30000金幣	Can obtain 30,000 gold.	<end>
+#	1504000026	策划文本26	大箱金币	大箱金幣	50k Gold	<end>
+#	1504000027	策划文本27	可获得50000金币	可獲得50000金幣	Can obtain 50,000 gold.	<end>
+#	1504000028	策划文本28	孙安娴（3天）	孫安嫻（3天）	Anxian (3 days)	<end>
+#	1504000029	策划文本29	可使用角色孙安娴，3天后失效	可使用角色孫安嫻，3天后失效	Can experience Anxian for 3 days	<end>
+#	1504000030	策划文本30	孙安娴（30天）	孫安嫻（30天）	Anxian (30 days)	<end>
+#	1504000031	策划文本31	可使用角色孙安娴，30天后失效	可使用角色孫安嫻，30天后失效	Can experience Anxian for 30 days	<end>
+#	1504000032	策划文本32	方形草地	方形草地	Square grassland	<end>
+#	1504000033	策划文本33	方形石头	方形石頭	Square stone	<end>
+#	1504000034	策划文本34	方形泥土	方形泥土	Square soil	<end>
+#	1504000035	策划文本35	平整方草地	平整方草地	Leveled square grassland	<end>
+#	1504000036	策划文本36	红色楼房	紅色樓房	Red building	<end>
+#	1504000037	策划文本37	蓝色楼房	藍色樓房	Blue building	<end>
+#	1504000038	策划文本38	绿色楼房	綠色樓房	Green building	<end>
+#	1504000039	策划文本39	绿色垃圾桶	綠色垃圾桶	Green garbage bin	<end>
+#	1504000040	策划文本40	蓝色垃圾桶	藍色垃圾桶	Blue garbage bin	<end>
+#	1504000041	策划文本41	黄色垃圾桶	黃色垃圾桶	Yellow garbage bin	<end>
+#	1504000042	策划文本42	红色垃圾桶	紅色垃圾桶	Red garbage bin	<end>
+#	1504000043	策划文本43	麻将桌	麻將桌	Mahjong table	<end>
+#	1504000044	策划文本44	小汽车	小汽車	Small car	<end>
+#	1504000045	策划文本45	方形石头50	方形石頭50	50 square stones	<end>
+#	1504000046	策划文本46	方形石头75	方形石頭75	75 square stones	<end>
+#	1504000047	策划文本47	方形泥土50	方形泥土50	50 square soil	<end>
+#	1504000048	策划文本48	方形泥土75	方形泥土75	75 square soil	<end>
+#	1504000049	策划文本49	平整方形草地50	平整方形草地50	50 leveled square grassland	<end>
+#	1504000050	策划文本50	平整方形草地75	平整方形草地75	75 leveled square grassland	<end>
+#	1504000051	策划文本51	圆形树桩	圓形樹樁	Circular tree stump	<end>
+#	1504000052	策划文本52	圆形草地	圓形草地	Circular grassland	<end>
+#	1504000053	策划文本53	平整圆草地	平整圓草地	Leveled circular grassland	<end>
+#	1504000054	策划文本54	蓝色油桶	藍色油桶	Blue oil drum	<end>
+#	1504000055	策划文本55	红色油桶	紅色油桶	Red oil drum	<end>
+#	1504000056	策划文本56	橙色油桶	橙色油桶	Orange oil drum	<end>
+#	1504000057	策划文本57	圆形草地50	圓形草地50	50 circular grassland	<end>
+#	1504000058	策划文本58	圆形草地75	圓形草地75	75 circular grassland	<end>
+#	1504000059	策划文本59	蓝色油桶50	藍色油桶50	50 blue oil drum	<end>
+#	1504000060	策划文本60	蓝色油桶75	藍色油桶75	75 blue oil drum	<end>
+#	1504000061	策划文本61	红色油桶50	紅色油桶50	50 red oil drum	<end>
+#	1504000062	策划文本62	红色油桶75	紅色油桶75	75 red oil drum	<end>
+#	1504000063	策划文本63	橙色油桶50	橙色油桶50	50 orange oil drum	<end>
+#	1504000064	策划文本64	橙色油桶75	橙色油桶75	75 orange oil drum	<end>
+#	1504000065	策划文本65	红色蘑菇	紅色蘑菇	Red mushroom	<end>
+#	1504000066	策划文本66	圆形花	圓形花	Circular flower	<end>
+#	1504000067	策划文本67	蓝色蘑菇	藍色蘑菇	Blue mushroom	<end>
+#	1504000068	策划文本68	圆形桌子	圓形桌子	Circular table	<end>
+#	1504000069	策划文本69	轮胎	輪胎	Tire	<end>
+#	1504000070	策划文本70	汉堡包	漢堡包	Hamburger	<end>
+#	1504000071	策划文本71	红色蘑菇50	紅色蘑菇50	50 red mushroom	<end>
+#	1504000072	策划文本72	红色蘑菇75	紅色蘑菇75	75 red mushroom	<end>
+#	1504000073	策划文本73	蓝色蘑菇50	藍色蘑菇50	50 blue mushroom	<end>
+#	1504000074	策划文本74	蓝色蘑菇75	藍色蘑菇75	75 blue mushroom	<end>
+#	1504000075	策划文本75	圆形桌子50	圓形桌子50	50 circular table	<end>
+#	1504000076	策划文本76	圆形桌子75	圓形桌子75	75 circular table	<end>
+#	1504000077	策划文本77	轮胎50	輪胎50	50 tire	<end>
+#	1504000078	策划文本78	轮胎75	輪胎75	75 tire	<end>
+#	1504000079	策划文本79	黄色道具台	黃色道具台	Yellow item table	<end>
+#	1504000080	策划文本80	紫色道具台	紫色道具台	Purple item table	<end>
+#	1504000081	策划文本81	喷水台子	噴水台子	Water spray platform	<end>
+#	1504000082	策划文本82	履带台子	履帶台子	Track platform	<end>
+#	1504000083	策划文本83	小袋金币	小袋金幣	Small bag of coins	<end>
+#	1504000084	策划文本84	大袋金币	大袋金幣	Large bag of coins	<end>
+#	1504000085	策划文本85	一盒金币	一盒金幣	Box of coins	<end>
+#	1504000086	策划文本86	白银奖励	白銀獎勵	Silver reward	<end>
+#	1504000087	策划文本87	黄金奖励	黃金獎勵	Gold reward	<end>
+#	1504000088	策划文本88	铂金奖励	鉑金獎勵	Platinum reward	<end>
+#	1504000089	策划文本89	翡翠奖励	翡翠獎勵	Emerald reward	<end>
+#	1504000090	策划文本90	钻石奖励	鑽石獎勵	Gem reward	<end>
+#	1504000091	策划文本91	大师奖励	大師獎勵	Master reward	<end>
+#	1504000092	策划文本92	宗师奖励	宗師獎勵	Grandmaster reward	<end>
+#	1504000093	策划文本93	传奇奖励	傳奇獎勵	Legendary reward	<end>
+#	1504000094	策划文本94	青铜1	青銅1	Bronze 1	<end>
+#	1504000095	策划文本95	青铜2	青銅2	Bronze 2	<end>
+#	1504000096	策划文本96	青铜3	青銅3	Bronze 3	<end>
+#	1504000097	策划文本97	青铜4	青銅4	Bronze 4	<end>
+#	1504000098	策划文本98	青铜5	青銅5	Bronze 5	<end>
+#	1504000099	策划文本99	青铜6	青銅6	Bronze 6	<end>
+#	1504000100	策划文本100	青铜7	青銅7	Bronze 7	<end>
+#	1504000101	策划文本101	青铜8	青銅8	Bronze 8	<end>
+#	1504000102	策划文本102	白银1	白銀1	Silver 1	<end>
+#	1504000103	策划文本103	白银2	白銀2	Silver 2	<end>
+#	1504000104	策划文本104	白银3	白銀3	Silver 3	<end>
+#	1504000105	策划文本105	白银4	白銀4	Silver 4	<end>
+#	1504000106	策划文本106	白银5	白銀5	Silver 5	<end>
+#	1504000107	策划文本107	白银6	白銀6	Silver 6	<end>
+#	1504000108	策划文本108	白银7	白銀7	Silver 7	<end>
+#	1504000109	策划文本109	白银8	白銀8	Silver 8	<end>
+#	1504000110	策划文本110	黄金1	黃金1	Gold 1	<end>
+#	1504000111	策划文本111	黄金2	黃金2	Gold 2	<end>
+#	1504000112	策划文本112	黄金3	黃金3	Gold 3	<end>
+#	1504000113	策划文本113	黄金4	黃金4	Gold 4	<end>
+#	1504000114	策划文本114	黄金5	黃金5	Gold 5	<end>
+#	1504000115	策划文本115	黄金6	黃金6	Gold 6	<end>
+#	1504000116	策划文本116	黄金7	黃金7	Gold 7	<end>
+#	1504000117	策划文本117	黄金8	黃金8	Gold 8	<end>
+#	1504000118	策划文本118	铂金1	鉑金1	Platinum 1	<end>
+#	1504000119	策划文本119	铂金2	鉑金2	Platinum 2	<end>
+#	1504000120	策划文本120	铂金3	鉑金3	Platinum 3	<end>
+#	1504000121	策划文本121	铂金4	鉑金4	Platinum 4	<end>
+#	1504000122	策划文本122	铂金5	鉑金5	Platinum 5	<end>
+#	1504000123	策划文本123	铂金6	鉑金6	Platinum 6	<end>
+#	1504000124	策划文本124	铂金7	鉑金7	Platinum 7	<end>
+#	1504000125	策划文本125	铂金8	鉑金8	Platinum 8	<end>
+#	1504000126	策划文本126	翡翠1	翡翠1	Jade 1	<end>
+#	1504000127	策划文本127	翡翠2	翡翠2	Jade 2	<end>
+#	1504000128	策划文本128	翡翠3	翡翠3	Jade 3	<end>
+#	1504000129	策划文本129	翡翠4	翡翠4	Jade 4	<end>
+#	1504000130	策划文本130	翡翠5	翡翠5	Jade 5	<end>
+#	1504000131	策划文本131	翡翠6	翡翠6	Jade 6	<end>
+#	1504000132	策划文本132	翡翠7	翡翠7	Jade 7	<end>
+#	1504000133	策划文本133	翡翠8	翡翠8	Jade 8	<end>
+#	1504000134	策划文本134	钻石1	鑽石1	Gem 1	<end>
+#	1504000135	策划文本135	钻石2	鑽石2	Gem 2	<end>
+#	1504000136	策划文本136	钻石3	鑽石3	Gem 3	<end>
+#	1504000137	策划文本137	钻石4	鑽石4	Gem 4	<end>
+#	1504000138	策划文本138	钻石5	鑽石5	Gem 5	<end>
+#	1504000139	策划文本139	钻石6	鑽石6	Gem 6	<end>
+#	1504000140	策划文本140	钻石7	鑽石7	Gem 7	<end>
+#	1504000141	策划文本141	钻石8	鑽石8	Gem 8	<end>
+#	1504000142	策划文本142	大师1	大師1	Master 1	<end>
+#	1504000143	策划文本143	大师2	大師2	Master 2	<end>
+#	1504000144	策划文本144	大师3	大師3	Master 3	<end>
+#	1504000145	策划文本145	大师4	大師4	Master 4	<end>
+#	1504000146	策划文本146	大师5	大師5	Master 5	<end>
+#	1504000147	策划文本147	大师6	大師6	Master 6	<end>
+#	1504000148	策划文本148	大师7	大師7	Master 7	<end>
+#	1504000149	策划文本149	大师8	大師8	Master 8	<end>
+#	1504000150	策划文本150	宗师1	宗師1	Sensei 1	<end>
+#	1504000151	策划文本151	宗师2	宗師2	Sensei 2	<end>
+#	1504000152	策划文本152	宗师3	宗師3	Sensei 3	<end>
+#	1504000153	策划文本153	宗师4	宗師4	Sensei 4	<end>
+#	1504000154	策划文本154	宗师5	宗師5	Sensei 5	<end>
+#	1504000155	策划文本155	宗师6	宗師6	Sensei 6	<end>
+#	1504000156	策划文本156	宗师7	宗師7	Sensei 7	<end>
+#	1504000157	策划文本157	宗师8	宗師8	Sensei 8	<end>
+#	1504000158	策划文本158	传奇1	傳奇1	Epic 1	<end>
+#	1504000159	策划文本159	传奇2	傳奇2	Epic 2	<end>
+#	1504000160	策划文本160	传奇3	傳奇3	Epic 3	<end>
+#	1504000161	策划文本161	传奇4	傳奇4	Epic 4	<end>
+#	1504000162	策划文本162	传奇5	傳奇5	Epic 5	<end>
+#	1504000163	策划文本163	传奇6	傳奇6	Epic 6	<end>
+#	1504000164	策划文本164	传奇7	傳奇7	Epic 7	<end>
+#	1504000165	策划文本165	传奇8	傳奇8	Epic 8	<end>
+#	1504000166	策划文本166	散碎钻石	散碎鑽石	Scattered Gems	<end>
+#	1504000167	策划文本167	小袋钻石	小袋鑽石	S-Bag Gems	<end>
+#	1504000168	策划文本168	大袋钻石	大袋鑽石	L-Bag Gems	<end>
+#	1504000169	策划文本169	小盒钻石	小盒鑽石	S-Box Gems	<end>
+#	1504000170	策划文本170	大盒钻石	大盒鑽石	L-Box Gems	<end>
+#	1504000171	策划文本171	一箱钻石	一箱鑽石	Crate Gems	<end>
+#	1504000172	策划文本172	100万钻石	100萬鑽石	1 million gems	<end>
+#	1504000173	策划文本173	100万金币	100萬金幣	1 million golds	<end>
+#	1504000174	策划文本174	金币收集者	金幣收集者	Coin Get	<end>
+#	1504000175	策划文本175	累计获得{0}金币	累計獲得{0}金幣	Get {0} golds	<end>
+#	1504000176	策划文本176	钻石收集者	鑽石收集者	Gem Get	<end>
+#	1504000177	策划文本177	累计获得{0}钻石	累計獲得{0}鑽石	Get {0} gems	<end>
+#	1504000178	策划文本178	消费达人	消費達人	Top Spender	<end>
+#	1504000179	策划文本179	累计消费{0}金币	累計消費{0}金幣	Spent {0} gold	<end>
+#	1504000180	策划文本180	投资大师	投資大師	Investmentor	<end>
+#	1504000181	策划文本181	累计消费{0}钻石	累計消費{0}鑽石	Spent {0} gems	<end>
+#	1504000182	策划文本182	收藏家	收藏家	Get	<end>
+#	1504000183	策划文本183	获得{0}位角色	獲得{0}位角色	Get {0} heros	<end>
+#	1504000184	策划文本184	广告达人	廣告達人	Ad Master	<end>
+#	1504000185	策划文本185	累计观看{0}次广告	累計觀看{0}次廣告	Ad views {0}	<end>
+#	1504000186	策划文本186	登高者	登高者	Climber	<end>
+#	1504000187	策划文本187	玩家等级达到{0}	玩家等級達到{0}	Level {0}	<end>
+#	1504000188	策划文本188	竞技达人	競技達人	Competition	<end>
+#	1504000189	策划文本189	累计参与{0}场比赛	累計參與{0}場比賽	Match {0} times	<end>
+#	1504000190	策划文本190	保证前三	保證前三	Top Three	<end>
+#	1504000191	策划文本191	累计获得{0}次前三名	累計獲得{0}次前三名	Get top three {0}	<end>
+#	1504000192	策划文本192	跳跃专家	跳躍專家	Jumper	<end>
+#	1504000193	策划文本193	成功跳跃{0}个格子	成功跳躍{0}個格子	To jumps {0}	<end>
+#	1504000194	策划文本194	破坏者	破壞者	Destroyer	<end>
+#	1504000195	策划文本195	成功干扰他人{0}次	成功干擾他人{0}次	To hits {0}	<end>
+#	1504000196	策划文本196	防御者	防御者	Defender	<end>
+#	1504000197	策划文本197	成功抵抗干扰{0}次	成功抵抗干擾{0}次	To defenses {0}	<end>
+#	1504000198	策划文本198	道具终结者	道具終結者	Item User	<end>
+#	1504000199	策划文本199	使用{0}个任意道具	使用{0}個任意道具	Items used {0}	<end>
+#	1504000200	策划文本200	道具搜集者	道具蒐集者	Item Get	<end>
+#	1504000201	策划文本201	获得{0}个任意道具	獲得{0}個任意道具	Items get {0}	<end>
+#	1504000202	策划文本202	导弹达人	導彈達人	Missile man	<end>
+#	1504000203	策划文本203	使用{0}个导弹	使用{0}個導彈	Missiles used {0}	<end>
+#	1504000204	策划文本204	飞弹达人	飛彈達人	dart man	<end>
+#	1504000205	策划文本205	使用{0}个飞弹	使用{0}個飛彈	Darts used {0}	<end>
+#	1504000206	策划文本206	香蕉皮达人	香蕉皮達人	Banana man	<end>
+#	1504000207	策划文本207	使用{0}个香蕉皮	使用{0}個香蕉皮	Banana used {0}	<end>
+#	1504000208	策划文本208	护盾达人	護盾達人	Shield man	<end>
+#	1504000209	策划文本209	使用{0}个护盾	使用{0}個護盾	Shields used {0}	<end>
+#	1504000210	策划文本210	急速鞋达人	急速鞋達人	Speed Shoes man	<end>
+#	1504000211	策划文本211	使用{0}个急速鞋	使用{0}個急速鞋	Speed shoes used {0}	<end>
+#	1504000212	策划文本212	导弹收集者	導彈收集者	Missile Get	<end>
+#	1504000213	策划文本213	获得{0}个导弹	獲得{0}個導彈	Missiles get {0}	<end>
+#	1504000214	策划文本214	飞弹收集者	飛彈收集者	Dart Get	<end>
+#	1504000215	策划文本215	获得{0}个飞弹	獲得{0}個飛彈	Darts get {0}	<end>
+#	1504000216	策划文本216	香蕉皮收集者	香蕉皮收集者	Banana Get	<end>
+#	1504000217	策划文本217	获得{0}个香蕉皮	獲得{0}個香蕉皮	Banana get {0}	<end>
+#	1504000218	策划文本218	护盾收集者	護盾收集者	Shield Get	<end>
+#	1504000219	策划文本219	获得{0}个护盾	獲得{0}個護盾	Shields get {0}	<end>
+#	1504000220	策划文本220	急速鞋收集者	急速鞋收集者	Speed Shoes Get	<end>
+#	1504000221	策划文本221	获得{0}个急速鞋	獲得{0}個急速鞋	Speed shoes get {0}	<end>
+#	1504000222	策划文本222	竞技专家	競技專家	Competition man	<end>
+#	1504000223	策划文本223	累次完成{0}场比赛	累次完成{0}場比賽	Natch finish {0}	<end>
+#	1504000224	策划文本224	我是冠军	我是冠軍	Champion	<end>
+#	1504000225	策划文本225	累计获得{0}次第一名	累計獲得{0}次第一名	Champion {0}	<end>
+#	1504000226	策划文本226	独占鳌头	獨占鰲頭	Top Spot	<end>
+#	1504000227	策划文本227	累计获得{0}次独占鳌头	累計獲得{0}次獨占鰲頭	Top spots {0}	<end>
+#	1504000228	策划文本228	导弹专家	導彈專家	Missile man	<end>
+#	1504000229	策划文本229	使用导弹成功命中{0}次	使用導彈成功命中{0}次	Hit with missiles {0}	<end>
+#	1504000230	策划文本230	飞弹专家	飛彈專家	dart man	<end>
+#	1504000231	策划文本231	使用飞弹成功命中{0}次	使用飛彈成功命中{0}次	Hit with darts {0}	<end>
+#	1504000232	策划文本232	香蕉皮专家	香蕉皮專家	Banana man	<end>
+#	1504000233	策划文本233	使用香蕉皮成功干扰{0}次	使用香蕉皮成功干擾{0}次	Hit with banana {0}	<end>
+#	1504000234	策划文本234	使用阿修完成{0}场比赛	使用阿修完成{0}場比賽	Using Ashu {0}	<end>
+#	1504000235	策划文本235	使用船长完成{0}场比赛	使用船長完成{0}場比賽	Using Willy {0}	<end>
+#	1504000236	策划文本236	使用柴旋风完成{0}场比赛	使用柴旋風完成{0}場比賽	Using Xuanfeng {0}	<end>
+#	1504000237	策划文本237	使用薇尔完成{0}场比赛	使用薇爾完成{0}場比賽	Using Veil {0}	<end>
+#	1504000238	策划文本238	使用玛丽完成{0}场比赛	使用瑪麗完成{0}場比賽	Using Mary {0}	<end>
+#	1504000239	策划文本239	使用特蕾莎完成{0}场比赛	使用特蕾莎完成{0}場比賽	Using Teresa {0}	<end>
+#	1504000240	策划文本240	使用孙安娴完成{0}场比赛	使用孫安嫻完成{0}場比賽	Using Anxian {0}	<end>
+#	1504000241	策划文本241	使用骑手完成{0}场比赛	使用騎手完成{0}場比賽	Using Thunder {0}	<end>
+#	1504000242	策划文本242	夏日草原	夏日草原	G-land	<end>
+#	1504000243	策划文本243	静风云层	靜風雲層	C-Clouds	<end>
+#	1504000244	策划文本244	苍蓝海域	蒼藍海域	A-Seas	<end>
+#	1504000245	策划文本245	童心街区	童心街區	C-block	<end>
+#	1504000246	策划文本246	玩具小镇	玩具小鎮	T-town	<end>
+#	1504000247	策划文本247	夏日草原（难）	夏日草原（難）	G-land (H)	<end>
+#	1504000248	策划文本248	静风云层（难）	靜風雲層（難）	C-Clouds (H)	<end>
+#	1504000249	策划文本249	苍蓝海域（难）	蒼藍海域（難）	A-Seas (H)	<end>
+#	1504000250	策划文本250	童心街区（难）	童心街區（難）	C-block (H)	<end>
+#	1504000251	策划文本251	玩具小镇（难）	玩具小鎮（難）	T-town (H)	<end>
+#	1504000252	策划文本252	60钻石	60鑽石	60 gems	<end>
+#	1504000253	策划文本253	300钻石	300鑽石	300 gems	<end>
+#	1504000254	策划文本254	980钻石	980鑽石	980 gems	<end>
+#	1504000255	策划文本255	1280钻石	1280鑽石	1280 gems	<end>
+#	1504000256	策划文本256	328钻石	328鑽石	328 gems	<end>
+#	1504000257	策划文本257	6480钻石	6480鑽石	6480 gems	<end>
+#	1504000258	策划文本258	大厅	大廳	Lobby	<end>
+#	1504000259	策划文本259	主场景	主場景	Main Scene	<end>
+#	1504000260	策划文本260	排位赛	排位賽	Match	<end>
+#	1504000261	策划文本261	PVP	PVP	PVP	<end>
+#	1504000262	策划文本262	自定义模式	自定義模式	Custom	<end>
+#	1504000263	策划文本263	多人单机	多人單機	Singly multiplayer	<end>
+#	1504000264	策划文本264	青铜Ⅲ	青銅Ⅲ	Bronze III	<end>
+#	1504000265	策划文本265	青铜Ⅱ	青銅Ⅱ	Bronze II	<end>
+#	1504000266	策划文本266	青铜Ⅰ	青銅Ⅰ	Bronze I	<end>
+#	1504000267	策划文本267	白银Ⅲ	白銀Ⅲ	Silver III	<end>
+#	1504000268	策划文本268	白银Ⅱ	白銀Ⅱ	Silver II	<end>
+#	1504000269	策划文本269	白银Ⅰ	白銀Ⅰ	Silver I	<end>
+#	1504000270	策划文本270	黄金Ⅲ	黃金Ⅲ	Gold III	<end>
+#	1504000271	策划文本271	黄金Ⅱ	黃金Ⅱ	Gold II	<end>
+#	1504000272	策划文本272	黄金Ⅰ	黃金Ⅰ	Gold I	<end>
+#	1504000273	策划文本273	铂金Ⅳ	鉑金Ⅳ	Platinum IV	<end>
+#	1504000274	策划文本274	铂金Ⅲ	鉑金Ⅲ	Platinum III	<end>
+#	1504000275	策划文本275	铂金Ⅱ	鉑金Ⅱ	Platinum II	<end>
+#	1504000276	策划文本276	铂金Ⅰ	鉑金Ⅰ	Platinum I	<end>
+#	1504000277	策划文本277	翡翠Ⅳ	翡翠Ⅳ	Jade IV	<end>
+#	1504000278	策划文本278	翡翠Ⅲ	翡翠Ⅲ	Jade III	<end>
+#	1504000279	策划文本279	翡翠Ⅱ	翡翠Ⅱ	Jade II	<end>
+#	1504000280	策划文本280	翡翠Ⅰ	翡翠Ⅰ	Jade I	<end>
+#	1504000281	策划文本281	钻石Ⅳ	鑽石Ⅳ	Gem IV	<end>
+#	1504000282	策划文本282	钻石Ⅲ	鑽石Ⅲ	Gem III	<end>
+#	1504000283	策划文本283	钻石Ⅱ	鑽石Ⅱ	Gem II	<end>
+#	1504000284	策划文本284	钻石Ⅰ	鑽石Ⅰ	Gem I	<end>
+#	1504000285	策划文本285	大师Ⅴ	大師Ⅴ	Master V	<end>
+#	1504000286	策划文本286	大师Ⅳ	大師Ⅳ	Master IV	<end>
+#	1504000287	策划文本287	大师Ⅲ	大師Ⅲ	Master III	<end>
+#	1504000288	策划文本288	大师Ⅱ	大師Ⅱ	Master II	<end>
+#	1504000289	策划文本289	大师Ⅰ	大師Ⅰ	Master I	<end>
+#	1504000290	策划文本290	宗师Ⅴ	宗師Ⅴ	Grandmaster V	<end>
+#	1504000291	策划文本291	宗师Ⅳ	宗師Ⅳ	Grandmaster IV	<end>
+#	1504000292	策划文本292	宗师Ⅲ	宗師Ⅲ	Grandmaster III	<end>
+#	1504000293	策划文本293	宗师Ⅱ	宗師Ⅱ	Grandmaster II	<end>
+#	1504000294	策划文本294	宗师Ⅰ	宗師Ⅰ	Grandmaster I	<end>
+#	1504000295	策划文本295	传奇	傳奇	Legendary	<end>
+#	1504000296	策划文本296	商城	商城	Shop	<end>
+#	1504000297	策划文本297	金币	金幣	golds	<end>
+#	1504000298	策划文本298	充值	充值	Pay	<end>
+#	1504000299	策划文本299	钻石	鑽石	Gems	<end>
+#	1504000300	策划文本300	高级货币，可通过奖励、活动、充值等途径获取	高級貨幣，可通過獎勵、活動、充值等途徑獲取	Premium currency, obtainable through rewards, events, and recharging	<end>
+#	1504000301	策划文本301	常用货币，可通过比赛、奖励、活动等途径获取	常用貨幣，可通過比賽、獎勵、活動等途徑獲取	Common currency, obtainable through competitions, rewards, events, etc.	<end>
+#	1504000302	策划文本302	经验	經驗	EXP	<end>
+#	1504000303	策划文本303	用于提升等级，可通过比赛获取	用於提升等級，可通過比賽獲取	Used to level up, obtainable through competitions.	<end>
+#	1504000304	策划文本304	在线礼包功能	在線禮包功能	Online gift pack feature	<end>
+#	1504000305	策划文本305	3天累积登陆	3天累積登陸	3-day login	<end>
+#	1504000306	策划文本306	持续在线，分阶段领取豪华奖品	持續在線，分階段領取豪華獎品	Stay online to get luxury prizes in stages	<end>
+#	1504000307	策划文本307	活动期间内每天登陆都可以签到，领取豪华奖品	活動期間內每天登陸都可以簽到，領取豪華獎品	During the event period, you can sign in every day and get luxury prizes.	<end>
+#	1504000308	策划文本308	首充活动	首充活動	First Pay	<end>
+#	1504000309	策划文本309	首次充值任意金额即可领取奖励	首次充值任意金額即可領取獎勵	Get rewards upon first Pay of any amount.	<end>
+#	1504000310	策划文本310	每一项奖励每天只能领取一次。①玩家本日持续在线时长达到规定时长的场合，就可以领取一次对应奖励。②奖励每天重置，玩家离线时，不会积累在线时长	每一項獎勵每天只能領取一次。 ①玩家本日持續在線時長達到規定時長的場合，就可以領取一次對應獎勵。 ②獎勵每天重置，玩家離線時，不會積累在線時長	Each reward can only be claimed once per day. ① If the player's total online duration for the day meets the specified requirement, they can claim the corresponding reward. ② Rewards reset every day and online duration does not accumulate while offline.	<end>
+#	1504000311	策划文本311	活动持续x天，每天登陆时可以领取当天所对应的奖励，若有未登录的天数，可以花费元宝补签，获得那一天的奖励	活動持續x天，每天登陸時可以領取當天所對應的獎勵，若有未登錄的天數，可以花費元寶補簽，獲得那一天的獎勵	Event lasts for x days. Players can claim the corresponding reward for each day upon logging in. If there are any missed login days, they can spend ingets to make up for it and get the corresponding day's rewards.	<end>
+#	1504000312	策划文本312	导弹	導彈	Missile	<end>
+#	1504000313	策划文本313	飞弹	飛彈	Dart	<end>
+#	1504000314	策划文本314	香蕉皮	香蕉皮	Banana	<end>
+#	1504000315	策划文本315	护盾	護盾	Shield	<end>
+#	1504000316	策划文本316	加速	加速	Speed boost	<end>
+#	1504000317	策划文本317	攻击敌方名次最高的玩家	攻擊敵方名次最高的玩家	Attack player with highest rank in enemy team	<end>
+#	1504000318	策划文本318	攻击距离自身最近的玩家，相同距离优先攻击前方的玩家	攻擊距離自身最近的玩家，相同距離優先攻擊前方的玩家	Attack player closest to self, prioritizing players in front if at the same distance	<end>
+#	1504000319	策划文本319	使用后放置在后方的格子上，玩家落地或起跳会滑倒	使用後放置在後方的格子上，玩家落地或起跳會滑倒	Places banana peel in a grid space behind the player Causes the player to slip and fall upon landing or jumping	<end>
+#	1504000320	策划文本320	抵挡任何攻击，持续3秒	抵擋任何攻擊，持續3秒	Blocks any attack for 3 seconds	<end>
+#	1504000321	策划文本321	自动前进3格	自動前進3格	Automatically moves forward 3 spaces	<end>
+#	1504000322	策划文本322	12时双倍金币卡	12時雙倍金幣卡	12H D.Gold	<end>
+#	1504000323	策划文本323	使用后有效时长12小时，进行比赛获得双倍金币，双倍收益不叠加	使用後有效時長12小時，進行比賽獲得雙倍金幣，雙倍收益不疊加	To get dual Golds in 12H( overlay) at match after used.	<end>
+#	1504000324	策划文本324	24时双倍金币卡	24時雙倍金幣卡	24H D.Gold	<end>
+#	1504000325	策划文本325	使用后有效时长24小时，进行比赛获得双倍金币，双倍收益不叠加	使用後有效時長24小時，進行比賽獲得雙倍金幣，雙倍收益不疊加	To get dual Golds in 24H( overlay) at match after used.	<end>
+#	1504000326	策划文本326	36时双倍金币卡（36时）	36時雙倍金幣卡（36時）	36H D.Gold	<end>
+#	1504000327	策划文本327	使用后有效时长36小时，进行比赛获得双倍金币，双倍收益不叠加	使用後有效時長36小時，進行比賽獲得雙倍金幣，雙倍收益不疊加	To get dual Golds in 36H( overlay) at match after used.	<end>
+#	1504000328	策划文本328	48时双倍金币卡	48時雙倍金幣卡	48H D.Gold	<end>
+#	1504000329	策划文本329	使用后有效时长48小时，进行比赛获得双倍金币，双倍收益不叠加	使用後有效時長48小時，進行比賽獲得雙倍金幣，雙倍收益不疊加	To get dual Golds in 48H( overlay) at match after used.	<end>
+#	1504000330	策划文本330	12时双倍经验卡	12時雙倍經驗卡	12H D.EXP	<end>
+#	1504000331	策划文本331	使用后有效时长12小时，进行比赛获得双倍人物经验，双倍收益不叠加	使用後有效時長12小時，進行比賽獲得雙倍人物經驗，雙倍收益不疊加	To get dual EXP in 12H( overlay) at match after used.	<end>
+#	1504000332	策划文本332	24时双倍经验卡	24時雙倍經驗卡	24H D.EXP	<end>
+#	1504000333	策划文本333	使用后有效时长24小时，进行比赛获得双倍人物经验，双倍收益不叠加	使用後有效時長24小時，進行比賽獲得雙倍人物經驗，雙倍收益不疊加	To get dual EXP in 24H( overlay) at match after used.	<end>
+#	1504000334	策划文本334	36时双倍经验卡（36时）	36時雙倍經驗卡（36時）	36H D.EXP	<end>
+#	1504000335	策划文本335	使用后有效时长36小时，进行比赛获得双倍人物经验，双倍收益不叠加	使用後有效時長36小時，進行比賽獲得雙倍人物經驗，雙倍收益不疊加	To get dual EXP in 36H( overlay) at match after used.	<end>
+#	1504000336	策划文本336	48时双倍经验卡	48時雙倍經驗卡	48H D.EXP	<end>
+#	1504000337	策划文本337	使用后有效时长48小时，进行比赛获得双倍人物经验，双倍收益不叠加	使用後有效時長48小時，進行比賽獲得雙倍人物經驗，雙倍收益不疊加	To get dual EXP in 48H( overlay) at match after used.	<end>
+#	1504000338	策划文本338	火焰靴（1天）	火焰靴（1天）	F.Boot(1day)	<end>
+#	1504000339	策划文本339	使用后有效时长1天，比赛中急速鞋特效变为火焰靴特效	使用後有效時長1天，比賽中急速鞋特效變為火焰靴特效	When Used, Speed boost will change to F.boot in 1day.	<end>
+#	1504000340	策划文本340	圣光盾（1天）	聖光盾（1天）	H.barrel(1day)	<end>
+#	1504000341	策划文本341	使用后有效时长1天，比赛中护盾特效变为圣光盾特效	使用後有效時長1天，比賽中護盾特效變為聖光盾特效	When Used, Shield will change to H.barrel in 1day.	<end>
+#	1504000342	策划文本342	火焰之环（1天）	火焰之環（1天）	F.ring(1day)	<end>
+#	1504000343	策划文本343	使用后有效时长1天，跳跃至中心点的特效改变为火焰之环	使用後有效時長1天，跳躍至中心點的特效改變為火焰之環	When Used, midblock-fx will change to F.ring in 1day.	<end>
+#	1504000344	策划文本344	神圣之光（1天）	神聖之光（1天）	H.light(1day)	<end>
+#	1504000345	策划文本345	使用后有效时长1天，跳跃至中心点的特效改变为神圣之光	使用後有效時長1天，跳躍至中心點的特效改變為神聖之光	When Used, midblock-fx will change to H.light in 1day.	<end>
+#	1504000346	策划文本346	广告券	廣告券	Ads ticket	<end>
+#	1504000347	策划文本347	看广告时可选择	看廣告時可選擇	Can choose when seeing ads	<end>
+#	1504000348	策划文本348	3点段位经验卡	3點段位經驗卡	3 Rank Exp	<end>
+#	1504000349	策划文本349	使用后获得3点段位经验	使用後獲得3點段位經驗	Get 3 Rank Exp when used	<end>
+#	1504000350	策划文本350	5点段位经验卡	5點段位經驗卡	5 Rank Exp	<end>
+#	1504000351	策划文本351	使用后获得5点段位经验	使用後獲得5點段位經驗	Get 5 Rank Exp when used	<end>
+#	1504000352	策划文本352	10点段位经验卡	10點段位經驗卡	10 Rank Exp	<end>
+#	1504000353	策划文本353	使用后获得10点段位经验	使用後獲得10點段位經驗	Get 10 Rank Exp when used	<end>
+#	1504000354	策划文本354	15点段位经验卡	15點段位經驗卡	15 Rank Exp	<end>
+#	1504000355	策划文本355	使用后获得15点段位经验	使用後獲得15點段位經驗	Get 15 Rank Exp when used	<end>
+#	1504000356	策划文本356	20点段位经验卡	20點段位經驗卡	20 Rank Exp	<end>
+#	1504000357	策划文本357	使用后获得20点段位经验	使用後獲得20點段位經驗	Get 20 Rank Exp when used	<end>
+#	1504000358	策划文本358	闪电骑士碎片	閃電騎士碎片	Thunder frag	<end>
+#	1504000359	策划文本359	80个碎片可合成角色闪电骑士	80個碎片可合成角色閃電騎士	80 Frags to craft Thunder	<end>
+#	1504000360	策划文本360	特蕾莎碎片	特蕾莎碎片	Teresa frag	<end>
+#	1504000361	策划文本361	80个碎片可合成角色特蕾莎	80個碎片可合成角色特蕾莎	80 Frags to craft Teresa	<end>
+#	1504000362	策划文本362	初赛门票	初賽門票	Preliminary tickets	<end>
+#	1504000363	策划文本363	每日比赛锦标赛初赛中报名使用	每日比賽錦標賽初賽中報名使用	To enter Daily Preliminary rank	<end>
+#	1504000364	策划文本364	复赛门票	復賽門票	Rematch tickets	<end>
+#	1504000365	策划文本365	每日比赛锦标赛复赛中报名使用	每日比賽錦標賽復賽中報名使用	To enter Daily Rematch rank	<end>
+#	1504000366	策划文本366	决赛门票	決賽門票	Final tickets	<end>
+#	1504000367	策划文本367	每日比赛锦标赛决赛中报名使用	每日比賽錦標賽決賽中報名使用	To enter Daily Final rank	<end>
+#	1504000368	策划文本368	大奖赛门票	大獎賽門票	Grand tickets	<end>
+#	1504000369	策划文本369	每日比赛大奖赛中报名使用	每日比賽大獎賽中報名使用	To enter Daily Grand rank	<end>
+#	1504010001	程序文本1	在线礼包	在線禮包	Online gift	<end>
+#	1504010002	程序文本2	登录活动	登錄活動	Login fes	<end>
+#	1504010003	程序文本3	角色	角色	Heros	<end>
+#	1504010004	程序文本4	商城	商城	Store	<end>
+#	1504010005	程序文本5	进入游戏	進入遊戲	Jump in	<end>
+#	1504010006	程序文本6	排位赛	排位賽	Match	<end>
+#	1504010007	程序文本7	自定义模式	自定義模式	Custom	<end>
+#	1504010008	程序文本8	成  就	成  就	Achievement	<end>
+#	1504010009	程序文本9	综合	綜合	ALL	<end>
+#	1504010010	程序文本10	普通	普通	CON	<end>
+#	1504010011	程序文本11	竞赛	競賽	MAT	<end>
+#	1504010012	程序文本12	挑战	挑戰	CHA	<end>
+#	1504010013	程序文本13	领 取	領 取	Get	<end>
+#	1504010014	程序文本14	进行中	進行中	Ongoing	<end>
+#	1504010015	程序文本15	成就总数	成就總數	ALL	<end>
+#	1504010016	程序文本16	普通成就	普通成就	CON	<end>
+#	1504010017	程序文本17	竞赛成就	競賽成就	MAT	<end>
+#	1504010018	程序文本18	挑战成就	挑戰成就	CHA	<end>
+#	1504010019	程序文本19	近期成就	近期成就	NEW	<end>
+#	1504010020	程序文本20	暂无信息	暫無信息	No information	<end>
+#	1504010021	程序文本21	第xx天	第xx天	Day xx	<end>
+#	1504010022	程序文本22	领 取	領 取	Get	<end>
+#	1504010023	程序文本23	第xx天可领取	第xx天可領取	Ongoing on Day xx	<end>
+#	1504010024	程序文本24	公  告	公  告	Post	<end>
+#	1504010025	程序文本25	征途奖励	征途獎勵	Rewards	<end>
+#	1504010026	程序文本26	段位达到xx	段位達到xx	Reached rank xx	<end>
+#	1504010027	程序文本27	第xx名	第xx名	Ranked xxth	<end>
+#	1504010028	程序文本28	恭喜获得：	恭喜獲得：	Receiving:	<end>
+#	1504010029	程序文本29	名次	名次	Rank	<end>
+#	1504010030	程序文本30	昵称	暱稱	Name	<end>
+#	1504010031	程序文本31	时间	時間	Time	<end>
+#	1504010032	程序文本32	分数	分數	Score	<end>
+#	1504010033	程序文本33	返 回	返 回	Exit	<end>
+#	1504010034	程序文本34	双倍收益	雙倍收益	Double	<end>
+#	1504010035	程序文本35	商品描述	商品描述	Describe	<end>
+#	1504010036	程序文本36	购买数量:xx	購買數量:xx	Quantity: xx	<end>
+#	1504010037	程序文本37	设  置	設  置	Setting	<end>
+#	1504010038	程序文本38	声音	聲音	Sound	<end>
+#	1504010039	程序文本39	音 乐	音 樂	BGM	<end>
+#	1504010040	程序文本40	音 效	音 效	Effect	<end>
+#	1504010041	程序文本41	玩家信息	玩家信息	Information	<end>
+#	1504010042	程序文本42	玩家 ID	玩家 ID	playerID	<end>
+#	1504010043	程序文本43	当前语言	當前語言	Language	<end>
+#	1504010044	程序文本44	复制id	複製id	Copy ID	<end>
+#	1504010045	程序文本45	退出登录	退出登錄	Log out	<end>
+#	1504010046	程序文本46	公  告	公  告	Post	<end>
+#	1504010047	程序文本47	头  像	頭  像	Avatar	<end>
+#	1504010048	程序文本48	更 换	更 換	Change	<end>
+#	1504010049	程序文本49	是否需要退出游戏？	是否需要退出遊戲？	Exit the game?	<end>
+#	1504010050	程序文本50	确认	確認	Confirm	<end>
+#	1504010051	程序文本51	基 础	基 礎	Basic	<end>
+#	1504010052	程序文本52	数 据	數 據	Data	<end>
+#	1504010053	程序文本53	更改头像	更改頭像	Avatar	<end>
+#	1504010054	程序文本54	当前段位	當前段位	Current rank	<end>
+#	1504010055	程序文本55	历史最高	歷史最高	Highest rank	<end>
+#	1504010056	程序文本56	常用角色	常用角色	Frequently used	<end>
+#	1504010057	程序文本57	冠军次数	冠軍次數	champion	<end>
+#	1504010058	程序文本58	比赛场次	比賽場次	matches	<end>
+#	1504010059	程序文本59	平均名次	平均名次	Average	<end>
+#	1504010060	程序文本60	全部赛季	全部賽季	All seasons	<end>
+#	1504010061	程序文本61	当前赛季	當前賽季	Current season	<end>
+#	1504010062	程序文本62	场次统计	場次統計	matches	<end>
+#	1504010063	程序文本63	表现统计	表現統計	Performance	<end>
+#	1504010064	程序文本64	道具统计	道具統計	Item	<end>
+#	1504010065	程序文本65	冠军次数	冠軍次數	champions	<end>
+#	1504010066	程序文本66	比赛场次	比賽場次	matches	<end>
+#	1504010067	程序文本67	完成次数	完成次數	Average	<end>
+#	1504010068	程序文本68	平均名次	平均名次	Average	<end>
+#	1504010069	程序文本69	独占鳌头	獨占鰲頭	Solo lead	<end>
+#	1504010070	程序文本70	连续第一	連續第一	winning streak	<end>
+#	1504010071	程序文本71	干扰他人	干擾他人	Interfere	<end>
+#	1504010072	程序文本72	抵抗干扰	抵抗干擾	Resist	<end>
+#	1504010073	程序文本73	使用导弹	使用導彈	missile usage	<end>
+#	1504010074	程序文本74	使用飞弹	使用飛彈	dart usage	<end>
+#	1504010075	程序文本75	使用香蕉皮	使用香蕉皮	banana usage	<end>
+#	1504010076	程序文本76	使用加速	使用加速	boost usage	<end>
+#	1504010077	程序文本77	使用护盾	使用護盾	shield usage	<end>
+#	1504010078	程序文本78	xx天后过期	xx天后過期	Expires in xx days	<end>
+#	1504010079	程序文本79	领取全部	領取全部	Claim all	<end>
+#	1504010080	程序文本80	删除已读	刪除已讀	Delete	<end>
+#	1504010081	程序文本81	领取	領取	Claim	<end>
+#	1504010082	程序文本82	返 回	返 回	Exit	<end>
+#	1504010083	程序文本83	发件人：xx	發件人：xx	Sender: xx	<end>
+#	1504010084	程序文本84	战区	戰區	Battlefield	<end>
+#	1504010085	程序文本85	请确认你所属战区	請確認你所屬戰區	Need confirm	<end>
+#	1504010086	程序文本86	确认	確認	Confirm	<end>
+#	1504010087	程序文本87	排行榜	排行榜	Leaderboard	<end>
+#	1504010088	程序文本88	未上榜	未上榜	Away	<end>
+#	1504010089	程序文本89	等待连接中	等待連接中	Wait for Connect	<end>
+#	1504010090	程序文本90	段位总积分:xx	段位總積分:xx	Rank Total Points: xx	<end>
+#	1504010091	程序文本91	达成成就 - {0}	達成成就 - {0}	GET - {0}	<end>
+#	1504010092	程序文本92	当前出战角色已过期，请及时更换角色	當前出戰角色已過期，請及時更換角色	Current battle hero has expired	<end>
+#	1504010093	程序文本93	随机地图	隨機地圖	Random map	<end>
+#	1504010094	程序文本94	房间异常	房間異常	Room exception	<end>
+#	1504010095	程序文本95	需要真机测试	需要真機測試	Requires real device testing	<end>
+#	1504010096	程序文本96	操作异常	操作異常	Operation exception	<end>
+#	1504010097	程序文本97	请输入数字账号	請輸入數字賬號	Enter number ID	<end>
+#	1504010098	程序文本98	没有附件可领取	沒有附件可領取	No attachments	<end>
+#	1504010099	程序文本99	无可删除邮件	無可刪除郵件	No emails	<end>
+#	1504010100	程序文本100	删除成功	刪除成功	Delet success	<end>
+#	1504010101	程序文本101	还未拥有	還未擁有	Unowned	<end>
+#	1504010102	程序文本102	暂未开放	暫未開放	Unavailable	<end>
+#	1504010103	程序文本103	已售罄	已售罄	Sold out	<end>
+#	1504010104	程序文本104	已拥有	已擁有	Owned	<end>
+#	1504010105	程序文本105	购买数量为0	購買數量為0	Buy num is 0	<end>
+#	1504010106	程序文本106	购买次数用尽	購買次數用盡	Can not buy	<end>
+#	1504010107	程序文本107	货币不足	貨幣不足	Not enough money	<end>
+#	1504010108	程序文本108	请进入大厅重新接受邀请	請進入大廳重新接受邀請	Please enter the lobby to accept the invitation again	<end>
+#	1504010109	程序文本109	游戏分享完毕	遊戲分享完畢	Shared	<end>
+#	1504010110	程序文本110	游戏邀请完毕	遊戲邀請完畢	Invited	<end>
+#	1504010111	程序文本111	{0}天	{0}天	{0} days	<end>
+#	1504010112	程序文本112	{0}小时	{0}小時	{0} hours	<end>
+#	1504010113	程序文本113	{0}分钟	{0}分鐘	{0} minutes	<end>
+#	1504010114	程序文本114	{0}秒	{0}秒	{0} seconds	<end>
+#	1504010115	程序文本115	{0}时 {1}分	{0}時 {1}分	{0} hours {1} minutes	<end>
+#	1504010116	程序文本116	{0}万	{0}萬	{0} thousand	<end>
+#	1504010117	程序文本117	{0}千万	{0}千萬	{0} million	<end>
+#	1504010118	程序文本118	您未连接WIFI,更新将消耗约{0}m流量,是否继续更新？	您未連接WIFI,更新將消耗約{0}m流量,是否繼續更新？	You are not connected to Wi-Fi Updating will consume approximately {0} MB of data Continue with update?	<end>
+#	1504010119	程序文本119	更新资源(共{0}k)	更新資源(共{0}k)	Updating (total {0} KB)	<end>
+#	1504010120	程序文本120	更新资源错误，请重试{0}	更新資源錯誤，請重試{0}	Error updating, Please try again ({0})	<end>
+#	1504010121	程序文本121	有新版本了,请更新...	有新版本了,請更新...	New version available Please update	<end>
+#	1504010122	程序文本122	下载资源失败,{0}	下載資源失敗,{0}	Failed to download ({0})	<end>
+#	1504010123	程序文本123	创建资源文件失败,{0}|{1}	創建資源文件失敗,{0}|{1}	Failed to create file ({0}|{1})	<end>
+#	1504010124	程序文本124	创建错误:{0}|路径:{1}|url:{2}|Trace:{3}	創建錯誤:{0}|路徑:{1}|url:{2}|Trace:{3}	Creation error: {0}|Path: {1}|URL: {2}|Trace: {3}	<end>
+#	1504010125	程序文本125	下载资源失败,{0}|{1}	下載資源失敗,{0}|{1}	Failed to download resources ({0}|{1})	<end>
+#	1504010126	程序文本126	广告还未准备好	廣告還未準備好	Ad not ready	<end>
+#	1504010127	程序文本127	文本已复制到剪切板	文本已復製到剪切板	Text copied	<end>
+#	1504010128	程序文本128	定位失败	定位失敗	Location not found	<end>
+#	1504010129	程序文本129	未确认战区	未確認戰區	Where	<end>
+#	1504010130	程序文本130	购买数量: {0}	購買數量: {0}	Can buy: {0}	<end>
+#	1504010131	程序文本131	无	無	None	<end>
+#	1504010132	程序文本132	第 {0} 天	第 {0} 天	Day {0}	<end>
+#	1504010133	程序文本133	第{0}天可领取	第{0}天可領取	Can claim on day {0}	<end>
+#	1504010134	程序文本134	当前拥有数量: {0}	當前擁有數量: {0}	You have: {0}	<end>
+#	1504010135	程序文本135	点击任意区域继续	點擊任意區域繼續	Click to continue	<end>
+#	1504010136	程序文本136	取消准备	取消準備	Cancel	<end>
+#	1504010137	程序文本137	开始游戏	開始遊戲	Start	<end>
+#	1504010138	程序文本138	准备	準備	Ready	<end>
+#	1504010139	程序文本139	第{0}名	第{0}名	Rank {0}	<end>
+#	1504010140	程序文本140	剩余: {0}	剩餘: {0}	Remaining: {0}	<end>
+#	1504010141	程序文本141	此邮件已过期	此郵件已過期	This email has expired	<end>
+#	1504010142	程序文本142	{0}天后过期	{0}天后過期	Expires in {0} days	<end>
+#	1504010143	程序文本143	请求微信数据失败，请重新登录	請求微信數據失敗，請重新登錄	Failed to request data Please log in again	<end>
+#	1504010144	程序文本144	微信信息同步完成	微信信息同步完成	WeChat information synced	<end>
+#	1504010145	程序文本145	同步失败,请重试	同步失敗,請重試	Sync failed Please try again	<end>
+#	1504010146	程序文本146	冠军次数：{0}	冠軍次數：{0}	Champions: {0}	<end>
+#	1504010147	程序文本147	场次：{0}	場次：{0}	Matches: {0}	<end>
+#	1504010148	程序文本148	平均名次：{0}	平均名次：{0}	Avg rank: {0}	<end>
+#	1504010149	程序文本149	场次统计	場次統計	M.S	<end>
+#	1504010150	程序文本150	表现统计	表現統計	P.S	<end>
+#	1504010151	程序文本151	道具统计	道具統計	I.S	<end>
+#	1504010152	程序文本152	比赛场次：{0}	比賽場次：{0}	Matches: {0}	<end>
+#	1504010153	程序文本153	冠军次数：{0}	冠軍次數：{0}	Champions: {0}	<end>
+#	1504010154	程序文本154	完成次数：{0}	完成次數：{0}	Completion: {0}	<end>
+#	1504010155	程序文本155	平均名次：{0}	平均名次：{0}	Average rank: {0}	<end>
+#	1504010156	程序文本156	独占鳌头：{0}	獨占鰲頭：{0}	Solo lead: {0}	<end>
+#	1504010157	程序文本157	连续第一：{0}	連續第一：{0}	Consecutive 1st: {0}	<end>
+#	1504010158	程序文本158	干扰他人：{0}	干擾他人：{0}	Hit others: {0}	<end>
+#	1504010159	程序文本159	抵挡干扰：{0}	抵擋干擾：{0}	Block: {0}	<end>
+#	1504010160	程序文本160	使用导弹：{0}	使用導彈：{0}	Use missile: {0}	<end>
+#	1504010161	程序文本161	使用飞弹：{0}	使用飛彈：{0}	Use dart: {0}	<end>
+#	1504010162	程序文本162	使用香蕉皮：{0}	使用香蕉皮：{0}	Use banana: {0}	<end>
+#	1504010163	程序文本163	使用护盾：{0}	使用護盾：{0}	Use shield: {0}	<end>
+#	1504010164	程序文本164	使用加速：{0}	使用加速：{0}	Use speed boost: {0}	<end>
+#	1504010165	程序文本165	已领取	已領取	Claimed	<end>
+#	1504010166	程序文本166	取消	取消	Cancel	<end>
+#	1504010167	程序文本167	确定	確定	Confirm	<end>
+#	1504010168	程序文本168	开始	開始	Start	<end>
+#	1504010169	程序文本169	获得 {0}×{1}	獲得 {0}×{1}	get {0} x {1}	<end>
+#	1504010170	程序文本170	检查基础配置 {0}%	檢查基礎配置 {0}%	Checking configuration {0}%	<end>
+#	1504010171	程序文本171	检查游戏失败，请检查网络并重进游戏:{0}|{1}	檢查遊戲失敗，請檢查網絡並重進遊戲:{0}|{1}	Failed to check game, Please check network: {0}|{1}	<end>
+#	1504010172	程序文本172	检查游戏信息 {0}%	檢查遊戲信息 {0}%	Checking game information {0}%	<end>
+#	1504010173	程序文本173	资源加载中...	資源加載中...	Loading resources...	<end>
+#	1504010174	程序文本174	正在重新进入战斗	正在重新進入戰鬥	Re-entering	<end>
+#	1504010175	程序文本175	至少需要2名玩家或所有玩家均准备才能开始游戏	至少需要2名玩家或所有玩家均準備才能開始遊戲	At least 2 players ready required to start	<end>
+#	1504010176	程序文本176	{0}秒后自动开始游戏	{0}秒後自動開始遊戲	Start in {0} seconds	<end>
+#	1504010177	程序文本177	是否确定将玩家{0}踢出房间	是否確定將玩家{0}踢出房間	Ban player {0}?	<end>
+#	1504010178	程序文本178	踢出	踢出	Ban	<end>
+#	1504010179	程序文本179	终身限购次数	終身限購次數	Lifetime	<end>
+#	1504010180	程序文本180	今日限购次数	今日限購次數	Today	<end>
+#	1504010181	程序文本181	本周限购次数	本週限購次數	This week	<end>
+#	1504010182	程序文本182	本月限购次数	本月限購次數	This month	<end>
+#	1504010183	程序文本183	邮箱中没有邮件	郵箱中沒有郵件	No emails	<end>
+#	1504010184	程序文本184	账号	賬號	ID	<end>
+#	1504010185	程序文本185	商店	商店	Shop	<end>
+#	1504010186	程序文本186	{0}/{1}	{0}/{1}	{0}/{1}	<end>
+#	1504010187	程序文本187	当前	當前	now	<end>
+#	1504010188	程序文本188	段位达到 {0}	段位達到 {0}	Rank {0}	<end>
+#	1504010189	程序文本189	角色描述	角色描述	Describe	<end>
+#	1504010190	程序文本190	成就总览	成就總覽	Achieve	<end>
+#	1504010191	程序文本191	暂无已完成成就	暫無已完成成就	No Achieve	<end>
+#	1504010192	程序文本192	进行中...	進行中...	Ongoing	<end>
+#	1504010193	程序文本193	音 量	音 量	Vol	<end>
+#	1504010194	程序文本194	复制ID	複製ID	Copy ID	<end>
+#	1504010195	程序文本195	语言	語言	Language	<end>
+#	1504010196	程序文本196	免费	免費	Free	<end>
+#	1504010197	程序文本197	暂无使用过的角色	暫無使用過的角色	No Hero	<end>
+#	1504010198	程序文本198	房主	房主	Lead	<end>
+#	1504010199	程序文本199	选择地图	選擇地圖	Map	<end>
+#	1504010200	程序文本200	获得第{0}名：	獲得第{0}名：	Get {0}:	<end>
+#	1504010201	程序文本201	完成比赛：	完成比賽：	Finsh match:	<end>
+#	1504010202	程序文本202	独占鳌头：	獨占鰲頭：	Single top:	<end>
+#	1504010203	程序文本203	段位总积分	段位總積分	Score	<end>
+#	1504010204	程序文本204	恭喜获得!	恭喜獲得!	Get:	<end>
+#	1504010205	程序文本205	未完成	未完成	Unfinished	<end>
+#	1504010206	程序文本206	邮  件	郵  件	Mail	<end>
+#	1504010207	程序文本207	道具描述	道具描述	Item info	<end>
+#	1504010208	程序文本208	匹配中...	匹配中...	Matching	<end>
+#	1504010209	程序文本209	领取并删除	领取并删除	Get&del	<end>
+#	1504010210	程序文本210	排名	排名	Rank	<end>
+#	1504010211	程序文本211	玩家名称	玩家名稱	Name	<end>
+#	1504010212	程序文本212	{0}分	{0}分	{0} points	<end>
+#	1504010213	程序文本213	加载游戏场景	加載遊戲場景	Loading stage	<end>
+#	1504010214	程序文本214	等待其他玩家进入	等待其他玩家進入	Waiting for others	<end>
+#	1504010215	程序文本215	首充奖励	首充獎勵	First Pay	<end>
+#	1504010216	程序文本216	已 达 成	已 達 成	End	<end>
+#	1504010217	程序文本217	未 达 成	未 達 成	Do	<end>
+#	1504010218	程序文本218	前往充值	前往充值	Pay	<end>
+#	1504010219	程序文本219	可领取	可領取	Can get	<end>
+#	1504010220	程序文本220	获得奖励	獲得獎勵	get gift	<end>
+#	1504010221	程序文本221	首充礼包	首充禮包	FPG	<end>
+#	1504010222	程序文本222	删除成功	刪除成功	Deleted	<end>
+#	1504010223	程序文本223	暂未开放	暫未開放	Coming soon	<end>
+#	1504010224	程序文本224	玩家ID: {0}	玩家ID: {0}	ID: {0}	<end>
+#	1504010225	程序文本225	服务器断开连接，请重新登录	伺服器斷開連接，請重新登錄	Disconnected, please log in again	<end>
+#	1504010226	程序文本226	重 登	重 登	Login	<end>
+#	1504010227	程序文本227	首充双倍	首充雙倍	Bouns	<end>
+#	1504010228	程序文本228	网络未连接,请检查网络后重试	網路未連接,請檢查網路後重試	Network is not connected, please check the network and try again	<end>
+#	1504010229	程序文本229	检查游戏信息	檢查遊戲資訊	Check game information	<end>
+#	1504010230	程序文本230	游戏信息检查失败:{0}|{1}	遊戲資訊檢查失敗:{0}|{1}	Game information check failed:{0}|{1}	<end>
+#	1504010231	程序文本231	检查基础配置 {0}%	檢查基礎配置 {0}%	Check the base configuration {0}%	<end>
+#	1504010232	程序文本232	检查游戏失败，请检查网络并重进游戏:{0}|{1}	檢查遊戲失敗，請檢查網路並重進遊戲:{0}|{1}	Check game failed, please check the network and re-enter the game:{0}|{1}	<end>
+#	1504010233	程序文本233	确 定	確 定	Yes	<end>
+#	1504010234	程序文本234	客户端异常	客戶端異常	Client Exception	<end>
+#	1504010235	程序文本235	网络未连接,请检查网络后重登	網路未連接,請檢查網路後重登	Network is not connected, please check the network and try again login	<end>
+#	1504010236	程序文本236	退 出	退 出	Exit	<end>
+#	1504010237	程序文本237	正在重连，请稍后...	正在重連，請稍後...	Reconnecting, please wait...	<end>
+#	1504010238	程序文本238	重连失败，请检查网络后重登	重連失敗，請檢查網路後重登	Reconnect failed, please check the network and log in again	<end>
+#	1504010239	程序文本239	服务器连接断开	伺服器連接斷開	Disconnected	<end>
+#	1504010240	程序文本240	游戏异常	遊戲異常	Game Exception	<end>
+#	1504010241	程序文本241	资源加载中...	資源加載中...	Resources are loading...	<end>
+#	1504010242	程序文本242	正在重新进入战斗	正在重新進入戰鬥	Are re-entering the battle	<end>
+#	1504010243	程序文本243	资源加载错误,请退出重登	資源加載錯誤,請退出重登	Resource loading error, please log in again	<end>
+#	1504010244	程序文本244	退出	退出	quit	<end>
+#	1504010245	程序文本245	输入账号	輸入帳號	Input ID	<end>
+#	1504010246	程序文本246	暂未开启	暫未開啟	Ongoing	<end>
+#	1504010247	程序文本247	是否确认购买?	是否確認購買?	Buy it?	<end>
+#	1504010248	程序文本248	连接超时，请检查网络后重登	連接超時，請檢查網路後重登	Time out, please re-login	<end>
+#	1504010249	程序文本249	免扣分	免扣分	Reject	<end>
+#	1504010250	程序文本250	查看公告	查看公告	See post	<end>
+#	1504010251	程序文本251	还未拥有	還未擁有	Haven't	<end>
+#	1504010252	程序文本252	确  定	確  定	Yes	<end>
+#	1504010253	程序文本253	返  回	返  回	Back	<end>
+#	1504010254	程序文本254	退  出	退  出	Exit	<end>
+#	1504010255	程序文本255	公  告	公  告	Post	<end>
+#	1504010256	程序文本256	资源下载失败,请重新登录	資源下載失敗,請重新登錄	Download Error, please re-login	<end>
+#	1504010257	程序文本257	取  消	取  消	Cancel	<end>
+#	1504010258	程序文本258	重  登	重  登	Login	<end>
+#	1504010259	程序文本259	领  取	領  取	Get	<end>
+#	1504010260	程序文本260	背  包	背  包	Bag	<end>
+#	1504010261	程序文本261	全部	全部	All	<end>
+#	1504010262	程序文本262	道具	道具	Item	<end>
+#	1504010263	程序文本263	碎片	碎片	Frag	<end>
+#	1504010264	程序文本264	皮肤	皮膚	Skin	<end>
+#	1504010265	程序文本265	月  卡	月  卡	VIP	<end>
+#	1504010266	程序文本266	白银VIP	白銀VIP	S.VIP	<end>
+#	1504010267	程序文本267	黄金VIP	黃金VIP	G.VIP	<end>
+#	1504010268	程序文本268	购买立得	購買立得	Free	<end>
+#	1504010269	程序文本269	免看广告	免看廣告	No ads	<end>
+#	1504010270	程序文本270	每日可领取	每日可領取	Daily get	<end>
+#	1504010271	程序文本271	比赛获得的收益+{0}%	比賽獲得的收益+{0}%	Match gain+{0}%	<end>
+#	1504010272	程序文本272	每日前{0}场排位赛获得的积分+{1}	每日前{0}場排位賽獲得的積分+{1}	Daily 1st {0} times score +{1}	<end>
+#	1504010273	程序文本273	排位看广告和免扣分次数+{0}	排位看廣告和免扣分次數+{0}	Match ads and exempt times +{0}	<end>
+#	1504010274	程序文本274	剩余{0}天	剩餘{0}天	{0} day(s) left	<end>
+#	1504010275	程序文本275	Vip	Vip	Vip	<end>
+#	1504010276	程序文本276	荣耀手册	榮耀手冊	H.book	<end>
+#	1504010277	程序文本277	距离结束还剩:{0}	距離結束還剩:{0}	{0} day(s) left	<end>
+#	1504010278	程序文本278	普通手册	普通手冊	N.book	<end>
+#	1504010279	程序文本279	高级手册	高級手冊	S.book	<end>
+#	1504010280	程序文本280	手册任务	手冊任務	Missions	<end>
+#	1504010281	程序文本281	一键领取	一鍵領取	Get all	<end>
+#	1504010282	程序文本282	每日任务	每日任務	Missions	<end>
+#	1504010283	程序文本283	今日完成{0}局排位赛	今日完成{0}局排位賽	Finsih {0} matches	<end>
+#	1504010284	程序文本284	今日在排位赛中获得{0}次第1名	今日在排位賽中獲得{0}次第1名	Get 1st {0} times from matches	<end>
+#	1504010285	程序文本285	今日在排位赛中获得过{0}次前{1}名	今日在排位賽中獲得過{0}次前{1}名	Get aleast {1}ranks {0} times from matches	<end>
+#	1504010286	程序文本286	充值任意金额领取豪华大礼	充值任意金額領取豪華大禮	Pay some money and get these	<end>
+#	1504010287	程序文本287	累充12元	累充12元	Pay 12 RMB	<end>
+#	1504010288	程序文本288	每日签到	每日簽到	Daily Check	<end>
+#	1504010289	程序文本289	累计{0}天	累計{0}天	{0} days	<end>
+#	1504010290	程序文本290	第{0}天可领取	第{0}天可領取	Get in {0}day	<end>
+#	1504010291	程序文本291	签到	簽到	Check	<end>
+#	1504010292	程序文本292	双倍签到	雙倍簽到	D.C	<end>
+#	1504010293	程序文本293	广告宝箱	廣告寶箱	Ads Chest	<end>
+#	1504010294	程序文本294	累计{0}条	累計{0}條	{0} Slice	<end>
+#	1504010295	程序文本295	观看{0}次	觀看{0}次	See {0}	<end>
+#	1504010296	程序文本296	邀请好友	邀請好友	Invite friends	<end>
+#	1504010297	程序文本297	邀请{0}人	邀請{0}人	Invite {0}	<end>
+#	1504010298	程序文本298	初赛	初賽	Preliminary	<end>
+#	1504010300	程序文本300	复赛	復賽	Rematch	<end>
+#	1504010302	程序文本302	决赛	決賽	Final	<end>
+#	1504010304	程序文本304	大奖赛	大獎賽	Grand	<end>
