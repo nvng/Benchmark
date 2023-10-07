@@ -188,7 +188,8 @@ public :
 
         void Connect(const std::string& ip, uint16_t port, const auto& cb)
         {
-                auto ses = cb(boost::asio::ip::tcp::socket(boost::asio::make_strand(*DistCtx(++_distIOCtxIdx))));
+                // auto ses = cb(boost::asio::ip::tcp::socket(boost::asio::make_strand(*DistCtx(++_distIOCtxIdx))));
+                auto ses = cb(boost::asio::ip::tcp::socket(*DistCtx(++_distIOCtxIdx)));
                 ses->_createSession = std::move(cb);
                 ses->_connectEndPoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(ip), port);
                 ses->_socket.async_connect(ses->_connectEndPoint, [ses](const auto& ec) {
@@ -262,7 +263,8 @@ private :
         void DoAccept(const AcceptorTypePtr& acceptor, const auto& cb)
         {
                 AcceptorTypeWeakPtr weakAcceptor = acceptor;
-                acceptor->async_accept(boost::asio::make_strand(*DistCtx(++_distIOCtxIdx)), [weakAcceptor, cb{std::move(cb)}](const auto& ec, auto&& s) {
+                // acceptor->async_accept(boost::asio::make_strand(*DistCtx(++_distIOCtxIdx)), [weakAcceptor, cb{std::move(cb)}](const auto& ec, auto&& s) {
+                acceptor->async_accept(*DistCtx(++_distIOCtxIdx), [weakAcceptor, cb{std::move(cb)}](const auto& ec, auto&& s) {
                         if (!ec)
                         {
                                 auto ses = cb(std::move(s), NetMgrBase::GetInstance()->_sslCtx);

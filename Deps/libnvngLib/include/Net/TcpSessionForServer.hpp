@@ -69,11 +69,6 @@ public :
         {
         }
 
-        void OnEstablish() override
-        {
-                SuperType::OnEstablish();
-        }
-
         void OnConnect() override
         {
                 SuperType::OnConnect();
@@ -101,8 +96,8 @@ public :
 
                         boost::fibers::fiber(
                              std::allocator_arg,
-                             boost::fibers::fixedsize_stack{ 32 * 1024 },
-                             // boost::fibers::segmented_stack{},
+                             // boost::fibers::fixedsize_stack{ 32 * 1024 },
+                             boost::fibers::segmented_stack{},
                              [weakSes]() {
                                 auto ses = weakSes.lock();
                                 if (!ses)
@@ -140,8 +135,8 @@ public :
 
                         boost::fibers::fiber(
                              std::allocator_arg,
-                             boost::fibers::fixedsize_stack{ 32 * 1024 },
-                             // boost::fibers::segmented_stack{},
+                             // boost::fibers::fixedsize_stack{ 32 * 1024 },
+                             boost::fibers::segmented_stack{},
                              [weakSes]() {
                                 auto ses = weakSes.lock();
                                 if (!ses)
@@ -288,18 +283,8 @@ __end__ :
         {
                 SuperType::OnClose(reasonType);
 
-                /*
-                std::weak_ptr<ThisType> weakPtr = shared_from_this();
-                boost::asio::post(_socket.get_executor(), [weakPtr]() {
-                        auto thisPtr = weakPtr.lock();
-                        if (thisPtr)
-                        {
-                                boost::system::error_code ec;
-                                thisPtr->_socket.shutdown(boost::asio::socket_base::shutdown_both, ec);
-                                thisPtr->_socket.close(ec);
-                        }
-                });
-                */
+                boost::system::error_code ec;
+                _socket.shutdown(boost::asio::socket_base::shutdown_both, ec);
 
                 _recvChannel.push(nullptr);
                 _sendChannel.push(stSessionSendBufInfo<MsgHeaderType>{});
@@ -318,23 +303,19 @@ __end__ :
                 if (!_bufList.empty() && !SuperType::IsInSend())
                 {
                         SuperType::SetInSend();
-                        std::weak_ptr<TcpSession> weakSes = ThisType::shared_from_this();
+                        auto ses = ThisType::shared_from_this();
                         // _bufList 使用 std::move 无效。
-                        boost::asio::async_write(_socket, _bufList, [weakSes, brl{ std::move(_bufRefList) }](const auto& ec, std::size_t size) {
+                        boost::asio::async_write(_socket, _bufList, [ses, brl{ std::move(_bufRefList) }](const auto& ec, std::size_t size) {
                                 /*
                                  * async_write 内部异步多部操作，因此不能同时存在多个 async_write 操作，
                                  * 必须等待返回后再次调用 async_write。
                                  */
 
-                                auto ses = weakSes.lock();
-                                if (ses)
-                                {
-                                        ses->DelInSend();
-                                        if (!ec)
-                                                ses->DoSend();
-                                        else
-                                                ses->OnError(ec);
-                                }
+                                ses->DelInSend();
+                                if (!ec)
+                                        ses->DoSend();
+                                else
+                                        ses->OnError(ec);
                         });
 
                         if (_bufList.capacity() <= 4)
@@ -352,25 +333,17 @@ __end__ :
 
         void DoRecv()
         {
-                std::weak_ptr<TcpSession> weakSes = ThisType::shared_from_this();
+                auto ses = ThisType::shared_from_this();
                 boost::asio::async_read(_socket, boost::asio::buffer((char*)&_msgTotalHead, sizeof(_msgTotalHead)),
                                         // boost::asio::transfer_at_least(sizeof(_totalMsgHead)),
-                                        [weakSes](const auto& ec, std::size_t size) {
-                                                auto ses = weakSes.lock();
-                                                if (!ses)
-                                                        return;
-
+                                        [ses](const auto& ec, std::size_t size) {
                                                 if (!ec)
                                                 {
                                                         auto buf = std::make_shared<char[]>(ses->_msgTotalHead._size);
                                                         *reinterpret_cast<MsgTotalHeadType*>(buf.get()) = ses->_msgTotalHead;
                                                         boost::asio::async_read(ses->_socket, boost::asio::buffer(buf.get() + sizeof(MsgTotalHeadType), ses->_msgTotalHead._size - sizeof(MsgTotalHeadType)),
                                                                                 // boost::asio::transfer_at_least(ses->_totalMsgHead._size - sizeof(MsgTotalHeadType)),
-                                                                                [weakSes, buf](const auto& ec, std::size_t size) {
-                                                                                        auto ses = weakSes.lock();
-                                                                                        if (!ses)
-                                                                                                return;
-
+                                                                                [ses, buf](const auto& ec, std::size_t size) {
                                                                                         if (!ec)
                                                                                         {
                                                                                                 if (boost::fibers::channel_op_status::success != ses->_recvChannel.try_push(buf))

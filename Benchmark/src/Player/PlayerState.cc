@@ -46,10 +46,14 @@ void PlayerNoneState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
                                 switch (msg->region_type())
                                 {
                                         case E_RT_MainCity :
+                                                try {
                                                 player->ChangeState(E_PST_Lobby, evt);
+                                                } catch (...) { LOG_FATAL("33333333333333333333333"); }
                                                 break;
                                         default :
+                                                try {
                                                 player->ChangeState(E_PST_Game, evt);
+                                                } catch (...) { LOG_FATAL("44444444444444444444444"); }
                                                 break;
                                 }
                         }
@@ -91,7 +95,9 @@ void PlayerLobbyState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
                                 // player->ChangeState(E_PST_Lobby, evt);
                                 break;
                         default :
+                                try {
                                 player->ChangeState(E_PST_Game, evt);
+                                } catch (...) { LOG_FATAL("55555555555555555555555"); }
                                 break;
                         }
                 }
@@ -230,10 +236,14 @@ void PlayerGameState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
                         switch (msg->region_type())
                         {
                         case E_RT_MainCity :
+                                try {
                                 player->ChangeState(E_PST_Lobby, evt);
+                                                } catch (...) { LOG_FATAL("66666666666666666666666"); }
                                 break;
                         default :
+                                try {
                                 player->ChangeState(E_PST_Game, evt);
+                                                } catch (...) { LOG_FATAL("77777777777777777777777"); }
                                 break;
                         }
                 }

@@ -23,7 +23,7 @@ public :
         void OnDisconnect();
 
 public :
-        std::shared_ptr<ClientGateSession> _ses;
+        std::weak_ptr<ClientGateSession> _ses;
         MsgPlayerInfo _msgPlayerInfo;
         std::unordered_map<int64_t, int64_t> _goodsList;
 

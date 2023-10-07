@@ -73,10 +73,10 @@ public :
                         return false;
                 }
 
-                GetAppBase()->_mainChannel.push([thisPtr, stackSize]() {
+                GetAppBase()->_mainChannel.push([thisPtr]() {
                         boost::fibers::fiber(std::allocator_arg,
-                                             boost::fibers::fixedsize_stack{ stackSize },
-                                             // boost::fibers::segmented_stack{},
+                                             // boost::fibers::fixedsize_stack{ stackSize },
+                                             boost::fibers::segmented_stack{},
                                              [thisPtr]() {
                                                      if (thisPtr->Init())
                                                      {
@@ -316,7 +316,14 @@ protected :
                                 clock_t realClock = _clock;
 #endif
 
-                                mail->Run(this, handlerList);
+                                try
+                                {
+                                        mail->Run(this, handlerList);
+                                }
+                                catch (...)
+                                {
+                                        LOG_FATAL("11111111111111111111111111 type[{}]", mail->Type());
+                                }
 
 #ifdef ____PRINT_ACTOR_MAIL_COST_TIME____
                                 clock_t end = clock();

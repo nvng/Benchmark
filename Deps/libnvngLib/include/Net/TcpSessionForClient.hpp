@@ -92,16 +92,11 @@ public :
                         }));
 
                         // Accept the websocket handshake
-                        ISessionWeakPtr weakSes = ses;
-                        ThisType::_socket.async_accept([weakSes](const auto& ec) {
-                                auto ses = weakSes.lock();
-                                if (ses)
-                                {
-                                        if (!ec)
-                                                ses->OnConnect();
-                                        else
-                                                ses->OnError(ec);
-                                }
+                        ThisType::_socket.async_accept([ses](const auto& ec) {
+                                if (!ec)
+                                        ses->OnConnect();
+                                else
+                                        ses->OnError(ec);
                         });
                 }
                 else
@@ -147,8 +142,6 @@ public :
 
         ~TcpSession() override
         {
-                // boost::system::error_code ec;
-                // _socket.close(ec);
         }
 
         void OnEstablish() override
@@ -166,12 +159,8 @@ public :
         {
                 SuperType::OnClose(reasonType);
 
-                auto thisPtr = shared_from_this();
-                // ::nl::util::SteadyTimer::StaticStart(_socket._socket.get_executor(), std::chrono::seconds(0), [thisPtr]() {
-                // boost::asio::post(boost::asio::make_strand(_socket._socket.get_executor()), [thisPtr]() {
-                        boost::system::error_code ec;
-                        thisPtr->_socket._socket.shutdown(boost::asio::socket_base::shutdown_both, ec);
-                // });
+                boost::system::error_code ec;
+                _socket._socket.shutdown(boost::asio::socket_base::shutdown_both, ec);
         }
 
 private :
@@ -188,7 +177,6 @@ private :
                 {
                         SuperType::SetInSend();
 
-                        // std::weak_ptr<ThisType> weakSes = shared_from_this();
                         auto ses = shared_from_this();
                         _socket.async_write(_bufList, [ses, refList{ std::move(_bufRefList) }](const auto& ec, std::size_t size) {
                                 /*
@@ -196,7 +184,6 @@ private :
                                  * 必须等待返回后再次调用 async_write。
                                  */
 
-                                // auto ses = weakSes.lock();
                                 if (ses)
                                 {
                                         ses->DelInSend();
@@ -222,17 +209,12 @@ private :
 
         virtual void DoRecv()
         {
+                auto ses = shared_from_this();
                 if constexpr (!SocketType::IsWebsocket())
                 {
-                        // std::weak_ptr<ThisType> weakSes = shared_from_this();
-                        auto ses = shared_from_this();
                         _socket.async_read(boost::asio::buffer((char*)&_msgHead, sizeof(_msgHead)),
                                            // boost::asio::transfer_at_least(sizeof(_msgHead)),
                                            [ses](const auto& ec, std::size_t size) {
-                                                   // auto ses = weakSes.lock();
-                                                   if (!ses)
-                                                           return;
-
                                                    if (!ec)
                                                    {
                                                            auto buf = std::make_shared<char[]>(ses->_msgHead._size);
@@ -240,10 +222,6 @@ private :
                                                            ses->_socket.async_read(boost::asio::buffer(buf.get() + sizeof(MsgHeaderType), ses->_msgHead._size - sizeof(MsgHeaderType)),
                                                                                    // boost::asio::transfer_at_least(ses->_msgHead._size - sizeof(MsgHeaderType)),
                                                                                    [ses, buf](const auto& ec, std::size_t size) {
-                                                                                           // auto ses = weakSes.lock();
-                                                                                           if (!ses)
-                                                                                                   return;
-
                                                                                            if (!ec)
                                                                                            {
                                                                                                    ses->OnRecv(buf.get(), buf);
@@ -264,12 +242,7 @@ private :
                 }
                 else
                 {
-                        std::weak_ptr<ThisType> weakSes = ThisType::shared_from_this();
-                        ThisType::_socket._socket.async_read(_buf, [weakSes](const auto& ec, std::size_t size) {
-                                auto ses = weakSes.lock();
-                                if (!ses)
-                                        return;
-
+                        ThisType::_socket._socket.async_read(_buf, [ses](const auto& ec, std::size_t size) {
                                 if (!ec)
                                 {
                                         auto buf = std::make_shared<char[]>(size);

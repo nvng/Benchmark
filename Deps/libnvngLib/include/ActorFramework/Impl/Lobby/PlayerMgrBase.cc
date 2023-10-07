@@ -64,8 +64,8 @@ SPECIAL_ACTOR_MAIL_HANDLE(PlayerMgrActor, 0, MsgClientLogin)
 #endif
                 std::weak_ptr<stLoginInfo> weakLoginInfo = loginInfo;
                 boost::fibers::fiber(std::allocator_arg,
-                                     boost::fibers::fixedsize_stack{ 32 * 1024 },
-                                     // boost::fibers::segmented_stack{},
+                                     // boost::fibers::fixedsize_stack{ 32 * 1024 },
+                                     boost::fibers::segmented_stack{},
                                      [p, weakLoginInfo]() mutable {
                         do
                         {

@@ -38,8 +38,9 @@ void Player::UnPack(const MsgPlayerInfo& msg)
 
 void Player::SendPB(uint16_t mainType, uint16_t subType, const MessageLitePtr& pb/*=nullptr*/)
 {
-        if (_ses)
-                _ses->SendPB(pb, mainType, subType);
+        auto ses = _ses.lock();
+        if (ses)
+                ses->SendPB(pb, mainType, subType);
 }
 
 bool Player::UseGMGoods()
@@ -81,13 +82,18 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_DataResetNoneZero)
 
 ACTOR_MAIL_HANDLE(Player, E_MCMT_GameCommon, E_MCGCST_SwitchRegion, MsgSwitchRegion)
 {
+        try
+        {
         // LOG_INFO("玩家[{}] 收到 SwitchRegion type[{}]", GetID(), msg->region_type());
         OnEvent(E_MCMT_GameCommon, E_MCGCST_SwitchRegion, msg);
+        } catch (...) { LOG_FATAL("222222222222222222222222222111 this[{}]", fmt::ptr(this)); }
 
+        try {
         // 必须要切完再发，LoadFinish 设计意义在于等待客户端加载完成。
         auto sendMsg = std::make_shared<MsgLoadFinish>();
         sendMsg->set_region_type(msg->region_type());
         SendPB(E_MCMT_GameCommon, E_MCGCST_LoadFinish, sendMsg);
+        } catch (...) { LOG_FATAL("222222222222222222222222222222 this[{}]", fmt::ptr(this)); }
 
         return nullptr;
 }
