@@ -51,6 +51,8 @@ message MsgPlayerInfo
   MsgMatchInfo match_info = 11;
   repeated MsgPlayerChange player_change_list = 12;
   sint64 server_day_zero_timestamp = 13;
+  sint64 server_weak_zero_timestamp = 14;
+  sint64 server_time_zero = 15;
 
   repeated MsgGoodsItem goods_list = 30;
   MsgPlayerMailSysBrief mail = 31;
@@ -130,7 +132,7 @@ message MsgReqEnterRegion
 {
   EClientErrorType error_type = 1;
   ERegionType region_type = 2;
-  sint64 region_guid = 3;
+  sint64 region_id = 3;
   sint64 param = 4;
 }
 
@@ -201,7 +203,7 @@ message MsgResult
 message MsgFighterExit
 {
   ERegionType region_type = 1;
-  sint64 region_guid = 2;
+  sint64 region_id = 2;
   sint64 fighter_guid = 3;
 }
 
@@ -286,6 +288,8 @@ enum EVIPAttrType
   E_VIP_AT_RankGameAvoidDecScore = 0x8; // 排位额外免扣分次数。
   E_VIP_AT_RankGameAddScoreDailyCnt = 0x9; // 排位赛额外加成场次。
   E_VIP_AT_RankGameAddScore = 0xa; // 排位赛额外加成积分。
+  E_VIP_AT_AD = 0xb; // 免广告领奖。
+  E_VIP_AT_GameEnergyBar = 0xc; // 是否有蓄力条。
 }
 
 message MsgVIPReward

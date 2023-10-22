@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+import "msg_internal_common.proto";
+
+enum EMsgInternalLogSubType
+{
+        E_MILOGST_Register = 0x0;
+        E_MILOGST_Log = 0x1;
+}
+
+enum ELogServiceOrigType
+{
+        E_LSOT_None = 0x0;
+        E_LSOT_PiFu = 0x1;
+        E_LSOT_Mail = 0x2;
+        E_LSOT_AD = 0x3;
+        E_LSOT_Hero = 0x4;
+        E_LSOT_Festival = 0x5;
+        E_LSOT_CDKey = 0x6;
+        E_LSOT_ReqQueue = 0x7;
+        E_LSOT_ExitQueue = 0x8;
+        E_LSOT_Achievement = 0x9;
+        E_LSOT_Segment = 0xa;
+        E_LSOT_GameSeasonJourney = 0xb;
+        E_LSOT_ChangeNickName = 0xc;
+        E_LSOT_BagUse = 0xd;
+        E_LSOT_GM = 0xe;
+
+        E_LSOT_Pay = 0x10;
+        E_LSOT_Shop = 0x11;
+        E_LSOT_VIP = 0x12;
+
+        E_LSOT_PVP = 0x20;
+        E_LSOT_PVE = 0x21;
+        E_LSOT_CompetitionKnockout = 0x22;
+}
+
+enum ELogServiceLogMainType
+{
+        E_LSLMT_Content = 0x0;
+}
+
+enum ELogServiceLogSubType
+{
+        E_LSLST_None = 0x0;
+        E_LSLST_Money = 0x1;
+        E_LSLST_Hero = 0x2;
+        E_LSLST_Goods = 0x3;
+        E_LSLST_HeadIcon = 0x4;
+        E_LSLST_MonthCard = 0x5;
+        E_LSLST_ZhanLing = 0x6;
+        E_LSLST_PiFu = 0x7;
+
+        E_LSLST_CDKey = 0x10;
+        E_LSLST_Festival = 0x11;
+        E_LSLST_Mail = 0x12;
+}
+
+enum ELogServiceLogRatationType
+{
+        E_LSLRT_None = 0x0;
+}
+
+message MsgLogServiceRegisterItem
+{
+        ELogServiceLogMainType type = 1;
+        ELogServiceLogRatationType rotating_type = 3;
+        string sql_table_create = 4;
+        string sql_prefix = 5;
+}
+
+message MsgLogServiceRegister
+{
+        EInternalErrorType error_type = 1;;
+        repeated MsgLogServiceRegisterItem item_list = 2;
+}
+
+message MsgLogServiceLog
+{
+        ELogServiceLogMainType type = 1;
+        sint64 idx = 2;
+        repeated string data_list = 3;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

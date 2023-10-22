@@ -45,15 +45,21 @@ bool App::Init()
         LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 
         GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
-                static int64_t oldRegionCreateCnt = 0;
-                static int64_t oldRegionDestroyCnt = 0;
-                static int64_t oldCnt = 0;
-                (void)oldRegionCreateCnt;
-                (void)oldRegionDestroyCnt;
-                (void)oldCnt;
+                [[maybe_unused]] static int64_t oldRegionCreateCnt = 0;
+                [[maybe_unused]] static int64_t oldRegionDestroyCnt = 0;
+                [[maybe_unused]] static int64_t oldCnt = 0;
 
-                LOG_INFO_IF(true, "cnt[{}] actorCnt[{}] rc[{}] rd[{}] avg[{}]",
-                            GetApp()->_cnt - oldCnt,
+                int64_t clientCnt = 0;
+                NetMgrImpl::GetInstance()->_gateSesList.Foreach([&clientCnt](const auto& s) {
+                        auto ses = s.lock();
+                        if (ses)
+                                clientCnt += ses->GetAgentCnt();
+                });
+
+                LOG_INFO_IF(true, "cnt[{}] client[{}] actorCnt[{}] rc[{}] rd[{}] avg[{}]",
+                            GetApp()->_cnt,
+                            clientCnt,
+                            // GetApp()->_cnt - oldCnt,
                             RegionMgr::GetInstance()->GetActorCnt(),
                             GetApp()->_regionCreateCnt - oldRegionCreateCnt,
                             GetApp()->_regionDestroyCnt - oldRegionDestroyCnt,

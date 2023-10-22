@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+option optimize_for = LITE_RUNTIME;
+// option optimize_for = CODE_SIZE; // SerializeToArray 比 LITE_RUNTIME 慢
+// option optimize_for = SPEED; // 默认
+
+/*
+   optimize for CODE_SIZE does not generate fast accessor
+   methods for everything, but relies on slow reflection,
+
+   optimize for SPEED will give you the fast accessors
+
+   and optimize for LITE_RUNTIME will also give you fast accessors,
+   but does not support the full functionality of protobuf, but only 
+   the lighter subset protobuf-lite. Basically, this means descriptors
+   or reflection are not available.
+ */
+
+// package PokerProto;
+
+import "msg_client_common.proto";
+
+enum EMsgClientCDKeySubType
+{
+        E_MCCKST_ReqUse = 0x0;
+}
+
+message MsgCDKeyRewardInfo
+{
+        sint64 reward_id = 1;
+        sint64 reward_type = 2;
+        sint64 num = 3;
+}
+
+message MsgCDKeyInfo
+{
+        sint64 end_time = 1;
+        map<sint64, sint64> platform_list = 2;
+        sint64 group_id = 3;
+        sint64 max_use_count_limit = 4;
+        sint64 cur_use_count = 5;
+        repeated string cdkey_list = 6;
+        repeated MsgCDKeyRewardInfo reward_list = 7;
+}
+
+message MsgCDKeyInfoList
+{
+        repeated MsgCDKeyInfo info_list = 1;
+}
+
+message MsgCDKeyReqUse
+{
+        EClientErrorType error_type = 1;
+        sint64 player_guid = 2;
+        string cdkey = 3;
+        sint64 platform = 4;
+        repeated MsgCDKeyRewardInfo reward_list = 5;
+
+        MsgPlayerChange player_change = 10;
+}
+
+// vim: fenc=utf8:expandtab:ts=8

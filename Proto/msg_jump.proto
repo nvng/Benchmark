@@ -113,7 +113,7 @@ message MsgFighterInfo
 message MsgFighterEnter
 {
         ERegionType region_type = 1;
-        sint64 region_guid = 2;
+        sint64 region_id = 2;
 
         MsgFighterInfo fighter_info = 10;
 }
@@ -121,7 +121,7 @@ message MsgFighterEnter
 message MsgRegionInfo
 {
         ERegionType region_type = 1;
-        sint64 region_guid = 2;
+        sint64 region_id = 2;
         sint64 random_seed = 3;
         sint64 time = 4;
         sint64 pattarn_cfg_id = 5;

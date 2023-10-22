@@ -20,8 +20,7 @@ void ClientGateSession::OnConnect()
 	if (0 != RandInRange(0, 3))
 	{
                 std::weak_ptr<ClientGateSession> weakSes = shared_from_this();
-                // SteadyTimer::StaticStart(SuperType::_socket._socket.get_executor(), std::chrono::milliseconds(RandInRange(0, 61 * 1000)), [weakSes]() {
-                SteadyTimer::StaticStart(std::chrono::milliseconds(RandInRange(0, 61 * 1000)), [weakSes]() {
+                SteadyTimer::StaticStart(RandInRange(0, 61), [weakSes]() {
 			auto ses = weakSes.lock();
 			if (ses)
 				ses->Close(1024);
@@ -44,8 +43,7 @@ void ClientGateSession::OnClose(int32_t reasonType)
                 p->OnDisconnect();
 
 	std::weak_ptr<ClientGateSession> weakSes = shared_from_this();
-        // SteadyTimer::StaticStart(SuperType::_socket._socket.get_executor(), std::chrono::milliseconds(RandInRange(0, 61 * 1000)), [
-        SteadyTimer::StaticStart(std::chrono::milliseconds(RandInRange(0, 61 * 1000)), [
+        SteadyTimer::StaticStart(RandInRange(0, 61), [
                                  ip{_connectEndPoint.address().to_string()},
                                  port{_connectEndPoint.port()}
         ]() {

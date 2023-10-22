@@ -7,6 +7,7 @@ set(SRC_DIR
         ./src/Region
         ../Deps/libnvngLib/include/ActorFramework/Impl/Lobby
         ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Benchmark
+        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Log
         )
 
 include($ENV{HOME}/git/config/cmake/project.cmake)

@@ -2,55 +2,132 @@
 
 #include "Player.h"
 
-void Bag::InitFromDB(const google::protobuf::RepeatedPtrField<MsgGoodsItem>& msgGoodsList)
+void Bag::InitFromDB(const DBPlayerInfo& dbInfo)
 {
+        auto now = GetClock().GetTimeStamp();
         _goodsList.clear();
-        for (auto& item : msgGoodsList)
-                _goodsList.emplace(item.id(), std::make_pair(item.num(), item.type()));
-}
-
-void Bag::Pack2DB(google::protobuf::RepeatedPtrField<MsgGoodsItem>& msgGoodsList) const
-{
-        for (auto& val : _goodsList)
+        for (auto& item : dbInfo.goods_list())
         {
-                auto item = msgGoodsList.Add();
-                item->set_id(val.first);
-                item->set_num(val.second.first);
-                item->set_type(val.second.second);
+                if (0 == item.end_time() || item.end_time() > now)
+                        _goodsList.emplace(item.id(), std::make_tuple(item.num(), item.type(), item.end_time()));
+        }
+
+        for (int64_t i=0; i<dbInfo.bag_buf_list_size(); ++i)
+        {
+                auto& listInfo = dbInfo.bag_buf_list(i);
+                for (auto& msgInfo : listInfo.buf_list())
+                {
+                        if (msgInfo.end_time() > now)
+                        {
+                                auto info = std::make_shared<stBagBufInfo>();
+                                info->UnPack(msgInfo);
+                                _bufList[listInfo.type()].emplace(info->_id, info);
+                        }
+                }
+        }
+
+        for (auto& val : _bufList[E_BBT_Goods])
+        {
+                auto info = val.second;
+                LOG_INFO("buffID[{}] active[{}] endTime[{}]",
+                         info->_id, info->_active, info->_endTime);
         }
 }
 
-void Bag::Pack2Client(google::protobuf::RepeatedPtrField<MsgGoodsItem>& msgGoodsList) const
+void Bag::Pack2Client(MsgPlayerInfo& msg)
 {
-        Pack2DB(msgGoodsList);
+        Pack2DB(msg);
+        for (int64_t i=0; i<EBagBuffType_ARRAYSIZE; ++i)
+        {
+                bool found = false;
+                for (auto& msgInfo : *msg.mutable_bag_buf_list())
+                {
+                        if (i == msgInfo.type())
+                        {
+                                found = true;
+                                break;
+                        }
+                }
+
+                if (!found)
+                {
+                        msg.add_bag_buf_list()->set_type(static_cast<EBagBuffType>(i));
+                }
+        }
+}
+
+int64_t Bag::GetAddRatio(EBagBuffType t)
+{
+        auto it = _bufList.find(t);
+        if (_bufList.end() != it)
+        {
+                if (!it->second.empty())
+                {
+                        auto cfg = BagMgr::GetInstance()->_bagItemCfgList.Get(it->second.begin()->second->_id);
+                        if (cfg)
+                                return cfg->_param;
+                };
+        }
+
+        return 0;
 }
 
 int64_t Bag::GetCnt(int64_t id)
 {
         auto it = _goodsList.find(id);
-        return _goodsList.end()!=it ? it->second.first : 0;
+        return _goodsList.end()!=it ? std::get<0>(it->second) : 0;
 }
 
-std::tuple<int64_t, int64_t, int64_t> Bag::Add(int64_t id, int64_t cnt, int64_t type/*=0*/)
+std::tuple<int64_t, int64_t, int64_t> Bag::Add(const PlayerPtr& p, MsgPlayerChange& msg, int64_t id, int64_t cnt, int64_t type, ELogServiceOrigType logType, uint64_t logParam)
 {
         std::tuple<int64_t, int64_t, int64_t> ret;
         if (cnt <= 0)
                 return ret;
 
+        auto cfg = BagMgr::GetInstance()->_bagItemCfgList.Get(id);
+        if (!cfg)
+                return ret;
+
         auto it = _goodsList.find(id);
         if (_goodsList.end() != it)
         {
-                it->second.first += cnt;
-                return std::make_tuple(id, it->second.first, it->second.second);
+                if (8 == cfg->_effectiveType && 1 == cfg->_param)
+                        p->AddMoney(msg, E_PAT_Coins, cnt * cfg->_param_1, logType, logParam);
+                else
+                {
+                        auto old = std::get<0>(it->second);
+                        std::get<0>(it->second) += cnt;
+                        auto n = std::get<0>(it->second);
+
+                        std::string str = fmt::format("{}\"old\":{},\"new\":{},\"diff\":{}{}", "{", old, n, n-old, "}");
+                        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), Base64Encode(str), E_LSLST_Goods, id, GetClock().GetTimeStamp(), logType, logParam);
+                }
+                return std::make_tuple(id, std::get<0>(it->second), std::get<1>(it->second));
         }
         else
         {
-                _goodsList.emplace(id, std::make_pair(cnt, type));
+                time_t overTime = 0;
+                if (8 == cfg->_effectiveType)
+                {
+                        auto now = GetClock().GetTimeStamp();
+                        auto weekDay = GetClock().GetWeekDay(now);
+                        auto weekZero = GetClock().TimeClear_Slow(now - DAY_TO_SEC(weekDay), Clock::E_CTT_DAY);
+                        overTime = weekZero + WEEK_TO_SEC(1) + HOUR_TO_SEC(GlobalSetup_CH::GetInstance()->_dataResetNonZero);
+                        if (1 == cfg->_param)
+                        {
+                                p->AddMoney(msg, E_PAT_Coins, (cnt - 1) * cfg->_param_1, logType, logParam);
+                                cnt = 1;
+                        }
+                }
+                _goodsList.emplace(id, std::make_tuple(cnt, type, overTime));
+
+                std::string str = fmt::format("{}\"old\":{},\"new\":{},\"diff\":{}{}", "{", 0, cnt, cnt, "}");
+                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), Base64Encode(str), E_LSLST_Goods, id, GetClock().GetTimeStamp(), logType, logParam);
                 return std::make_tuple(id, cnt, type);
         }
 }
 
-std::tuple<int64_t, int64_t, int64_t> Bag::Del(int64_t id, int64_t cnt)
+std::tuple<int64_t, int64_t, int64_t> Bag::Del(const PlayerPtr& p, int64_t id, int64_t cnt, ELogServiceOrigType logType, uint64_t logParam)
 {
         std::tuple<int64_t, int64_t, int64_t> ret;
         if (cnt <= 0)
@@ -59,13 +136,18 @@ std::tuple<int64_t, int64_t, int64_t> Bag::Del(int64_t id, int64_t cnt)
         auto it = _goodsList.find(id);
         if (_goodsList.end() != it)
         {
-                if (it->second.first < cnt)
+                if (std::get<0>(it->second) < cnt)
                         return ret;
 
-                it->second.first -= cnt;
-                ret = std::make_tuple(id, it->second.first, it->second.second);
-                if (it->second.first <= 0)
+                auto old = std::get<0>(it->second);
+                std::get<0>(it->second) -= cnt;
+                ret = std::make_tuple(id, std::get<0>(it->second), std::get<1>(it->second));
+                if (std::get<0>(it->second) <= 0)
                         _goodsList.erase(it);
+
+                auto n = std::get<0>(it->second);
+                std::string str = fmt::format("{}\"old\":{},\"new\":{},\"diff\":{}{}", "{", old, n, n-old, "}");
+                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), Base64Encode(str), E_LSLST_Goods, id, GetClock().GetTimeStamp(), logType, logParam);
                 return ret;
         }
         return ret;
@@ -82,22 +164,35 @@ bool Bag::Check(const std::vector<std::pair<int64_t, int64_t>>& costList)
 }
 
 std::vector<std::tuple<int64_t, int64_t, int64_t>>
-Bag::Del(const std::vector<std::pair<int64_t, int64_t>>& costList)
+Bag::Del(const PlayerPtr& p, const std::vector<std::pair<int64_t, int64_t>>& costList, ELogServiceOrigType logType, uint64_t logParam)
 {
         std::vector<std::tuple<int64_t, int64_t, int64_t>> retList;
         retList.reserve(costList.size());
         for (auto& val : costList)
-                retList.emplace_back(Del(val.first, val.second));
+                retList.emplace_back(Del(p, val.first, val.second, logType, logParam));
         return retList;
 }
 
 std::vector<std::tuple<int64_t, int64_t, int64_t>>
-Bag::CheckAndDel(const std::vector<std::pair<int64_t, int64_t>>& costList)
+Bag::CheckAndDel(const PlayerPtr& p, const std::vector<std::pair<int64_t, int64_t>>& costList, ELogServiceOrigType logType, uint64_t logParam)
 {
         std::vector<std::tuple<int64_t, int64_t, int64_t>> retList;
         if (!Check(costList))
                 return std::vector<std::tuple<int64_t, int64_t, int64_t>>();
-        return Del(costList);
+        return Del(p, costList, logType, logParam);
+}
+
+std::vector<int64_t> Bag::GetActiveBufList()
+{
+        std::vector<int64_t> retList;
+        retList.reserve(8);
+        for (auto& val : _bufList[E_BBT_Goods])
+        {
+                if (val.second->_active)
+                        retList.emplace_back(val.first);
+        }
+
+        return retList;
 }
 
 bool BagMgr::Init()
@@ -116,7 +211,7 @@ bool BagMgr::ReadBagCfg()
         int64_t idx = 0;
         std::string tmpStr;
         _itemIDByPos.Clear();
-        _bagItemCfgList.clear();
+        _bagItemCfgList.Clear();
         while (ReadTo(ss, "#"))
         {
                 if (++idx <= 3)
@@ -128,13 +223,15 @@ bool BagMgr::ReadBagCfg()
                         >> tmpStr
                         >> tmpStr
                         >> cfg->_pinZhi
+                        >> tmpStr
                         >> cfg->_type
                         >> cfg->_effectiveType
                         >> cfg->_param
                         >> cfg->_param_1
+                        >> cfg->_price
                         ;
 
-                LOG_FATAL_IF(!_bagItemCfgList.emplace(cfg->_id, cfg).second,
+                LOG_FATAL_IF(!_bagItemCfgList.Add(cfg->_id, cfg),
                              "文件[{}] 唯一ID重复，id[{}]!!!",
                              fileName, cfg->_id);
                 LOG_FATAL_IF(!CheckConfigEnd(ss, fileName),
@@ -145,12 +242,6 @@ bool BagMgr::ReadBagCfg()
         return true;
 }
 
-
-stBagItemCfgPtr BagMgr::GetBagItemCfg(int64_t id)
-{
-        auto it = _bagItemCfgList.find(id);
-        return _bagItemCfgList.end()!=it ? it->second : nullptr;
-}
 
 bool BagMgr::ReadDropCfg()
 {
@@ -310,7 +401,8 @@ EClientErrorType BagMgr::DoDropInternal(const std::vector<std::pair<int64_t, int
 EClientErrorType BagMgr::DoDrop(const PlayerPtr& p,
                                 MsgPlayerChange& msg,
                                 const std::vector<std::pair<int64_t, int64_t>>& idList,
-                                EPlayerLogModuleType from/* = static_cast<EPlayerLogModuleType>(E_LOG_MT_None)*/,
+                                ELogServiceOrigType logType,
+                                uint64_t logParam,
                                 int64_t r/* = 0*/)
 {
         std::map<int64_t, std::pair<int64_t, int64_t>> tmpList;
@@ -319,7 +411,7 @@ EClientErrorType BagMgr::DoDrop(const PlayerPtr& p,
                 return errorType;
 
         for (auto& val : tmpList)
-                p->AddDrop(msg, val.second.second, val.first, val.second.first * (1.0 + r / 10000.0), from);
+                p->AddDrop(msg, val.second.second, val.first, val.second.first * (1.0 + r / 10000.0), logType, logParam);
 
         return E_CET_Success;
 }

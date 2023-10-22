@@ -7,6 +7,7 @@
 #define PING_PONG_SERVICE_CLIENT
 #define PING_PONG_BIG_SERVICE_CLIENT
 #define REDIS_SERVICE_CLIENT
+#define LOG_SERVICE_CLIENT
 
 #define BOOST_SP_DISABLE_THREADS
 #include <boost/shared_ptr.hpp>
@@ -37,6 +38,7 @@
 #include "msg_client_type.pb.h"
 #include "msg_client.pb.h"
 #include "msg_db.pb.h"
+#include "msg_log.pb.h"
 
 #include "nvngLib.h"
 
@@ -49,6 +51,7 @@ using namespace nl::net::server;
 #include "GlobalVarActor.h"
 #include "LobbyGateSession.h"
 #include "LobbyDBSession.h"
+#include "LogService.h"
 
 #include "Share/GlobalDef.h"
 #include "Share/GlobalSetup.h"

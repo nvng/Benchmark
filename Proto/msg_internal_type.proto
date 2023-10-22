@@ -25,7 +25,8 @@ enum EMsgInternalMainType
 {
   E_MIMT_Internal = 0x0; // 服务器间内部消息
 
-  E_MIMT_DB = 0xfe8;
+  E_MIMT_DB = 0xfe7;
+  E_MIMT_Log = 0xfe8;
 
   E_MIMT_Robot = 0xfe9;
   E_MIMT_QueueCommon = 0xfea;

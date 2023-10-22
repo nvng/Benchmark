@@ -14,6 +14,7 @@ public :
 
 public :
   stGateServerCfgPtr _gateCfg;
+  std::atomic_int64_t _cnt;
   std::atomic_int64_t _clientRecvCnt;
   std::atomic_int64_t _serverRecvCnt;
   std::atomic_int64_t _gameRecvCnt;

@@ -54,11 +54,12 @@ bool App::Init()
 				gamePlayerCnt += gameSes->GetPlayerCnt();
 		});
 
-                [[maybe_unused]]static int64_t clientRecvCnt = 0;
-                [[maybe_unused]]static int64_t serverRecvCnt = 0;
-                [[maybe_unused]]static int64_t gameRecvCnt = 0;
-                [[maybe_unused]]static int64_t loginRecvCnt = 0;
-		LOG_INFO_IF(true, "sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
+                [[maybe_unused]] static int64_t clientRecvCnt = 0;
+                [[maybe_unused]] static int64_t serverRecvCnt = 0;
+                [[maybe_unused]] static int64_t gameRecvCnt = 0;
+                [[maybe_unused]] static int64_t loginRecvCnt = 0;
+		LOG_INFO_IF(true, "cnt[{}] sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
+                            GetApp()->_cnt,
 			    NetMgrImpl::GetInstance()->GetSessionCnt(),
 			    PlayerMgr::GetInstance()->GetPlayerCnt(),
 			    lobbyPlayerCnt,

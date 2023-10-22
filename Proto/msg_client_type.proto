@@ -35,6 +35,7 @@ enum EMsgClientMainType
   E_MCMT_Hero = 0x9;
   E_MCMT_Achievement = 0xa;
   E_MCMT_Activity = 0xb;
+  E_MCMT_CDKey = 0xc;
 
   E_MCMT_Pay = 0xf9;
   E_MCMT_QueueCommon = 0xfa;
