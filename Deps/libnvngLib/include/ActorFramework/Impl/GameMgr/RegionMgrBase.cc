@@ -67,7 +67,7 @@ RegionMgrActor::ReqCreateRegionAgent(const std::shared_ptr<MailRegionCreateInfo>
                                      const RequestActorPtr& reqActor)
 {
         // TODO: gameSes 分配失败!!!
-        auto gameSes = GetRegionMgrBase()->DistGameSes(cfg->region_type(), cfg->region_guid());
+        auto gameSes = GetRegionMgrBase()->DistGameSes(cfg->region_type(), cfg->region_id());
         if (!gameSes)
         {
                 LOG_WARN("玩家 请求进入场景时，分配 gameSes 失败!!!");
@@ -108,7 +108,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(RegionMgrActor, 0x0, stMailReqEnterRegion)
                         for (auto& val : _regionList)
                         {
                                 auto& reg = val.second;
-                                if (reg->CanEnter(pb) && reg->GetID() != (uint64_t)pb->old_region_guid())
+                                if (reg->CanEnter(pb) && reg->GetID() != (uint64_t)pb->old_region_id())
                                 {
                                         region = reg;
                                         break;
@@ -128,7 +128,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(RegionMgrActor, 0x0, stMailReqEnterRegion)
                         // TODO: 读取 region cfg 配置
                         auto mail = std::make_shared<MailRegionCreateInfo>();
                         mail->set_region_type(pb->region_type());
-                        mail->set_region_guid(regionGuid);
+                        mail->set_region_id(regionGuid);
                         mail->set_param(fInfo.param());
 
                         auto gameAgent = ReqCreateRegionAgent(mail, reqActor);
@@ -170,7 +170,7 @@ ActorMailDataPtr RegionMgrActor::DelRegion(const IActorPtr& from, const std::sha
         auto mail = std::make_shared<MailResult>();
         mail->set_error_type(E_IET_Success);
 
-        _regionList.erase(msg->region_guid());
+        _regionList.erase(msg->region_id());
 
         return mail;
 }
@@ -185,7 +185,7 @@ ActorMailDataPtr RegionMgrActor::ExitRegion(const IActorPtr& from, const std::sh
         auto ret = std::make_shared<MailResult>();
         ret->set_error_type(E_IET_Success);
 
-        auto it = _regionList.find(msg->region_guid());
+        auto it = _regionList.find(msg->region_id());
         if (_regionList.end() == it)
                 return ret;
 
@@ -219,7 +219,8 @@ ActorMailDataPtr RegionMgrActor::CreateRegion(const IActorPtr& from, const std::
 
         auto mail = std::make_shared<MailRegionCreateInfo>();
         mail->set_region_type(msg->_regionType);
-        mail->set_region_guid(GenGuid(_regionList, GetRegionType(), idList));
+        mail->set_region_id(GenGuid(_regionList, GetRegionType(), idList));
+        mail->set_guid(msg->_guid);
         mail->set_param(msg->_param);
         mail->set_param_1(msg->_param_1);
         mail->set_param_2(msg->_param_2);
@@ -272,7 +273,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(RegionMgrActor, 0xf, MailRegionRelationInfo)
                 // 因此需要再创建一个 RegionAgent 给 GameServer 删，若 lobby player 重复收到处理一下。
                 auto mail = std::make_shared<MailRegionCreateInfo>();
                 mail->set_region_type(msg->region_type());
-                mail->set_region_guid(msg->id());
+                mail->set_region_id(msg->id());
                 mail->set_param(msg->param());
 
                 auto regionAgent = GetRegionMgrBase()->CreateRegionAgent(mail, gameSes, reqActor);
@@ -316,17 +317,17 @@ ActorMailDataPtr CompetitionKnockoutRegionMgrActor::DelRegion(const IActorPtr& f
 {
         auto mail = std::make_shared<MailResult>();
 
-        auto it = _regionList.find(msg->region_guid());
+        auto it = _regionList.find(msg->region_id());
         if (_regionList.end() == it)
         {
-                LOG_WARN("比赛中，删除 Region[{}] 时，未找到!!!", msg->region_guid());
+                LOG_WARN("比赛中，删除 Region[{}] 时，未找到!!!", msg->region_id());
                 return mail;
         }
 
         auto region = it->second;
         if (!region)
         {
-                LOG_WARN("比赛中，删除 Region[{}] 时，region is nullptr!!!", msg->region_guid());
+                LOG_WARN("比赛中，删除 Region[{}] 时，region is nullptr!!!", msg->region_id());
                 return mail;
         }
 
@@ -459,6 +460,9 @@ void CompetitionKnockoutRegionMgrActor::StartRound(std::vector<stPlayerInfoPtr>&
                         tmpInfo->_param_1 = _param_1;
                         tmpInfo->_param_2 = _roundCnt;
 
+                        tmpInfo->_guid = SnowflakeRegionGuid::Gen();
+                        _regionGuidList.emplace_back(tmpInfo->_guid);
+
                         for (auto& p : Random(playerList, tmpPlayerCnt))
                                 tmpInfo->_playerList.emplace(p->GetID(), p);
 
@@ -573,6 +577,7 @@ bool RegionMgrBase::Init()
                 return lhs->GetID() < rhs->GetID();
         });
 
+        SnowflakeRegionGuid::Init(GetApp()->GetSID());
 	return true;
 }
 
@@ -871,6 +876,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(QueueMgrActor, E_MCQCST_Opt, MsgQueueOpt)
                                         if (reqAgent)
                                         {
                                                 qInfo->_regionMgr = GetRegionMgrBase()->GetRegionMgrActor(qInfo->_regionType);
+                                                qInfo->_guid = SnowflakeRegionGuid::Gen();
                                                 Send(reqAgent->GetBindActor(), E_MIMT_QueueCommon, E_MIQCST_ReqQueue, qInfo);
                                         }
                                 }
@@ -1102,6 +1108,7 @@ void NormalQueueMgrActor::InitCheckTimer()
                         {
                                 auto reqActor = GetRegionMgrBase()->DistReqActor(qInfo->GetID());
                                 qInfo->_regionMgr = GetRegionMgrBase()->GetRegionMgrActor(qInfo->_regionType);
+                                qInfo->_guid = SnowflakeRegionGuid::Gen();
                                 Send(reqActor, E_MIMT_QueueCommon, E_MIQCST_ReqQueue, qInfo);
 
                                 idList.emplace_back(qInfo->GetID());
@@ -1204,6 +1211,7 @@ void NormalQueueMgrActor::ReqQueue(const std::shared_ptr<stMailReqQueue>& msg)
         if (MatchQueue(otherQueueInfoList, qInfo, false))
         {
                 qInfo->_regionMgr = GetRegionMgrBase()->GetRegionMgrActor(qInfo->_regionType);
+                qInfo->_guid = SnowflakeRegionGuid::Gen();
                 Send(reqActor, E_MIMT_QueueCommon, E_MIQCST_ReqQueue, qInfo);
                 for (auto& info : otherQueueInfoList)
                         seq.erase(info->GetID());

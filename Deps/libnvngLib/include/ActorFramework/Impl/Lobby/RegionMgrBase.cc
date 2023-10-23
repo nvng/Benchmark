@@ -210,8 +210,8 @@ IActorPtr RegionMgrBase::RequestEnterRegion(const PlayerBasePtr& p, const MsgReq
 
         auto mail = std::make_shared<MailReqEnterRegion>();
         mail->set_region_type(regionType);
-        mail->set_region_guid(msg.region_guid());
-        mail->set_old_region_guid(oldRegion ? oldRegion->GetID() : -1);
+        mail->set_region_id(msg.region_id());
+        mail->set_old_region_id(oldRegion ? oldRegion->GetID() : -1);
 
         auto fInfo = mail->add_fighter_list();
         fInfo->set_gate_sid(sid);
@@ -233,7 +233,7 @@ IActorPtr RegionMgrBase::RequestEnterRegion(const PlayerBasePtr& p, const MsgReq
                 return regionAgent;
         }
 
-        return DirectEnterRegion(p, gameMgrSes, regionType, reqEnterRegionRet->region_guid(), reqEnterRegionRet->game_sid());
+        return DirectEnterRegion(p, gameMgrSes, regionType, reqEnterRegionRet->region_id(), reqEnterRegionRet->game_sid());
 }
 
 struct stQueueAgentCache

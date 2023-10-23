@@ -26,6 +26,7 @@
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <boost/mysql.hpp>
+#include <boost/crc.hpp>
 
 // multi_index_container
 #include <boost/multi_index_container.hpp>

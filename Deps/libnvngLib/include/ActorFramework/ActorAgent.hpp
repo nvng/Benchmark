@@ -398,7 +398,16 @@ public :
                 }
         }
 
-        FORCE_INLINE void SetSession(const std::shared_ptr<SessionType>& ses) { _ses = ses; if (ses) _sid = ses->GetSID(); }
+        FORCE_INLINE void SetSession(const std::shared_ptr<SessionType>& ses)
+        {
+                auto oldSes = _ses.lock();
+                if (oldSes)
+                        ses->RemoveAgent(GetAgentID(), GetLocalID(), this);
+                _ses = ses;
+                if (ses)
+                        _sid = ses->GetSID();
+        }
+
         FORCE_INLINE std::shared_ptr<SessionType> GetSession() { return _ses.lock(); }
         FORCE_INLINE int64_t GetSID() const { return _sid; }
 
@@ -413,7 +422,7 @@ protected :
 protected :
         uint64_t _local = 0;
 private :
-        uint64_t _id = 0;
+        const uint64_t _id = 0;
         uint32_t _sid = 0;
 };
 

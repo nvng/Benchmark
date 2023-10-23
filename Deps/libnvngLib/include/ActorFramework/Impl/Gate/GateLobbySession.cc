@@ -12,7 +12,7 @@ bool GateLobbySession::InitOnce()
         if (!SuperType::InitOnce())
                 return false;
 
-        SteadyTimer::StaticStart(std::chrono::seconds(1), []() {
+        SteadyTimer::StaticStart(1, []() {
                 int64_t cnt = 0;
                 NetMgrImpl::GetInstance()->ForeachLobby([&cnt](const auto& ses) {
                         ++cnt;
@@ -27,6 +27,11 @@ bool GateLobbySession::InitOnce()
         return true;
 }
 
+GateLobbySession::~GateLobbySession()
+{
+        NetMgrImpl::GetInstance()->RemoveSession(E_GST_Lobby, this);
+}
+
 void GateLobbySession::OnConnect()
 {
         LOG_WARN("lobby 连接成功!!!");
@@ -36,7 +41,6 @@ void GateLobbySession::OnConnect()
 void GateLobbySession::OnClose(int32_t reasonType)
 {
         LOG_WARN("lobby 断开连接!!!");
-	NetMgrImpl::GetInstance()->RemoveSession(E_GST_Lobby, shared_from_this());
 
         std::unordered_set<std::shared_ptr<GateClientSession>> tmpList;
         _playerList.Foreach([&tmpList](const std::weak_ptr<Player>& weakPlayer) {
@@ -214,7 +218,7 @@ void GateLobbySession::OnRecv(typename SuperType::BuffTypePtr::element_type* buf
                                                 {
                                                         if (gameSes->AddPlayer(player))
                                                         {
-                                                                player->_regionGuid = msg.region_guid();
+                                                                player->_regionGuid = msg.region_id();
                                                                 player->_gameSes = gameSes;
                                                         }
                                                         else

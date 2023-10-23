@@ -146,9 +146,10 @@ public :
                 return ret;
         }
 
-        virtual int64_t AddMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt);
+        virtual int64_t GetMoney(int64_t t);
+        virtual int64_t AddMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt, ELogServiceOrigType logType, uint64_t logParam);
         virtual bool CheckMoney(int64_t t, int64_t cnt);
-        virtual int64_t DelMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt);
+        virtual int64_t DelMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt, ELogServiceOrigType logType, uint64_t logParam);
 
         bool AddExp(int64_t exp);
 protected :
@@ -188,10 +189,11 @@ public :
         { for (auto& val : tList) PackUpdateGoods(msg, val); }
 
         virtual void AddDrop(MsgPlayerChange& msg,
-                     int64_t type,
-                     int64_t param,
-                     int64_t cnt,
-                     EPlayerLogModuleType from = static_cast<EPlayerLogModuleType>(E_LOG_MT_None))
+                             int64_t type,
+                             int64_t param,
+                             int64_t cnt,
+                             ELogServiceOrigType logType,
+                             uint64_t logParam)
         {
         }
 

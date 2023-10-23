@@ -24,7 +24,7 @@ class ServiceSession
                 , ActorAgent
                 , ServiceSession<ServiceType, IsServer, _Tag>
                 , IsServer
-                , Compress::ECompressType::E_CT_ZLib
+                , Compress::ECompressType::E_CT_Zstd
                 , _Tag>
 {
 public :
@@ -32,7 +32,7 @@ public :
                 , ActorAgent
                 , ServiceSession<ServiceType, IsServer, _Tag>
                 , IsServer
-                , Compress::ECompressType::E_CT_ZLib
+                , Compress::ECompressType::E_CT_Zstd
                 , _Tag
                 > SuperType;
         typedef ServiceSession<ServiceType, IsServer, _Tag> ThisType;
@@ -67,9 +67,9 @@ public :
                 ServiceType::GetInstance()->RemoveSession(shared_from_this());
         }
 
-        static void MsgHandleServerInit(const ISessionPtr& ses
-                                        , typename ISession::BuffTypePtr::element_type* buf
-                                        , const ISession::BuffTypePtr& bufRef)
+        static void MsgHandleServerInit(const ::nl::net::ISessionPtr& ses
+                                        , typename ::nl::net::ISession::BuffTypePtr::element_type* buf
+                                        , const ::nl::net::ISession::BuffTypePtr& bufRef)
         {
                 SuperType::MsgHandleServerInit(ses, buf, bufRef);
                 LOG_INFO("初始化 {} sid[{}] 成功!!!", ServiceType::GetInstance()->GetServiceName(), ses->GetSID());
@@ -249,17 +249,17 @@ public :
         {
                 if constexpr (E_ServiceType_Server == ServiceType)
                 {
-                        reinterpret_cast<ImplType*>(this)->StartServer(std::forward<Args>(args)...);
+                        reinterpret_cast<ImplType*>(this)->StartServer(args...);
                 }
                 else if constexpr (E_ServiceType_Client == ServiceType)
                 {
-                        ::nl::net::NetMgrBase<typename SessionType::Tag>::GetInstance()->Connect(std::forward<Args>(args)..., [](auto&& s) {
+                        ::nl::net::NetMgrBase<typename SessionType::Tag>::GetInstance()->Connect(args..., [](auto&& s) {
                                 return std::make_shared<SessionType>(std::move(s));
                         });
                 }
                 else if constexpr (E_ServiceType_Local == ServiceType)
                 {
-                        reinterpret_cast<ImplType*>(this)->StartLocal(std::forward<Args>(args)...);
+                        reinterpret_cast<ImplType*>(this)->StartLocal(args...);
                 }
                 else
                 {
@@ -272,15 +272,16 @@ public :
         template <typename ... Args>
         bool StartServer(uint16_t port, Args ... args)
         {
+                if (_actorArr.empty())
+                {
+                        auto serverInfo = GetAppBase()->GetServerInfo<stServerInfoBase>();
+                        reinterpret_cast<ImplType*>(this)->StartLocal(serverInfo->_workersCnt * 512, args...);
+                }
+
                 ::nl::net::NetMgrBase<typename SessionType::Tag>::GetInstance()->Listen(port, [](auto&& s, const auto& sslCtx) {
                         return std::make_shared<SessionType>(std::move(s));
                 });
 
-                if (_actorArr.empty())
-                {
-                        auto serverInfo = GetAppBase()->GetServerInfo<stServerInfoBase>();
-                        reinterpret_cast<ImplType*>(this)->StartLocal(serverInfo->_workersCnt * 512, std::forward<Args>(args)...);
-                }
                 return true;
         }
 
@@ -290,7 +291,7 @@ public :
                 LOG_FATAL_IF(!CHECK_2N(actCnt), "actCnt 必须设置为 2^N !!!", actCnt);
                 for (int64_t i=0; i<actCnt; ++i)
                 {
-                        auto act = std::make_shared<ActorType>(std::forward<Args>(args)...);
+                        auto act = std::make_shared<ActorType>(args...);
                         _actorArr.emplace_back(act);
                         act->Start();
                 }
@@ -313,7 +314,7 @@ public :
                         if (!ses)
                                 return std::shared_ptr<typename SessionType::ActorAgentType>();
 
-                        auto ret = std::make_shared<typename SessionType::ActorAgentType>(id, ses, std::forward<Args>(args)...);
+                        auto ret = std::make_shared<typename SessionType::ActorAgentType>(id, ses, args...);
                         ret->BindActor(act);
                         ses->AddAgent(ret);
                         return ret;
@@ -325,18 +326,25 @@ public :
                 }
         }
 
+        typedef std::function<void(const std::weak_ptr<ActorType>&)> ForeachAcotrFuncType;
+        virtual void ForeachActor(const ForeachAcotrFuncType& cb)
+        {
+                for (auto& wa : _actorArr)
+                        cb(wa);
+        }
+
 protected :
         std::vector<std::weak_ptr<ActorType>> _actorArr;
 
 public :
         FORCE_INLINE std::shared_ptr<SessionType> DistSession(uint64_t id)
         { return _sesDistribute.DistSession(id); }
-        FORCE_INLINE bool AddSession(const ISessionPtr& ses)
+        virtual bool AddSession(const ::nl::net::ISessionPtr& ses)
         { return _sesDistribute.AddSession(std::dynamic_pointer_cast<SessionType>(ses)); }
-        FORCE_INLINE void RemoveSession(const ISessionPtr& ses)
+        FORCE_INLINE void RemoveSession(const ::nl::net::ISessionPtr& ses)
         { _sesDistribute.RemoveSession(std::dynamic_pointer_cast<SessionType>(ses)); }
 
-private :
+public :
         SessionDistributeType _sesDistribute;
 
 public :
@@ -387,11 +395,11 @@ private :
 
 #define SERVICE_NET_HANDLE_BUF(sy, mt, st, buf, bufRef) \
         namespace _##sy##_##mt##_##st { nl::net::stRegistMsgHandleProxy<sy, mt, st, int, 2> _; }; \
-        template <> template <> void sy::MsgHandle<mt, st>(const sy::MsgHeaderType& msgHead, ISession::BuffTypePtr::element_type* buf, std::size_t bufSize, const ISession::BuffTypePtr& bufRef)
+        template <> template <> void sy::MsgHandle<mt, st>(const sy::MsgHeaderType& msgHead, ::nl::net::ISession::BuffTypePtr::element_type* buf, std::size_t bufSize, const ::nl::net::ISession::BuffTypePtr& bufRef)
 
 #define SERVICE_NET_HANDLE_MSG_BUF(sy, mt, st, my, buf, bufRef) \
         namespace _##sy##_##mt##_##st { nl::net::stRegistMsgHandleProxy<sy, mt, st, my, 3> _; }; \
-        template <> template <> void sy::MsgHandle<mt, st>(const sy::MsgHeaderType& msgHead, const std::shared_ptr<my>& msg, ISession::BuffTypePtr::element_type* buf, std::size_t bufSize, const ISession::BuffTypePtr& bufRef)
+        template <> template <> void sy::MsgHandle<mt, st>(const sy::MsgHeaderType& msgHead, const std::shared_ptr<my>& msg, ::nl::net::ISession::BuffTypePtr::element_type* buf, std::size_t bufSize, const ::nl::net::ISession::BuffTypePtr& bufRef)
 
 #define SERVICE_GET_NET_HANDLE_FUNC(_1, _2, _3, _4, _5, _6, FUNC_NAME, ...)      FUNC_NAME
 #define SERVICE_NET_HANDLE(...)     SERVICE_GET_NET_HANDLE_FUNC(__VA_ARGS__, SERVICE_NET_HANDLE_MSG_BUF, SERVICE_NET_HANDLE_BUF, SERVICE_NET_HANDLE_BASE, SERVICE_NET_HANDLE_EMPTY, ...)(__VA_ARGS__)

@@ -12,7 +12,7 @@ bool GateGameSession::InitOnce()
         if (!SuperType::InitOnce())
                 return false;
 
-        SteadyTimer::StaticStart(std::chrono::seconds(1), []() {
+        SteadyTimer::StaticStart(1, []() {
                 int64_t cnt = 0;
                 NetMgrImpl::GetInstance()->ForeachGame([&cnt](const auto& ses) {
                         ++cnt;
@@ -25,6 +25,11 @@ bool GateGameSession::InitOnce()
         });
 
         return true;
+}
+
+GateGameSession::~GateGameSession()
+{
+	NetMgrImpl::GetInstance()->RemoveSession(E_GST_Game, this);
 }
 
 void GateGameSession::OnConnect()
@@ -49,7 +54,6 @@ void GateGameSession::OnClose(int32_t reasonType)
                 if (p)
                         p->OnGameClose();
         });
-	NetMgrImpl::GetInstance()->RemoveSession(E_GST_Game, shared_from_this());
 	SuperType::OnClose(reasonType);
 }
 

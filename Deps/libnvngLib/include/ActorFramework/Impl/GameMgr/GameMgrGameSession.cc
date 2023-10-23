@@ -11,7 +11,7 @@ GameMgrGameSession::~GameMgrGameSession()
 
 void GameMgrGameSession::InitCheckFinishTimer()
 {
-        SteadyTimer::StaticStart(std::chrono::seconds(1), []() {
+        SteadyTimer::StaticStart(1, []() {
                 std::lock_guard l(RegionMgr::GetInstance()->_gameSesArrMutex);
                 if (static_cast<int64_t>(RegionMgr::GetInstance()->_gameSesArr.size()) >= ServerListCfgMgr::GetInstance()->GetSize<stGameServerInfo>())
                 {

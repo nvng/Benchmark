@@ -6,6 +6,12 @@
 namespace nl::af::impl {
 
 const std::string GateLoginSession::scPriorityTaskKey = "gate_login_load";
+
+GateLoginSession::~GateLoginSession()
+{
+	NetMgrImpl::GetInstance()->RemoveSession(E_GST_Login, this);
+}
+
 void GateLoginSession::OnConnect()
 {
 	SuperType::OnConnect();
@@ -13,7 +19,6 @@ void GateLoginSession::OnConnect()
 
 void GateLoginSession::OnClose(int32_t reasonType)
 {
-	NetMgrImpl::GetInstance()->RemoveSession(E_GST_Login, shared_from_this());
 	SuperType::OnClose(reasonType);
 }
 
@@ -28,7 +33,7 @@ void GateLoginSession::MsgHandleServerInit(const ISessionPtr& ses, typename ISes
 void GateLoginSession::OnRecv(typename SuperType::BuffTypePtr::element_type* buf, const typename SuperType::BuffTypePtr& bufRef)
 {
         auto msgHead = *reinterpret_cast<MsgHeaderType*>(buf);
-        auto clientSes = std::dynamic_pointer_cast<GateClientSession>(NetMgrImpl::GetInstance()->GetSession(msgHead._to));
+        auto clientSes = std::dynamic_pointer_cast<GateClientSession>(::nl::net::client::ClientNetMgr::GetInstance()->_sesList.Get(msgHead._to).lock());
         if (clientSes)
         {
                 clientSes->SendBuf<MsgHeaderType>(bufRef, buf, msgHead._size, msgHead.CompressType(), msgHead.MainType(), msgHead.SubType(), 0);

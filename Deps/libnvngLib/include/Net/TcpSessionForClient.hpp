@@ -184,14 +184,11 @@ private :
                                  * 必须等待返回后再次调用 async_write。
                                  */
 
-                                if (ses)
-                                {
-                                        ses->DelInSend();
-                                        if (!ec)
-                                                ses->DoSend();
-                                        else
-                                                ses->OnError(ec);
-                                }
+                                ses->DelInSend();
+                                if (!ec)
+                                        ses->DoSend();
+                                else
+                                        ses->OnError(ec);
                         });
 
                         if (_bufList.capacity() <= 4)
@@ -215,20 +212,21 @@ private :
                         _socket.async_read(boost::asio::buffer((char*)&_msgHead, sizeof(_msgHead)),
                                            // boost::asio::transfer_at_least(sizeof(_msgHead)),
                                            [ses](const auto& ec, std::size_t size) {
-                                                   if (!ec)
+                                                   if (!ec && ses->_msgHead._size >= sizeof(MsgHeaderType))
                                                    {
                                                            auto buf = std::make_shared<char[]>(ses->_msgHead._size);
                                                            *reinterpret_cast<MsgHeaderType*>(buf.get()) = ses->_msgHead;
                                                            ses->_socket.async_read(boost::asio::buffer(buf.get() + sizeof(MsgHeaderType), ses->_msgHead._size - sizeof(MsgHeaderType)),
                                                                                    // boost::asio::transfer_at_least(ses->_msgHead._size - sizeof(MsgHeaderType)),
                                                                                    [ses, buf](const auto& ec, std::size_t size) {
-                                                                                           if (!ec)
+                                                                                           if (!ec && size == ses->_msgHead._size - sizeof(MsgHeaderType))
                                                                                            {
                                                                                                    ses->OnRecv(buf.get(), buf);
                                                                                                    ses->DoRecv();
                                                                                            }
                                                                                            else
                                                                                            {
+                                                                                                   LOG_WARN("async read error ses id[{}] recvSize[{}] needSize[{}]", ses->GetID(), size, ses->_msgHead._size);
                                                                                                    ses->OnError(ec);
                                                                                            }
                                                                                    });
@@ -266,7 +264,7 @@ public :
                                   std::size_t bufSize, // 包括 from 的头。
                                   Args ... args)
         {
-                assert(sizeof(MsgHeaderType) <= sizeof(_FHy));
+                static_assert(sizeof(MsgHeaderType) <= sizeof(_FHy));
                 auto sendBuf = buf + sizeof(_FHy) - sizeof(MsgHeaderType);
                 auto sendSize = bufSize - sizeof(_FHy) + sizeof(MsgHeaderType);
                 new (sendBuf) MsgHeaderType(sendSize, std::forward<Args>(args)...);

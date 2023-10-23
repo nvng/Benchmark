@@ -9,7 +9,7 @@ public :
         RegionAgent(const std::shared_ptr<MailRegionCreateInfo>& cfg,
                     const std::shared_ptr<_Ty>& ses,
                     const IActorPtr& b)
-                : SuperType(cfg->region_guid(), ses)
+                : SuperType(cfg->region_id(), ses)
                   , _cfg(cfg)
         {
                 SuperType::BindActor(b);

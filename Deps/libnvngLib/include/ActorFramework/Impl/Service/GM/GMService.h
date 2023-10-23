@@ -1,54 +1,55 @@
 #pragma once
 
+#ifdef GM_SERVICE_SERVER
+
 #include "ActorFramework/ServiceExtra.hpp"
-#include "msg_pay.pb.h"
 
-SPECIAL_ACTOR_DEFINE_BEGIN(CDKeyActor, E_MCMT_CDKey);
-SPECIAL_ACTOR_DEFINE_END(CDKeyActor);
+struct stMailGMData : public stActorMailBase
+{
+        rapidjson::Value _data;
+};
 
-// #define CDKEY_SERVICE_SERVER
-// #define CDKEY_SERVICE_CLIENT
-// #define CDKEY_SERVICE_LOCAL
+SPECIAL_ACTOR_DEFINE_BEGIN(GMActor, 0xefc);
+SPECIAL_ACTOR_DEFINE_END(GMActor);
 
-#if defined (CDKEY_SERVICE_LOCAL) || defined (CDKEY_SERVICE_CLIENT)
-
-#include "Player.h"
-
-#endif
-
-DECLARE_SERVICE_BASE_BEGIN(CDKey, SessionDistributeSID, ServiceSession);
+DECLARE_SERVICE_BASE_BEGIN(GM, SessionDistributeSID, ServiceSession);
 
 private :
-        CDKeyServiceBase() : SuperType("CDKeyService") { }
-        ~CDKeyServiceBase() override { }
+        GMServiceBase() : SuperType("GMService") { }
+        ~GMServiceBase() override { }
 
 public :
         bool Init() override;
 
-#if defined (CDKEY_SERVICE_LOCAL) || defined (CDKEY_SERVICE_CLIENT)
+        template <typename ... Args>
+        bool StartServer(uint16_t port, Args ... args)
+        {
+                if (SuperType::_actorArr.empty())
+                {
+                        auto serverInfo = GetAppBase()->GetServerInfo<stServerInfoBase>();
+                        SuperType::StartLocal(1, std::forward<Args>(args)...);
+                }
 
-        std::shared_ptr<MsgPayOrderGuid> ReqOrderGuid(const PlayerPtr& act);
+                return true;
+        }
+        FORCE_INLINE GMActorPtr GetServiceActor() { return SuperType::_actorArr[0].lock(); }
 
-#else
-        
-        FORCE_INLINE auto GetServiceActor()
-        { return SuperType::_actorArr[_idx++ % SuperType::_actorArr.size()].lock(); }
-        int64_t _idx = 0;
+public :
+        typedef std::function<std::string(const rapidjson::Value&)> ModuleOptFuncType;
+        void RegistOpt(int64_t module, int64_t opt, const ModuleOptFuncType& cb)
+        {
+                auto key = std::make_pair(module, opt);
+                _moduleOptList.emplace(key, std::move(cb));
+        }
+
+        std::map<std::pair<int64_t, int64_t>, ModuleOptFuncType> _moduleOptList;
+
+DECLARE_SERVICE_BASE_END(GM);
 
 #endif
 
-DECLARE_SERVICE_BASE_END(CDKey);
-
-#ifdef CDKEY_SERVICE_SERVER
-typedef CDKeyServiceBase<E_ServiceType_Server, stLobbyServerInfo> CDKeyService;
-#endif
-
-#ifdef CDKEY_SERVICE_CLIENT
-typedef CDKeyServiceBase<E_ServiceType_Client, stCDKeyServerInfo> CDKeyService;
-#endif
-
-#ifdef CDKEY_SERVICE_LOCAL
-typedef CDKeyServiceBase<E_ServiceType_Local, stServerInfoBase> CDKeyService;
+#ifdef GM_SERVICE_SERVER
+typedef GMServiceBase<E_ServiceType_Server, stLobbyServerInfo> GMService;
 #endif
 
 // vim: fenc=utf8:expandtab:ts=8

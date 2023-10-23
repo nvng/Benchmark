@@ -147,7 +147,7 @@ void RobotService::BackRobot(const RobotPtr& r)
 void RobotActor::InitSaveTimer()
 {
         RobotActorWeakPtr weakAct = shared_from_this();
-        SteadyTimer::StaticStart(std::chrono::seconds(5 * 60), [weakAct]() {
+        SteadyTimer::StaticStart(5 * 60, [weakAct]() {
                 auto act = weakAct.lock();
                 if (!act)
                         return;

@@ -31,7 +31,7 @@ public :
                    const std::shared_ptr<CfgType>& cfg,
                    const GameMgrSession::ActorAgentTypePtr& agent,
                    int64_t queueSize = 32)
-                : SuperType(cInfo->region_guid(), queueSize)
+                : SuperType(cInfo->region_id(), queueSize)
                   , _regionMgr(agent)
                   , _cfg(cfg)
         {
@@ -138,7 +138,7 @@ public :
 
                 auto sendMsg = std::make_shared<FighterEnterMessageType>();
                 sendMsg->set_region_type(static_cast<ERegionType>(GetType()));
-                sendMsg->set_region_guid(SuperType::GetID());
+                sendMsg->set_region_id(SuperType::GetID());
                 f->PackFighterInfo(*(sendMsg->mutable_fighter_info()));
                 Send2Client(E_MCMT_GameCommon, E_MCGCST_OnFighterEnter, sendMsg, f->GetID());
 
@@ -151,7 +151,7 @@ public :
 
                 auto sendMsg = std::make_shared<MsgFighterExit>();
                 sendMsg->set_region_type(static_cast<ERegionType>(GetType()));
-                sendMsg->set_region_guid(SuperType::GetID());
+                sendMsg->set_region_id(SuperType::GetID());
                 sendMsg->set_fighter_guid(f->GetID());
                 Send2Client(E_MCMT_GameCommon, E_MCGCST_OnFighterExit, sendMsg);
 
@@ -167,7 +167,7 @@ public :
         virtual void PackRegionInfo(RegionInfoMessageType& msg, int64_t flag=0)
         {
                 msg.set_region_type(static_cast<ERegionType>(GetType()));
-                msg.set_region_guid(SuperType::GetID());
+                msg.set_region_id(SuperType::GetID());
 
                 PackCurRegionStateInfo(*(msg.mutable_state_info()));
                 ForeachFighter([&msg](const FighterPtr& f) {
@@ -191,7 +191,7 @@ public :
         {
                 auto mail = std::make_shared<MailRegionKickout>();
                 mail->set_error_type(errorType);
-                mail->set_region_guid(SuperType::GetID());
+                mail->set_region_id(SuperType::GetID());
                 mail->set_fighter_guid(f->GetID());
                 SuperType::Send(_regionMgr, E_MIMT_GameCommon, E_MIGCST_RegionKickout, mail);
         }
@@ -239,7 +239,7 @@ public :
         virtual std::shared_ptr<MailRegionDestroyInfo> PackRegionDestroyInfo()
         {
                 auto ret = std::make_shared<MailRegionDestroyInfo>();
-                ret->set_region_guid(SuperType::GetID());
+                ret->set_region_id(SuperType::GetID());
                 return ret;
         }
 
@@ -416,8 +416,11 @@ protected :
                                 auto gateSes = NetMgrImpl::GetInstance()->GetGateSession(msg->gate_sid());
                                 if (gateSes)
                                 {
-                                        client->SetSession(gateSes);
-                                        gateSes->AddAgent(client);
+                                        // 禁止复用，agent 删除靠析构。
+                                        auto clientAgent = std::make_shared<GameGateSession::ActorAgentType>(f->GetID(), gateSes);
+                                        f->SetClient(clientAgent);
+                                        clientAgent->BindActor(shared_from_this());
+                                        gateSes->AddAgent(clientAgent);
                                 }
                                 else
                                 {
@@ -464,13 +467,13 @@ protected :
                 auto retMsg = std::make_shared<MailReqEnterRegionRet>();
                 retMsg->set_error_type(E_IET_Success);
                 retMsg->set_game_sid(GetApp()->GetSID());
-                retMsg->set_region_guid(SuperType::GetID());
+                retMsg->set_region_id(SuperType::GetID());
 
                 for (auto& fInfo : msg->fighter_list())
                 {
                         REGION_DLOG_INFO(SuperType::GetID(),
                                          "玩家[{}] 请求进入场景 type[{}] id[{}]",
-                                         fInfo.player_guid(), msg->region_type(), msg->region_guid());
+                                         fInfo.player_guid(), msg->region_type(), msg->region_id());
 
                         auto gateSes = NetMgrImpl::GetInstance()->GetGateSession(fInfo.gate_sid());
                         if (!gateSes)

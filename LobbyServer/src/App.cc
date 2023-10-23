@@ -5,7 +5,6 @@
 #include "Region/RegionMgr.h"
 
 #include "DBMgr.h"
-#include "PingPongBig.h"
 
 AppBase* GetAppBase()
 {
@@ -28,7 +27,6 @@ App::App(const std::string& appName)
 
 	PlayerMgr::CreateInstance();
         nl::net::NetMgr::CreateInstance();
-        PingPongBigService::CreateInstance();
 }
 
 App::~App()
@@ -41,7 +39,6 @@ App::~App()
 	GlobalSetup_CH::DestroyInstance();
         RedisMgr::DestroyInstance();
         nl::net::NetMgr::DestroyInstance();
-        PingPongBigService::DestroyInstance();
 }
 
 bool App::Init()
@@ -53,7 +50,6 @@ bool App::Init()
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "DBMgr init error!!!");
-	LOG_FATAL_IF(!PingPongBigService::GetInstance()->Init(), "PingPongBigService init error!!!");
 
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
 		static int64_t oldCnt = 0;

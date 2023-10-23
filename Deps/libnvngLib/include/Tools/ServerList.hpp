@@ -73,9 +73,17 @@ struct stGMServerInfo : public stServerInfoBase
 	uint16_t _lobby_port = 0;
 	uint16_t _http_gm_port = 0;
 	uint16_t _http_activity_port = 0;
+        uint16_t _cdkey_port = 0;
 };
 typedef std::shared_ptr<stGMServerInfo> stGMServerInfoPtr;
 template <> inline EServerType CalServerType<stGMServerInfo>() { return E_ST_GM; }
+
+struct stLogServerInfo : public stServerInfoBase
+{
+	uint16_t _lobby_port = 0;
+};
+typedef std::shared_ptr<stLogServerInfo> stLogServerInfoPtr;
+template <> inline EServerType CalServerType<stLogServerInfo>() { return E_ST_Log; }
 
 struct stRobotMgrServerInfo : public stServerInfoBase
 {
@@ -313,6 +321,30 @@ public :
 			}
 		}
 
+		if (root.HasMember("log_server_list"))
+		{
+			auto& serverArr = root["log_server_list"];
+			LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
+			for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
+			{
+				auto& item = serverArr[i];
+				auto serverInfo = std::make_shared<stLogServerInfo>();
+				serverInfo->_sid = item["sid"].GetInt64();
+				serverInfo->_faName = item["fa_name"].GetString();
+				serverInfo->_ip = item["ip"].GetString();
+                                serverInfo->_lobby_port = item["lobby_port"].GetInt64();
+				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
+
+                                if (-1 == serverInfo->_workersCnt)
+                                        serverInfo->_workersCnt = std::thread::hardware_concurrency();
+
+				checkIPPort(serverInfo, serverInfo->_lobby_port);
+				checkSID(serverInfo->_sid);
+				if (!_serverInfoListByType[E_ST_Log].emplace(serverInfo->_sid, serverInfo).second)
+					LOG_FATAL("LogServer sid重复!!! sid[{}]", serverInfo->_sid);
+			}
+		}
+
                 if (root.HasMember("gm_server"))
 		{
 			auto& item = root["gm_server"];
@@ -323,6 +355,7 @@ public :
 			serverInfo->_lobby_port = distPort(serverInfo->_sid, 0);
 			serverInfo->_http_gm_port = item["http_gm_port"].GetInt64();
 			serverInfo->_http_activity_port = item["http_activity_port"].GetInt64();
+			serverInfo->_cdkey_port = item["cdkey_port"].GetInt64();
 
 			checkIPPort(serverInfo, serverInfo->_lobby_port);
 			checkIPPort(serverInfo, serverInfo->_http_gm_port);
@@ -505,23 +538,27 @@ public :
 			}
 		}
 
+                auto readMysqlCfgFunc = [](stMySqlConfig& cfg, auto& db, std::string_view dbName) {
+                        cfg._host = db["host"].GetString();
+                        cfg._port = db["port"].GetInt();
+                        cfg._user = db["user"].GetString();
+                        cfg._pwd = db["pwd"].GetString();
+                        cfg._connCnt = db["conn_cnt"].GetInt64();
+                        cfg._thCnt = db["thread_cnt"].GetInt64();
+                        cfg._dbName = db["db"].GetString();
+                        if ("-1" == cfg._dbName)
+                                cfg._dbName = fmt::format("{}_{}", dbName, ServerListCfgMgr::GetInstance()->_rid);
+                };
+
 		if (root.HasMember("mysql"))
-		{
-			auto& mysqlCfg = root["mysql"];
-			if (mysqlCfg.HasMember("game_db"))
-			{
-				auto& gameDB = mysqlCfg["game_db"];
-				_mysqlCfg._host = gameDB["host"].GetString();
-				_mysqlCfg._port = gameDB["port"].GetInt();
-				_mysqlCfg._user = gameDB["user"].GetString();
-				_mysqlCfg._pwd = gameDB["pwd"].GetString();
-				_mysqlCfg._connCnt = gameDB["conn_cnt"].GetInt64();
-                                _mysqlCfg._thCnt = gameDB["thread_cnt"].GetInt64();
-				_mysqlCfg._dbName = gameDB["db"].GetString();
-				if ("-1" == _mysqlCfg._dbName)
-					_mysqlCfg._dbName = fmt::format("game_db_{}", ServerListCfgMgr::GetInstance()->_rid);
-			}
-		}
+                {
+                        auto& mysqlCfg = root["mysql"];
+                        if (mysqlCfg.HasMember("game_db"))
+                                readMysqlCfgFunc(_mysqlCfg, mysqlCfg["game_db"], "game_db");
+
+                        if (mysqlCfg.HasMember("game_log"))
+                                readMysqlCfgFunc(_mysqlLogCfg, mysqlCfg["game_log"], "game_log");
+                }
 
 		if (_baseCfgDir.empty())
 			_baseCfgDir = root["cfg_dir"].GetString();
@@ -540,6 +577,7 @@ public :
 public :
 	stRedisCfg _redisCfg;
 	stMySqlConfig _mysqlCfg;
+	stMySqlConfig _mysqlLogCfg;
 	stGateServerCfgPtr _gateCfg;
         stDBServerCfgPtr _dbCfg;
 	std::string _baseCfgDir;

@@ -249,12 +249,12 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqShip, PayService::SessionType::
                 auto sendMsg = std::make_shared<MsgPayClientShip>();
                 sendMsg->set_cfg_id(pb->cfg_id());
                 auto playerChange = sendMsg->mutable_player_change();
-                _activityMgr.OnEvent(*playerChange, shared_from_this(), 0 == firstBuyTime ? E_AET_FirstRecharge : E_AET_Recharge, pb->order_amt() * 10000, 0);
+                _activityMgr.OnEvent(*playerChange, shared_from_this(), 0 == firstBuyTime ? E_AET_FirstRecharge : E_AET_Recharge, pb->order_amt() * 10000, 0, E_LSOT_Pay, pb->cfg_id());
 
                 if (0 != extraDropID)
                         rewardList.emplace_back(extraDropID, 1);
 
-                auto dropRet = BagMgr::GetInstance()->DoDrop(shared_from_this(), *playerChange, rewardList);
+                auto dropRet = BagMgr::GetInstance()->DoDrop(shared_from_this(), *playerChange, rewardList, E_LSOT_Pay, pb->cfg_id());
                 if (E_CET_Success != dropRet)
                 {
                         pb->set_error_type(E_CET_Fail);

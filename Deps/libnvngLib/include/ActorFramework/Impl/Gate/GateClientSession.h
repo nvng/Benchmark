@@ -38,10 +38,8 @@ class GateClientSession : public ::nl::net::client::TcpSession<GateClientSession
                 , Compress::ECompressType::E_CT_ZLib> SuperType;
 
 public :
-        GateClientSession(typename SuperType::SocketType&& s)
-                : SuperType(std::move(s))
-        {
-        }
+        explicit GateClientSession(typename SuperType::SocketType&& s);
+        ~GateClientSession() override;
 
 	void OnConnect() override;
 	void OnClose(int32_t reasonType) override;

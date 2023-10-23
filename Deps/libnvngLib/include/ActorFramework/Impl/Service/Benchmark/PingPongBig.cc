@@ -22,9 +22,9 @@ ACTOR_MAIL_HANDLE(PingPongBigActor, 0xfff, 0x0)
         boost::this_fiber::sleep_for(std::chrono::seconds(10));
 
         auto msg = std::make_shared<MsgClientLogin>();
-        msg->set_nick_name(GenRandStr(1024 * 100));
+        msg->set_nick_name(GenRandStr(128));
 
-        for (int64_t i=0; i<PingPongBigService::scSessionCnt * 4; ++i)
+        for (int64_t i=0; i<PingPongBigService::scSessionCnt; ++i)
         {
                 auto ses = PingPongBigService::GetInstance()->DistSession(i);
                 for (int64_t j=0; j<PingPongBigService::scPkgPerSession; ++j)

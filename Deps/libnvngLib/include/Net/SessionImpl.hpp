@@ -25,6 +25,12 @@ struct stSessionSendBufInfo
 #pragma pack(push,1)
 struct MsgTotalHeadType
 {
+        MsgTotalHeadType() = default;
+        explicit MsgTotalHeadType(uint64_t size)
+                : _size(size)
+        {
+        }
+
         uint32_t _size = 0;
 };
 
@@ -266,7 +272,7 @@ protected :
 
         virtual void OnRecv(ISession::BuffTypePtr::element_type* buf, const ISession::BuffTypePtr& bufRef)
         {
-                auto handleList = GetMsgHandleList();
+                static auto handleList = GetMsgHandleList();
                 auto msgHead = *reinterpret_cast<MsgHeaderType*>(buf);
                 auto cb = handleList[msgHead._type];
                 if (nullptr != cb)
@@ -295,15 +301,9 @@ public :
         {
                 SuperType::OnConnect();
 
-                if constexpr (IsServer)
-                {
-                        InitCheckHeartBeatTimer();
-                }
-                else
-                {
+                InitCheckHeartBeatTimer();
+                if constexpr (!IsServer)
                         InitSendHeartBeatTimer();
-                        InitCheckHeartBeatTimer();
-                }
 
                 if constexpr (std::is_same<MsgHeaderType, MsgActorAgentHeaderType>::value)
                 {
@@ -319,7 +319,7 @@ public :
         {
                 SuperType::Close(reasonType);
 
-                auto t = NetMgrBase<Tag>::GetInstance()->_sesList.Remove(GetID(), this);
+                auto t = NetMgrBase<Tag>::GetInstance()->_sesList.Remove(GetID(), this).lock();
                 if (t)
                 {
                         OnClose(reasonType);
@@ -330,14 +330,6 @@ public :
                                                                          std::move(_createSession));
                         }
                 }
-        }
-
-        void OnClose(int32_t reasonType) override
-        {
-                SuperType::OnClose(reasonType);
-
-                _sendHeartBeatTimer.Stop();
-                _checkHeartBeatTimer.Stop();
         }
 
         FORCE_INLINE std::size_t SerializeAndCompressNeedSize(std::size_t s)
@@ -375,14 +367,13 @@ public :
 public:
         static FORCE_INLINE MsgHandleType* GetMsgHandleList()
         {
-                static MsgHandleType hl[MsgHeaderType::scArraySize];
+                static MsgHandleType hl[MsgHeaderType::scArraySize] = { nullptr };
                 return hl;
         }
 
 public :
         boost::asio::ip::tcp::endpoint _connectEndPoint;
         std::function<std::shared_ptr<ImplType>(boost::asio::ip::tcp::socket&&)> _createSession;
-
 
 public :
         FORCE_INLINE void SendHeartBeat(const std::shared_ptr<google::protobuf::MessageLite>& pb)

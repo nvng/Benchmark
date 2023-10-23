@@ -305,7 +305,6 @@ protected :
         void Run()
         {
                 auto handlerList = GetHandlerList();
-                IActorMailPtr mail;
                 while (!IsTerminate())
                 {
                         IActorMailPtr mail = _msgQueue.value_pop();
@@ -316,14 +315,7 @@ protected :
                                 clock_t realClock = _clock;
 #endif
 
-                                try
-                                {
-                                        mail->Run(this, handlerList);
-                                }
-                                catch (...)
-                                {
-                                        LOG_FATAL("11111111111111111111111111 type[{}]", mail->Type());
-                                }
+                                mail->Run(this, handlerList);
 
 #ifdef ____PRINT_ACTOR_MAIL_COST_TIME____
                                 clock_t end = clock();
@@ -338,7 +330,6 @@ protected :
                                                               diff,
                                                               real));
 #endif
-                                mail.reset();
                         }
                 }
                 FLAG_ADD(_flag, 1<<15);
@@ -382,7 +373,7 @@ public :
 
         FORCE_INLINE static typename ActorMailType::HandleType* GetHandlerList()
         {
-                static typename ActorMailType::HandleType _handlerList[ActorMailType::scArraySize];
+                static typename ActorMailType::HandleType _handlerList[ActorMailType::scArraySize] = { nullptr };
                 return _handlerList;
         }
 };

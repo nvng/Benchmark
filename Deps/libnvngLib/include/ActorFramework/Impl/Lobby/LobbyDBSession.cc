@@ -13,7 +13,7 @@ LobbyDBSession::~LobbyDBSession()
 
 void LobbyDBSession::InitCheckFinishTimer()
 {
-        SteadyTimer::StaticStart(std::chrono::seconds(1), []() {
+        SteadyTimer::StaticStart(1, []() {
                 int64_t cnt = 0;
                 for (auto& ws : DBMgr::GetInstance()->_dbSesArr)
                 {

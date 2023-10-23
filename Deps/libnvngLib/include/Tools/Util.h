@@ -736,6 +736,7 @@ enum EServerType
 	E_ST_GameMgr,
 	E_ST_DB,
 	E_ST_GM,
+        E_ST_Log,
 	E_ST_RobotMgr,
 
 	EServerType_ARRAYSIZE,

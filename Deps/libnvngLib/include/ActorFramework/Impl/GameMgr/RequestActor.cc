@@ -137,7 +137,7 @@ ACTOR_MAIL_HANDLE(RequestActor, E_MCMT_GameCommon, E_MCGCST_ReqEnterRegion, stMa
                         }
                 }
 
-                reqPB->set_region_guid(regionAgent->GetID());
+                reqPB->set_region_id(regionAgent->GetID());
                 auto reqRet = Call(MailReqEnterRegionRet, regionAgent, E_MCMT_GameCommon, E_MCGCST_ReqEnterRegion, reqPB);
                 if (!reqRet || E_IET_Success != reqRet->error_type())
                 {
@@ -148,7 +148,7 @@ ACTOR_MAIL_HANDLE(RequestActor, E_MCMT_GameCommon, E_MCGCST_ReqEnterRegion, stMa
                 }
 
                 retMsg->set_error_type(E_IET_Success);
-                retMsg->set_region_guid(regionAgent->GetID());
+                retMsg->set_region_id(regionAgent->GetID());
                 retMsg->set_game_sid(gameSes->GetSID());
                 retMsg->set_error_type(E_IET_Success);
                 regionAgent->AddFighter(reqAgent);
@@ -213,7 +213,7 @@ ACTOR_MAIL_HANDLE(RequestActor, E_MCMT_GameCommon, E_MCGCST_ReqExitRegion, MailR
                         break;
                 }
 
-                msg->set_region_guid(region->GetID());
+                msg->set_region_id(region->GetID());
                 region->RemoveFighter(msg->player_guid());
         } while (0);
 
@@ -255,7 +255,7 @@ void RequestActor::DelRegionFromRegionMgr(const GameMgrGameSession::ActorAgentTy
         if (!msg)
         {
                 destroyMsg = std::make_shared<MailRegionDestroyInfo>();
-                destroyMsg->set_region_guid(regionAgent->GetID());
+                destroyMsg->set_region_id(regionAgent->GetID());
         }
         auto ret = Call(MailResult, regionAgent->_regionMgr, scRegionMgrActorMailMainType, 0x1, destroyMsg);
         if (!ret || E_IET_Success != ret->error_type())
@@ -267,7 +267,7 @@ void RequestActor::DelRegionFromRegionMgr(const GameMgrGameSession::ActorAgentTy
 
         regionAgent->ForeachFighter([this, &regionAgent](const IActorPtr& f) {
                 auto m = std::make_shared<MailRegionDestroy>();
-                m->set_region_guid(regionAgent->GetID());
+                m->set_region_id(regionAgent->GetID());
                 m->set_player_guid(f->GetID());
                 Send(f, E_MIMT_GameCommon, E_MIGCST_RegionDestroy, m);
         });
@@ -376,7 +376,7 @@ void RequestActor::ReqQueue(const stQueueInfoPtr& msg)
 
                 auto reqEnterRegionMsg = std::make_shared<MailReqEnterRegion>();
                 reqEnterRegionMsg->set_region_type(msg->_regionType);
-                reqEnterRegionMsg->set_region_guid(regionAgent->GetID());
+                reqEnterRegionMsg->set_region_id(regionAgent->GetID());
 
                 for (auto& val : msg->_playerList)
                         val.second->Pack2Region(*reqEnterRegionMsg->add_fighter_list());
@@ -397,7 +397,7 @@ void RequestActor::ReqQueue(const stQueueInfoPtr& msg)
                         break;
                 }
 
-                sendMsg->set_region_guid(regionAgent->GetID());
+                sendMsg->set_region_id(regionAgent->GetID());
                 sendMsg->set_game_sid(gameSes->GetSID());
                 sendMsg->set_error_type(E_IET_Success);
         } while (0);

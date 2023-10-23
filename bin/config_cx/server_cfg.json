@@ -24,12 +24,12 @@
   },
   "mysql": {
     "game_db": {
-      "host":"122.112.246.164",
+      "host": "10.0.0.94",
       "port": 3306,
       "user": "root",
-      "pwd":"274905258",
+      "pwd":"123456",
       "db": "-1",
-      "conn_cnt": 16,
+      "conn_cnt": 64,
       "thread_cnt": 1
     }
   },

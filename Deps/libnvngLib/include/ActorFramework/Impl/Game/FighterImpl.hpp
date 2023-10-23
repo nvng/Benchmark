@@ -59,8 +59,9 @@ public :
         virtual void MarkClientConnect() { }
         virtual bool IsClientConnect() const { return true; }
 
-        virtual GameGateSession::ActorAgentTypePtr GetClient() { return nullptr; }
         virtual GameLobbySession::ActorAgentTypePtr GetPlayer() { return nullptr; }
+        virtual void SetClient(const GameGateSession::ActorAgentTypePtr& c) { }
+        virtual GameGateSession::ActorAgentTypePtr GetClient() { return nullptr; }
 
 	virtual void Send2Player(uint64_t mainType, uint64_t subType, const ActorMailDataPtr& msg) { }
 	virtual void Send2Client(uint64_t mainType, uint64_t subType, const ActorMailDataPtr& msg) { }
@@ -97,6 +98,7 @@ public :
         }
 
         GameLobbySession::ActorAgentTypePtr GetPlayer() override { return _player; }
+        void SetClient(const GameGateSession::ActorAgentTypePtr& c) override { _client = c; }
         GameGateSession::ActorAgentTypePtr GetClient() override { return _client; }
 
         void Send2Player(uint64_t mainType, uint64_t subType, const ActorMailDataPtr& msg) override

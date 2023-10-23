@@ -100,28 +100,28 @@ public :
 		return true;
 	}
 
-	FORCE_INLINE ISessionPtr GetSession(uint64_t id) { return _sesList.Get(id); }
+	FORCE_INLINE ISessionPtr GetSession(uint64_t id) { return _sesList.Get(id).lock(); }
 
-	ISessionPtr RemoveSession(ESessionType sesType, const ISessionPtr& ses)
+	bool RemoveSession(ESessionType sesType, ISession* ses)
 	{
-		if (!ses)
-			return ses;
+		if (nullptr == ses)
+			return false;
 
-		auto ret = _sesList.Remove(ses->GetID(), ses.get());
+		auto ret = _sesList.Remove(ses->GetID(), ses).lock();
 		if (!ret)
-			return ret;
+			return false;
 
 		switch (sesType)
 		{
 		case E_GST_Login :
 			{
-				auto s = std::dynamic_pointer_cast<GateLoginSession>(ret);
+				auto s = dynamic_cast<GateLoginSession*>(ses);
 				_LoginConsistencyHash.RemoveNode(s->_hashKey);
 			}
 			break;
 		case E_GST_Lobby :
 			{
-				auto s = std::dynamic_pointer_cast<GateLobbySession>(ret);
+				auto s = dynamic_cast<GateLobbySession*>(ses);
 				const int64_t idx = ServerListCfgMgr::GetInstance()->CalSidIdx<stLobbyServerInfo>(s->GetSID());
                                 if (INVALID_SERVER_IDX != idx)
                                         _lobbySesList[idx].reset();
@@ -131,7 +131,7 @@ public :
 			break;
 		case E_GST_Game :
 			{
-				auto s = std::dynamic_pointer_cast<GateGameSession>(ret);
+				auto s = dynamic_cast<GateGameSession*>(ses);
 				const int64_t idx = ServerListCfgMgr::GetInstance()->CalSidIdx<stGameServerInfo>(s->GetSID());
                                 if (INVALID_SERVER_IDX != idx)
                                         _gameSesList[idx].reset();
@@ -143,7 +143,7 @@ public :
 			break;
 		}
 
-		return ret;
+		return true;
 	}
 
 	FORCE_INLINE std::size_t GetSessionCnt() { return _sesList.Size(); }
@@ -191,13 +191,15 @@ public :
 	template <typename _Fy>
 	FORCE_INLINE void Foreach(const _Fy& cb)
 	{
-		_sesList.Foreach([cb](const ISessionPtr& ses) {
-			cb(ses);
+		_sesList.Foreach([cb](const auto& s) {
+                        auto ses = s.lock();
+                        if (ses)
+                                cb(ses);
 		});
 	}
 
 private :
-	ThreadSafeUnorderedMap<uint64_t, ISessionPtr> _sesList;
+	ThreadSafeUnorderedMap<uint64_t, ISessionWeakPtr> _sesList;
 
 	ConsistencyHash<stSesDistData> _LoginConsistencyHash;
 

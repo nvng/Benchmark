@@ -3,6 +3,9 @@
 #include "GameMgrGameSession.h"
 #include "GameMgrLobbySession.h"
 
+struct stSnowflakeRegionGuidTag;
+typedef Snowflake<stSnowflakeRegionGuidTag, uint64_t, 1692871881000> SnowflakeRegionGuid;
+
 class RequestActor;
 
 struct stPlayerInfo
@@ -93,8 +96,9 @@ class CompetitionKnockoutRegionMgrActor : public RegionMgrActor
         typedef RegionMgrActor SuperType;
 public :
         explicit CompetitionKnockoutRegionMgrActor(const std::shared_ptr<RegionCfg>& cfg, EQueueType qt)
-                : SuperType(cfg), _queueType(qt)
+                : SuperType(cfg), _queueType(qt), _guid(SnowflakeRegionGuid::Gen())
         {
+                _regionGuidList.reserve(128);
         }
 
         ~CompetitionKnockoutRegionMgrActor()
@@ -123,6 +127,9 @@ public :
         std::vector<stPlayerInfoPtr> _nextRoundPlayerList;
         std::vector<std::shared_ptr<MailSyncPlayerInfo2Region>> _nextRoundRobotList;
         MultiCastWapper<GameMgrLobbySession> _multicastInfo;
+
+        const uint64_t _guid = 0;
+        std::vector<uint64_t> _regionGuidList;
 
         DECLARE_SHARED_FROM_THIS(CompetitionKnockoutRegionMgrActor);
 };
@@ -156,6 +163,7 @@ public :
         const uint64_t _id = 0;
         const ERegionType _regionType = E_RT_None;
         const EQueueType _queueType = E_QT_None;
+        uint64_t _guid = 0;
         int64_t _rank = 0;
         time_t _time = 0;
         bool _matched = false;
@@ -170,6 +178,7 @@ public :
 
         stQueueInfo& CopyBaseFrom(const stQueueInfo& rhs)
         {
+                _guid = rhs._guid;
                 _rank = rhs._rank;
                 _time = rhs._rank;
                 _matched = rhs._matched;
@@ -186,6 +195,7 @@ public :
                 msg.set_region_type(_regionType);
                 msg.set_queue_type(_queueType);
                 msg.set_queue_guid(_id);
+                msg.set_guid(_guid);
                 msg.set_time(_time);
         }
 

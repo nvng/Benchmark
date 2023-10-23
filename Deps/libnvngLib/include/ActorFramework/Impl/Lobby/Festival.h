@@ -162,7 +162,7 @@ public :
                                  MsgPlayerChange& msg,
                                  MsgActivityFestivalGroupCfg& groupCfg);
 
-        virtual void OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param);
+        virtual void OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
 
         virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t taskID, int64_t cnt, int64_t param);
 
@@ -346,10 +346,10 @@ public :
         }
 
         void OnDataReset(const PlayerPtr& p, MsgPlayerChange& msg);
-        virtual void OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param)
+        virtual void OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam)
         {
-                _fesList.Foreach([&msg, &p, eventType, cnt, param](const auto& fes) {
-                        fes->OnEvent(msg, p, eventType, cnt, param);
+                _fesList.Foreach([&msg, &p, eventType, cnt, param, logType, logParam](const auto& fes) {
+                        fes->OnEvent(msg, p, eventType, cnt, param, logType, logParam);
                 });
         }
 
@@ -425,7 +425,7 @@ public :
         void OnPlayerLogin(const PlayerPtr& p, MsgPlayerInfo& msg);
         void OnOffline(const PlayerPtr& p);
 
-        void OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param);
+        void OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
 
 public :
         std::shared_ptr<MsgPlayerChange> _playerChange;

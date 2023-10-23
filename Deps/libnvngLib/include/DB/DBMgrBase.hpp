@@ -64,10 +64,10 @@ protected :
 
         virtual bool CreateConn() = 0;
 
-        FORCE_INLINE static constexpr uint64_t GenDataKey(int64_t prefix) { return prefix * 1000 * 1000 * 1000 * 1000LL; }
         FORCE_INLINE bool IsTerminate() const { return FLAG_HAS(_internalFlag, 1 << E_DBMFT_Terminate); }
 
 public :
+        FORCE_INLINE static constexpr uint64_t GenDataKey(int64_t prefix) { return prefix * 1000 * 1000 * 1000 * 1000LL; }
         virtual void Terminate()
         {
                 _ioCtx->stop();

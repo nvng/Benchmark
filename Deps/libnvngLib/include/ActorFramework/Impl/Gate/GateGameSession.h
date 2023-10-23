@@ -14,6 +14,8 @@ public :
         {
         }
 
+        ~GateGameSession() override;
+
 	void OnConnect() override;
 	void OnClose(int32_t reasonType) override;
         void OnRecv(typename SuperType::BuffTypePtr::element_type* buf, const typename SuperType::BuffTypePtr& bufRef) override;

@@ -77,7 +77,7 @@ public :
         ISession() = default;
         virtual ~ISession()
         {
-                LOG_WARN_IF(0 != GetID(), "ISession::~ISession this:{} id:{}", fmt::ptr(this), GetID());
+                // LOG_WARN_IF(0 != GetID(), "ISession::~ISession this:{} id:{}", fmt::ptr(this), GetID());
         }
 
         virtual bool Init()
@@ -195,11 +195,11 @@ public :
                 ses->_socket.async_connect(ses->_connectEndPoint, [ses](const auto& ec) {
                         if (ec
                             || !ses->Init()
-                            || !NetMgrBase::GetInstance()->_sesList.Add(ses->GetID(), ses))
+                            || !NetMgrBase<_Tag>::GetInstance()->_sesList.Add(ses->GetID(), ses))
                         {
                                 auto ctx = ses->_socket.get_executor();
-                                ::nl::util::SteadyTimer::StaticStart(ctx, std::chrono::milliseconds(100), [ses]() {
-                                        NetMgrBase::GetInstance()->Connect(ses->_connectEndPoint.address().to_string()
+                                ::nl::util::SteadyTimer::StaticStart(ctx, 0.1, [ses]() {
+                                        NetMgrBase<_Tag>::GetInstance()->Connect(ses->_connectEndPoint.address().to_string()
                                                                            , ses->_connectEndPoint.port()
                                                                            , std::move(ses->_createSession));
                                 });
@@ -267,14 +267,14 @@ private :
                 acceptor->async_accept(*DistCtx(++_distIOCtxIdx), [weakAcceptor, cb{std::move(cb)}](const auto& ec, auto&& s) {
                         if (!ec)
                         {
-                                auto ses = cb(std::move(s), NetMgrBase::GetInstance()->_sslCtx);
-                                if (ses->Init() && NetMgrBase::GetInstance()->_sesList.Add(ses->GetID(), ses))
+                                auto ses = cb(std::move(s), NetMgrBase<_Tag>::GetInstance()->_sslCtx);
+                                if (ses->Init() && NetMgrBase<_Tag>::GetInstance()->_sesList.Add(ses->GetID(), ses))
                                         ses->OnEstablish();
                         }
 
                         auto acceptor = weakAcceptor.lock();
                         if (acceptor)
-                                NetMgrBase::GetInstance()->DoAccept(acceptor, std::move(cb));
+                                NetMgrBase<_Tag>::GetInstance()->DoAccept(acceptor, std::move(cb));
                 });
         }
 
@@ -301,7 +301,7 @@ public :
                 // sslCtx.use_tmp_dh_file("");
                 // auto s = std::make_shared<boost::beast::ssl_stream<boost::beast::tcp_stream>>(*NetMgr::GetInstance()->_ioCtx, sslCtx);
 
-                auto s = std::make_shared<boost::beast::tcp_stream>(*NetMgrBase::GetInstance()->DistCtx(++NetMgrBase::GetInstance()->_distIOCtxIdx));
+                auto s = std::make_shared<boost::beast::tcp_stream>(*NetMgrBase<_Tag>::GetInstance()->DistCtx(++NetMgrBase<_Tag>::GetInstance()->_distIOCtxIdx));
                 s->expires_after(std::chrono::seconds(5));
 
                 auto _req = std::make_shared<boost::beast::http::request<boost::beast::http::string_body>>();
@@ -403,7 +403,7 @@ private :
                                 cb(std::move(req));
                         });
 
-                        NetMgrBase::GetInstance()->HttpAccept(std::move(acceptor), cb);
+                        NetMgrBase<_Tag>::GetInstance()->HttpAccept(std::move(acceptor), cb);
                 });
         }
 
@@ -412,8 +412,10 @@ public :
         {
                 StopAllAcceptor();
 
-                _sesList.Foreach([](const auto& ses) {
-                        ses->Close(0);
+                _sesList.Foreach([](const auto& s) {
+                        auto ses = s.lock();
+                        if (ses)
+                                ses->Close(0);
                 });
 
                 for (auto& ctx : _ioCtxArr)
@@ -433,7 +435,7 @@ public :
         }
 
 public :
-        ThreadSafeUnorderedMap<uint64_t, ISessionPtr> _sesList;
+        ThreadSafeUnorderedMap<uint64_t, ISessionWeakPtr> _sesList;
 
 private :
         FORCE_INLINE std::shared_ptr<boost::asio::io_context> DistCtx(uint64_t idx)

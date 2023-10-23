@@ -76,7 +76,7 @@ void PlayerBase::OnClientReconnect(ERegionType oldRegionType)
 
         auto mail = std::make_shared<MailFighterReconnect>();
         mail->set_fighter_guid(GetID());
-        mail->set_region_guid(r->GetID());
+        mail->set_region_id(r->GetID());
         mail->set_gate_sid(GetClientSID());
         auto ret = Call(MailFighterReconnect, r, E_MCMT_ClientCommon, E_MCCCST_Reconnect, mail);
         if (ret)
@@ -87,7 +87,7 @@ void PlayerBase::OnClientReconnect(ERegionType oldRegionType)
                         sendMsg->set_region_type(ret->region_type());
                         sendMsg->set_old_region_type(oldRegionType);
                         sendMsg->set_game_sid(ret->game_sid());
-                        sendMsg->set_region_guid(r->GetID());
+                        sendMsg->set_region_id(r->GetID());
                         Send2Client(E_MCMT_GameCommon, E_MCGCST_SwitchRegion, sendMsg);
                 }
                 else
@@ -426,16 +426,29 @@ bool PlayerBase::DelAttr<E_PAT_TiLi>(MsgPlayerChange& msg, int64_t cnt)
         return ret;
 }
 
-int64_t PlayerBase::AddMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt)
+int64_t PlayerBase::GetMoney(int64_t t)
+{
+        switch (t)
+        {
+        case E_PAT_Coins :      return GetAttr<E_PAT_Coins>();           break;
+        case E_PAT_TiLi :       return GetAttr<E_PAT_TiLi>();            break;
+        case E_PAT_Diamonds :   return GetAttr<E_PAT_Diamonds>();        break;
+        case E_PAT_ZhanLinExp : return GetAttr<E_PAT_ZhanLinExp>();      break;
+        case E_PAT_MatchScore : return GetAttr<E_PAT_MatchScore>();      break;
+        default : return INVALID_MONEY_VAL; break;
+        }
+}
+
+int64_t PlayerBase::AddMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt, ELogServiceOrigType logType, uint64_t logParam)
 {
         int64_t ret = 0;
         switch (t)
         {
-        case E_PAT_Coins :    ret = AddAttr<E_PAT_Coins>(cnt);    PackUpdatePlayerAttr<E_PAT_Coins>(msg);       break;
-        case E_PAT_TiLi :     ret = AddAttr<E_PAT_TiLi>(cnt);     PackUpdatePlayerAttr<E_PAT_TiLi>(msg);        break;
-        case E_PAT_Diamonds : ret = AddAttr<E_PAT_Diamonds>(cnt); PackUpdatePlayerAttr<E_PAT_Diamonds>(msg);    break;
-        case E_PAT_ZhanLinExp : ret = AddAttr<E_PAT_ZhanLinExp>(cnt); PackUpdatePlayerAttr<E_PAT_ZhanLinExp>(msg);    break;
-        case E_PAT_MatchScore : ret = AddAttr<E_PAT_MatchScore>(cnt); PackUpdatePlayerAttr<E_PAT_MatchScore>(msg);    break;
+        case E_PAT_Coins :      ret = AddAttr<E_PAT_Coins>(msg, cnt);           break;
+        case E_PAT_TiLi :       ret = AddAttr<E_PAT_TiLi>(msg, cnt);            break;
+        case E_PAT_Diamonds :   ret = AddAttr<E_PAT_Diamonds>(msg, cnt);        break;
+        case E_PAT_ZhanLinExp : ret = AddAttr<E_PAT_ZhanLinExp>(msg, cnt);      break;
+        case E_PAT_MatchScore : ret = AddAttr<E_PAT_MatchScore>(msg, cnt);      break;
         default : return INVALID_MONEY_VAL; break;
         }
         return ret;
@@ -445,25 +458,25 @@ bool PlayerBase::CheckMoney(int64_t t, int64_t cnt)
 {
         switch (t)
         {
-        case E_PAT_Coins :    return GetAttr<E_PAT_Coins>() >= cnt;    break;
-        case E_PAT_TiLi :     return GetAttr<E_PAT_TiLi>() >= cnt;     break;
-        case E_PAT_Diamonds : return GetAttr<E_PAT_Diamonds>() >= cnt; break;
-        case E_PAT_ZhanLinExp : return GetAttr<E_PAT_ZhanLinExp>() >= cnt; break;
-        case E_PAT_MatchScore : return GetAttr<E_PAT_MatchScore>() >= cnt; break;
+        case E_PAT_Coins :      return GetAttr<E_PAT_Coins>() >= cnt;           break;
+        case E_PAT_TiLi :       return GetAttr<E_PAT_TiLi>() >= cnt;            break;
+        case E_PAT_Diamonds :   return GetAttr<E_PAT_Diamonds>() >= cnt;        break;
+        case E_PAT_ZhanLinExp : return GetAttr<E_PAT_ZhanLinExp>() >= cnt;      break;
+        case E_PAT_MatchScore : return GetAttr<E_PAT_MatchScore>() >= cnt;      break;
         default : return false; break;
         }
 }
 
-int64_t PlayerBase::DelMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt)
+int64_t PlayerBase::DelMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt, ELogServiceOrigType logType, uint64_t logParam)
 {
         int64_t ret = 0;
         switch (t)
         {
-        case E_PAT_Coins :    ret = DelAttr<E_PAT_Coins>(cnt);    PackUpdatePlayerAttr<E_PAT_Coins>(msg);       break;
-        case E_PAT_TiLi :     ret = DelAttr<E_PAT_TiLi>(cnt);     PackUpdatePlayerAttr<E_PAT_TiLi>(msg);        break;
-        case E_PAT_Diamonds : ret = DelAttr<E_PAT_Diamonds>(cnt); PackUpdatePlayerAttr<E_PAT_Diamonds>(msg);    break;
-        case E_PAT_ZhanLinExp : ret = DelAttr<E_PAT_ZhanLinExp>(cnt); PackUpdatePlayerAttr<E_PAT_ZhanLinExp>(msg);    break;
-        case E_PAT_MatchScore : ret = DelAttr<E_PAT_MatchScore>(cnt); PackUpdatePlayerAttr<E_PAT_MatchScore>(msg);    break;
+        case E_PAT_Coins :      ret = DelAttr<E_PAT_Coins>(msg, cnt);           break;
+        case E_PAT_TiLi :       ret = DelAttr<E_PAT_TiLi>(msg, cnt);            break;
+        case E_PAT_Diamonds :   ret = DelAttr<E_PAT_Diamonds>(msg, cnt);        break;
+        case E_PAT_ZhanLinExp : ret = DelAttr<E_PAT_ZhanLinExp>(msg, cnt);      break;
+        case E_PAT_MatchScore : ret = DelAttr<E_PAT_MatchScore>(msg, cnt);      break;
         default : return INVALID_MONEY_VAL; break;
         }
         return ret;
@@ -938,13 +951,13 @@ ACTOR_MAIL_HANDLE(PlayerBase, E_MIMT_QueueCommon, E_MIQCST_ReqQueue, MailReqQueu
                         auto ret = GetRegionMgrBase()->DirectEnterRegion(shared_from_this(),
                                                                          _queue->GetSession(),
                                                                          msg->base_info().region_type(),
-                                                                         msg->region_guid(),
+                                                                         msg->region_id(),
                                                                          msg->game_sid());
                         if (!ret)
                         {
                                 PLAYER_LOG_WARN(GetID(),
                                                  "玩家[{}] 排队直接进入 rg[{}] 失败!!! qg[{}]",
-                                                 GetID(), msg->region_guid(), _queue->GetID());
+                                                 GetID(), msg->region_id(), _queue->GetID());
                                 break;
                         }
 
@@ -965,7 +978,7 @@ ACTOR_MAIL_HANDLE(PlayerBase, E_MIMT_QueueCommon, E_MIQCST_ReqQueue, MailReqQueu
                         sendMsg->set_region_type(static_cast<ERegionType>(_region->GetType()));
                         sendMsg->set_old_region_type(E_RT_MainCity);
                         sendMsg->set_game_sid(gameSes->GetSID());
-                        sendMsg->set_region_guid(region->GetID());
+                        sendMsg->set_region_id(region->GetID());
                         Send2Client(E_MCMT_GameCommon, E_MCGCST_SwitchRegion, sendMsg);
                 }
                 break;
@@ -1075,7 +1088,7 @@ ACTOR_MAIL_HANDLE(PlayerBase, E_MIMT_GameCommon, E_MIGCST_RegionDestroy, MailReg
         {
                 ERegionType oldRegionType = static_cast<ERegionType>(r->GetType());
                 SetRegion(nullptr);
-                Back2MainCity(0 != msg->region_guid() ? oldRegionType : E_RT_None);
+                Back2MainCity(0 != msg->region_id() ? oldRegionType : E_RT_None);
         }
         return nullptr;
 }

@@ -107,13 +107,13 @@ private :
         boost::asio::steady_timer _timer;
 
 public :
-        static FORCE_INLINE void StaticStart(const auto& duration, const auto& cb)
-        { StaticStart(TimerMgrBase<Flag>::GetInstance()->_ioCtx, duration, std::move(cb)); }
+        static FORCE_INLINE void StaticStart(double t, const auto& cb)
+        { StaticStart(TimerMgrBase<Flag>::GetInstance()->_ioCtx, t, std::move(cb)); }
 
-        static FORCE_INLINE void StaticStart(auto& ctx, const auto& duration, const auto& cb)
+        static FORCE_INLINE void StaticStart(auto& ctx, double t, const auto& cb)
         {
                 auto timer = std::make_shared<boost::asio::steady_timer>(ctx);
-                timer->expires_after(duration);
+                timer->expires_from_now(std::chrono::milliseconds((time_t)(t * 1000)));
                 timer->async_wait([timer, cb{ std::move(cb) }](const auto& ec) {
                         if (boost::system::errc::success == ec.value())
                                 cb();
@@ -121,19 +121,23 @@ public :
         }
 
         FORCE_INLINE static void StartForever(double interval, const auto& cb)
-        { StartForeverInternal(interval, interval, std::move(cb)); }
+        { StartForever(TimerMgrBase<Flag>::GetInstance()->_ioCtx, interval, interval, std::move(cb)); }
+
+        FORCE_INLINE static void StartForever(auto& ctx, double interval, const auto& cb)
+        { StartForever(ctx, interval, interval, std::move(cb)); }
 
         FORCE_INLINE static void StartForever(double startTime, double interval, const auto& cb)
-        { StartForeverInternal(startTime, interval, std::move(cb)); }
+        { StartForever(TimerMgrBase<Flag>::GetInstance()->_ioCtx, startTime, interval, std::move(cb)); }
+
+        FORCE_INLINE static void StartForever(auto& ctx, double startTime, double interval, const auto& cb)
+        { StartForeverInternal(startTime, interval, std::move(cb), std::make_shared<boost::asio::steady_timer>(ctx)); }
 
 private :
         static void StartForeverInternal(double startTime
                                          , double interval
                                          , const auto& cb
-                                         , std::shared_ptr<boost::asio::steady_timer>&& timer = nullptr)
+                                         , std::shared_ptr<boost::asio::steady_timer>&& timer)
         {
-                if (!timer)
-                        timer = std::make_shared<boost::asio::steady_timer>(TimerMgrBase<Flag>::GetInstance()->_ioCtx);
                 timer->expires_from_now(std::chrono::milliseconds((time_t)(startTime * 1000)));
                 timer->async_wait([t{std::move(timer)}, interval, cb{ std::move(cb) }](const auto& ec) mutable {
                         if (boost::system::errc::success == ec.value())

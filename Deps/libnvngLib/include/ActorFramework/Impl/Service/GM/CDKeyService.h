@@ -1,41 +1,59 @@
 #pragma once
 
 #include "ActorFramework/ServiceExtra.hpp"
-#include "msg_pay.pb.h"
+#include "msg_cdkey.pb.h"
 
 SPECIAL_ACTOR_DEFINE_BEGIN(CDKeyActor, E_MCMT_CDKey);
+
+public :
+        bool Init() override;
+
+        bool AddInfo(const std::shared_ptr<MsgCDKeyInfo>& info);
+        std::string PackCDKeyInfo2Json(const MsgCDKeyInfo& msg);
+        static std::shared_ptr<MsgCDKeyInfo> UnPackCDKeyInfoFromJson(const rapidjson::Value& data);
+
+        void LoadFromDB();
+        void Save2DB();
+        void Flush2DB();
+
+        void Terminate() override;
+
+        ::nl::util::SteadyTimer _saveTimer;
+        bool _inTimer = false;
+        UnorderedMap<std::string, int64_t> _cdkeyListByKey;
+        UnorderedMap<int64_t, std::shared_ptr<MsgCDKeyInfo>> _cdkeyList;
+
 SPECIAL_ACTOR_DEFINE_END(CDKeyActor);
 
 // #define CDKEY_SERVICE_SERVER
 // #define CDKEY_SERVICE_CLIENT
 // #define CDKEY_SERVICE_LOCAL
 
-#if defined (CDKEY_SERVICE_LOCAL) || defined (CDKEY_SERVICE_CLIENT)
-
-#include "Player.h"
-
-#endif
-
 DECLARE_SERVICE_BASE_BEGIN(CDKey, SessionDistributeSID, ServiceSession);
 
 private :
-        CDKeyServiceBase() : SuperType("CDKeyService") { }
+        CDKeyServiceBase()
+                : SuperType("CDKeyService")
+        {
+        }
+
         ~CDKeyServiceBase() override { }
 
 public :
         bool Init() override;
 
-#if defined (CDKEY_SERVICE_LOCAL) || defined (CDKEY_SERVICE_CLIENT)
+        template <typename ... Args>
+        bool StartLocal(int64_t actCnt, Args ... args)
+        {
+                auto act = std::make_shared<typename SuperType::ActorType>(std::forward<Args>(args)...);
+                SuperType::_actorArr.emplace_back(act);
+                act->Start();
+                return true;
+        }
 
-        std::shared_ptr<MsgPayOrderGuid> ReqOrderGuid(const PlayerPtr& act);
+        bool GMOpt(int64_t opt, const rapidjson::Value& data);
 
-#else
-        
-        FORCE_INLINE auto GetServiceActor()
-        { return SuperType::_actorArr[_idx++ % SuperType::_actorArr.size()].lock(); }
-        int64_t _idx = 0;
-
-#endif
+        FORCE_INLINE CDKeyActorPtr GetActor_() const { return SuperType::_actorArr[0].lock(); }
 
 DECLARE_SERVICE_BASE_END(CDKey);
 
@@ -44,7 +62,7 @@ typedef CDKeyServiceBase<E_ServiceType_Server, stLobbyServerInfo> CDKeyService;
 #endif
 
 #ifdef CDKEY_SERVICE_CLIENT
-typedef CDKeyServiceBase<E_ServiceType_Client, stCDKeyServerInfo> CDKeyService;
+typedef CDKeyServiceBase<E_ServiceType_Client, stGMServerInfo> CDKeyService;
 #endif
 
 #ifdef CDKEY_SERVICE_LOCAL

@@ -11,9 +11,9 @@ SPECIAL_ACTOR_MAIL_HANDLE(RegionMgrActor, E_MIGCST_RegionCreate, stRegionCreateI
 {
         auto pb = msg->_cInfo;
         auto agent = msg->_agent;
-        REGION_DLOG_INFO(pb->region_guid(),
+        REGION_DLOG_INFO(pb->region_id(),
                          "RegionMgrActor 创建region[{}] id[{}] from[{}]",
-                         pb->region_type(), pb->region_guid(), agent->GetID());
+                         pb->region_type(), pb->region_id(), agent->GetID());
 
         auto retMsg = std::make_shared<MailResult>();
         retMsg->set_error_type(E_IET_Fail);
@@ -23,18 +23,18 @@ SPECIAL_ACTOR_MAIL_HANDLE(RegionMgrActor, E_MIGCST_RegionCreate, stRegionCreateI
                 auto ses = agent->GetSession();
                 if (!ses)
                 {
-                        REGION_LOG_ERROR(pb->region_guid(),
+                        REGION_LOG_ERROR(pb->region_id(),
                                          "req[{}] 请求创建region[{}] 时，ses already release!!!",
-                                         agent->GetID(), pb->region_guid());
+                                         agent->GetID(), pb->region_id());
                         break;
                 }
 
-                auto region = RegionMgr::GetInstance()->GetActor(pb->region_guid());
+                auto region = RegionMgr::GetInstance()->GetActor(pb->region_id());
                 if (region)
                 {
-                        REGION_LOG_ERROR(pb->region_guid(),
+                        REGION_LOG_ERROR(pb->region_id(),
                                          "req[{}] 请求创建region[{}] 时，region already exist!!!",
-                                         agent->GetID(), pb->region_guid());
+                                         agent->GetID(), pb->region_id());
                         retMsg->set_error_type(E_IET_RegionCreateAlreadyExist);
                         break;
                 }
@@ -42,9 +42,9 @@ SPECIAL_ACTOR_MAIL_HANDLE(RegionMgrActor, E_MIGCST_RegionCreate, stRegionCreateI
                 region = RegionMgr::GetInstance()->CreateRegion(pb, agent);
                 if (!region)
                 {
-                        REGION_LOG_ERROR(pb->region_guid(),
+                        REGION_LOG_ERROR(pb->region_id(),
                                          "req[{}] 请求创建region[{}] 时，region create nullptr!!!",
-                                         agent->GetID(), pb->region_guid());
+                                         agent->GetID(), pb->region_id());
                         retMsg->set_error_type(E_IET_RegionCreateError);
                         break;
                 }
@@ -107,7 +107,7 @@ IActorPtr RegionMgr::CreateRegion(const std::shared_ptr<MailRegionCreateInfo>& c
         auto cfg = _regionCfgList.Get(cInfo->region_type());
         if (!cfg)
         {
-                REGION_LOG_ERROR(cInfo->region_guid(),
+                REGION_LOG_ERROR(cInfo->region_id(),
 				 "创建 region 时，配置没找到!!! regionType[{}]",
 				 cInfo->region_type());
                 return reg;
@@ -116,7 +116,7 @@ IActorPtr RegionMgr::CreateRegion(const std::shared_ptr<MailRegionCreateInfo>& c
         auto createInfo = GetRegionOptList().Get(cInfo->region_type());
         if (!createInfo || !createInfo->_createRegionFunc)
         {
-                REGION_LOG_ERROR(cInfo->region_guid(),
+                REGION_LOG_ERROR(cInfo->region_id(),
 				 "创建 region 时，创建操作没找到!!! regionType[{}]",
 				 cInfo->region_type());
                 return reg;
@@ -140,9 +140,9 @@ bool RegionMgr::RegisterOpt(ERegionType regionType,
 
 NET_MSG_HANDLE(GameMgrSession, E_MIMT_GameCommon, E_MIGCST_RegionCreate, MailRegionCreateInfo)
 {
-	REGION_DLOG_INFO(msg->region_guid(),
+	REGION_DLOG_INFO(msg->region_id(),
 			 "game mgr 请求创建region[{}] id[{}]",
-			 msg->region_type(), msg->region_guid());
+			 msg->region_type(), msg->region_id());
 	if (RegionMgr::GetInstance()->_reqList.Add(msgHead._from))
 	{
 		auto agent = std::make_shared<GameMgrSession::ActorAgentType>(static_cast<int64_t>(msgHead._from), shared_from_this());

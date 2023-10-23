@@ -5,10 +5,22 @@
 
 namespace nl::af::impl {
 
+GateClientSession::GateClientSession(typename SuperType::SocketType&& s)
+        : SuperType(std::move(s))
+{
+        ++GetApp()->_cnt;
+}
+
+GateClientSession::~GateClientSession()
+{
+        --GetApp()->_cnt;
+	// NetMgrImpl::GetInstance()->RemoveSession(E_GST_Client, this);
+}
+
 void GateClientSession::OnConnect()
 {
 	SuperType::OnConnect();
-	NetMgrImpl::GetInstance()->AddSession(E_GST_Client, shared_from_this());
+	// NetMgrImpl::GetInstance()->AddSession(E_GST_Client, shared_from_this());
 }
 
 void GateClientSession::OnClose(int32_t reasonType)
@@ -20,7 +32,6 @@ void GateClientSession::OnClose(int32_t reasonType)
                 DLOG_INFO("客户端断开连接!!! 玩家[{}] ptr[{}] reasonType[{}]", p->GetID(), (void*)p.get(), reasonType);
                 p->OnClientClose();
         }
-	NetMgrImpl::GetInstance()->RemoveSession(E_GST_Client, shared_from_this());
 	SuperType::OnClose(reasonType);
 }
 
@@ -159,7 +170,7 @@ void GateClientSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
                                                                 ++p->_playerFlag;
                                                                 p->SetLobbySes(lobbySes);
                                                                 PlayerWeakPtr weakPlayer = p;
-                                                                SteadyTimer::StaticStart(std::chrono::seconds(30), [weakPlayer]() {
+                                                                SteadyTimer::StaticStart(30, [weakPlayer]() {
                                                                         // TODO: 有多线程风险。
                                                                         auto p = weakPlayer.lock();
                                                                         if (p)

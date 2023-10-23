@@ -13,7 +13,7 @@ LobbyGameSession::~LobbyGameSession()
 
 void LobbyGameSession::InitCheckFinishTimer()
 {
-        SteadyTimer::StaticStart(std::chrono::seconds(1), []() {
+        SteadyTimer::StaticStart(1, []() {
                 if (static_cast<int64_t>(GetRegionMgrBase()->_gameSesList.Size()) >= ServerListCfgMgr::GetInstance()->GetSize<stGameServerInfo>())
                 {
                         GetApp()->_startPriorityTaskList->Finish(scPriorityTaskKey);

@@ -222,15 +222,17 @@ void ActivityMgrBase::OnEvent(MsgPlayerChange& msg,
                           const PlayerPtr& p,
                           int64_t eventType,
                           int64_t cnt,
-                          int64_t param)
+                          int64_t param,
+                          ELogServiceOrigType logType,
+                          uint64_t logParam)
 {
-        _fesGroupList.Foreach([&msg, &p, eventType, cnt, param](const auto& group) {
+        _fesGroupList.Foreach([&msg, &p, eventType, cnt, param, logType, logParam](const auto& group) {
                 auto fesSyncData = ActivityMgrBase::_festivalSyncData;
                 if (fesSyncData)
                 {
                         auto cfg = fesSyncData->_groupCfgList.Get(group->_id);
                         if (cfg && 1 == cfg->state())
-                                group->OnEvent(msg, p, eventType, cnt, param);
+                                group->OnEvent(msg, p, eventType, cnt, param, logType, logParam);
                 }
         });
 }
@@ -587,7 +589,7 @@ void Festival::OnDataReset(const PlayerPtr& p,
                         if (1 == act.state())
                         {
                                 _param += 1;
-                                OnEvent(msg, p, E_AET_DataReset, 1, -1);
+                                OnEvent(msg, p, E_AET_DataReset, 1, -1, E_LSOT_None, 0);
                         }
                         return true;
                 }
@@ -606,7 +608,9 @@ void Festival::OnEvent(MsgPlayerChange& msg,
                        const PlayerPtr& p,
                        int64_t eventType,
                        int64_t cnt,
-                       int64_t param)
+                       int64_t param,
+                       ELogServiceOrigType logType,
+                       uint64_t logParam)
 {
         auto& seq = _taskList.get<by_task_event_type>();
         auto range = seq.equal_range(eventType);
@@ -660,7 +664,12 @@ bool FestivalTask::Reward(const PlayerPtr& p,
         if (!cfg || FLAG_HAS(_flag, 1))
                 return false;
 
-        BagMgr::GetInstance()->DoDrop(p, msg, cfg->_rewardList);
+        auto logGuid = LogService::GetInstance()->GenGuid();
+        BagMgr::GetInstance()->DoDrop(p, msg, cfg->_rewardList, E_LSOT_Festival, logGuid);
+
+        std::string str = fmt::format("{}\"id\":{}{}", "{", _id, "}");
+        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), Base64Encode(str), E_LSLST_Festival, fes->_type, GetClock().GetTimeStamp(), E_LSOT_Festival, logGuid);
+
         FLAG_ADD(_flag, 1);
         p->Save2DB();
         return true;
@@ -693,10 +702,14 @@ bool FestivalTaskImpl::Reward(const PlayerPtr& p,
                 return false;
         }
 
+        auto logGuid = LogService::GetInstance()->GenGuid();
+        std::string str = fmt::format("{}\"id\":{}{}", "{", _id, "}");
+        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), Base64Encode(str), E_LSLST_Festival, fes->_type, GetClock().GetTimeStamp(), E_LSOT_Festival, logGuid);
+
         for (auto& reward : rewardItem->goods_list())
         {
                 auto& item = reward.goods_item();
-                p->AddDrop(msg, item.type(), item.id(), item.num());
+                p->AddDrop(msg, item.type(), item.id(), item.num(), E_LSOT_Festival, logGuid);
         }
 
         FLAG_ADD(_flag, 1);

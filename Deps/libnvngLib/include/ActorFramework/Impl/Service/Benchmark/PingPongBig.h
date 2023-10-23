@@ -18,13 +18,10 @@ public :
 
 #include "ActorFramework/ServiceExtra.hpp"
 
-struct stPingPongBigTag;
-typedef ::nl::net::NetMgrBase<stPingPongBigTag> PingPongBigNetMgr;
-
 template <typename ServiceType, bool IsServer>
-class PingPongBigSession : public ServiceSession<ServiceType, IsServer, stPingPongBigTag>
+class PingPongBigSession : public ServiceSession<ServiceType, IsServer, stDefaultTag>
 {
-        typedef ServiceSession<ServiceType, IsServer, stPingPongBigTag> SuperType;
+        typedef ServiceSession<ServiceType, IsServer, stDefaultTag> SuperType;
 public :
         typedef typename SuperType::MsgHeaderType MsgHeaderType;
 public :
@@ -38,14 +35,14 @@ public :
                 ++GetApp()->_cnt;
                 auto msgHead = *reinterpret_cast<MsgHeaderType*>(buf);
                 SuperType::SendBuf(bufRef, buf+sizeof(MsgHeaderType), msgHead._size-sizeof(MsgHeaderType)
-                                   , Compress::E_CT_ZLib, msgHead.MainType(), msgHead.SubType()
+                                   , Compress::E_CT_Zstd, msgHead.MainType(), msgHead.SubType()
                                    , MsgHeaderType::E_RMT_Send, 0, 0, 0);
         }
 };
 
 DECLARE_SERVICE_BASE_BEGIN(PingPongBig, SessionDistributeMod, PingPongBigSession);
 
-        constexpr static int64_t scSessionCnt = 5;
+        constexpr static int64_t scSessionCnt = 1;
         constexpr static int64_t scPkgPerSession = 1000 * 100;
 
 private :
@@ -58,14 +55,12 @@ public :
                 if (!SuperType::Init())
                         return false;
 
-                PingPongBigNetMgr::CreateInstance();
-                PingPongBigNetMgr::GetInstance()->Init(4, "pingpong");
 #ifdef PING_PONG_BIG_SERVICE_SERVER
                 SuperType::Start(60000);
 #endif
 
 #ifdef PING_PONG_BIG_SERVICE_CLIENT
-                for (int64_t i=0; i<scSessionCnt * 4; ++i)
+                for (int64_t i=0; i<scSessionCnt; ++i)
                 {
                         auto remoteServerInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
                         SuperType::Start(remoteServerInfo->_ip, 60000);

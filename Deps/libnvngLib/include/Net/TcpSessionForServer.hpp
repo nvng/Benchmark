@@ -48,7 +48,7 @@ public :
         typedef typename SuperType::Tag Tag;
         constexpr static Compress::ECompressType CompressType = _Ct;
         constexpr static bool IsServer = _Sy;
-        constexpr static std::size_t cRecvChannelSize = 1 << 9;
+        constexpr static std::size_t cRecvChannelSize = 1 << 10;
         constexpr static std::size_t cSendChannelSize = 1 << 15; // 上限，超过效率明显降低。
         // constexpr static std::size_t cSendChannelSize = 1 << 12; // 下限
 
@@ -88,29 +88,23 @@ public :
                          boost::system::errc::success == ec.value() ? "success" : ec.what());
 
                 DoRecv();
-                std::weak_ptr<ThisType> weakSes = ThisType::shared_from_this();
-                GetAppBase()->_mainChannel.push([weakSes]() {
-                        auto ses = weakSes.lock();
-                        if (!ses)
-                                return;
-
+                auto ses = ThisType::shared_from_this();
+                GetAppBase()->_mainChannel.push([ses]() {
                         boost::fibers::fiber(
                              std::allocator_arg,
                              // boost::fibers::fixedsize_stack{ 32 * 1024 },
                              boost::fibers::segmented_stack{},
-                             [weakSes]() {
-                                auto ses = weakSes.lock();
-                                if (!ses)
-                                        return;
-
+                             [ses]() {
                                 while (!ses->IsTerminate())
                                 {
                                         auto recvBuf = ses->_recvChannel.value_pop();
                                         if (recvBuf)
                                         {
-                                                const int64_t totalSize = reinterpret_cast<MsgTotalHeadType*>(recvBuf.get())->_size;
+                                                // 不需要 crc32 进行包体校验，同一子网内，数据链路层已经保证包体完整性。
+                                                // 若中途需经过路由器，则需要进行校验，应用层不保证包体完整。
+                                                auto totalHead = *reinterpret_cast<MsgTotalHeadType*>(recvBuf.get());
                                                 auto buf = recvBuf.get() + sizeof(MsgTotalHeadType);
-                                                while (totalSize - (int64_t)(buf - recvBuf.get()) >= sizeof(MsgHeaderType))
+                                                while (totalHead._size - (int64_t)(buf - recvBuf.get()) >= sizeof(MsgHeaderType))
                                                 {
                                                         // 顺序不能改变，msgHead 所指向内存可能在后面被修改。
                                                         auto msgHead = *reinterpret_cast<MsgHeaderType*>(buf);
@@ -120,7 +114,7 @@ public :
                                         }
                                 }
 
-                                ses.reset();
+                                std::weak_ptr<ThisType> weakSes = std::move(ses);
                                 while (true)
                                 {
                                         boost::this_fiber::sleep_for(std::chrono::milliseconds(1));
@@ -137,11 +131,7 @@ public :
                              std::allocator_arg,
                              // boost::fibers::fixedsize_stack{ 32 * 1024 },
                              boost::fibers::segmented_stack{},
-                             [weakSes]() {
-                                auto ses = weakSes.lock();
-                                if (!ses)
-                                        return;
-
+                             [ses]() {
                                 constexpr std::size_t cSendBufInitSize = 1024 * 1024;
                                 auto sendBufRef = std::make_shared<char[]>(cSendBufInitSize);
                                 auto sendBuf = sendBufRef.get() + sizeof(MsgTotalHeadType);
@@ -151,7 +141,7 @@ public :
 
                                 auto allocCacheBufferFunc = [&](std::size_t needSize) {
                                         // LOG_FATAL_IF(_totalMsgSize > _bufSize, "222222222222222222222 _totalMsgSize[{}] _bufSize[{}]", _totalMsgSize, _bufSize);
-                                        reinterpret_cast<MsgTotalHeadType*>(sendBufRef.get())->_size = _totalMsgSize;
+                                        new (sendBufRef.get()) MsgTotalHeadType(_totalMsgSize);
                                         ses->DoSend(sendBufRef, sendBufRef.get(), _totalMsgSize);
 
                                         // 网络压力很大的情况下，一次性分配8M。
@@ -265,7 +255,7 @@ __direct_deal__ :
                                         }
                                 }
 __end__ :
-                                ses.reset();
+                                std::weak_ptr<ThisType> weakSes = std::move(ses);
                                 while (true)
                                 {
                                         boost::this_fiber::sleep_for(std::chrono::milliseconds(1));
@@ -337,14 +327,14 @@ __end__ :
                 boost::asio::async_read(_socket, boost::asio::buffer((char*)&_msgTotalHead, sizeof(_msgTotalHead)),
                                         // boost::asio::transfer_at_least(sizeof(_totalMsgHead)),
                                         [ses](const auto& ec, std::size_t size) {
-                                                if (!ec)
+                                                if (!ec && ses->_msgTotalHead._size >= sizeof(MsgTotalHeadType))
                                                 {
                                                         auto buf = std::make_shared<char[]>(ses->_msgTotalHead._size);
                                                         *reinterpret_cast<MsgTotalHeadType*>(buf.get()) = ses->_msgTotalHead;
                                                         boost::asio::async_read(ses->_socket, boost::asio::buffer(buf.get() + sizeof(MsgTotalHeadType), ses->_msgTotalHead._size - sizeof(MsgTotalHeadType)),
                                                                                 // boost::asio::transfer_at_least(ses->_totalMsgHead._size - sizeof(MsgTotalHeadType)),
                                                                                 [ses, buf](const auto& ec, std::size_t size) {
-                                                                                        if (!ec)
+                                                                                        if (!ec && size == ses->_msgTotalHead._size - sizeof(MsgTotalHeadType))
                                                                                         {
                                                                                                 if (boost::fibers::channel_op_status::success != ses->_recvChannel.try_push(buf))
                                                                                                 {
@@ -355,6 +345,7 @@ __end__ :
                                                                                         }
                                                                                         else
                                                                                         {
+                                                                                                LOG_WARN("async read error ses id[{}] recvSize[{}] needSize[{}]", ses->GetID(), size, ses->_msgTotalHead._size);
                                                                                                 ses->OnError(ec);
                                                                                         }
                                                                                 });
@@ -362,7 +353,6 @@ __end__ :
                                                 else
                                                 {
                                                         ses->OnError(ec);
-                                                        return;
                                                 }
                                         });
         }
