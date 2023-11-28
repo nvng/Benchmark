@@ -23,7 +23,7 @@ struct stGMResult : stActorMailBase
 
 #ifdef GM_SERVICE_SERVER
 struct stSnowflakeGMGuidTag;
-typedef Snowflake<stSnowflakeGMGuidTag, uint64_t, 1692871881000> SnowflakeGMGuid;
+typedef Snowflake<stSnowflakeGMGuidTag, SNOW_FLAKE_START_TIME> SnowflakeGMGuid;
 #endif
 
 DECLARE_SERVICE_BASE_BEGIN(GM, SessionDistributeSID, ServiceSession);

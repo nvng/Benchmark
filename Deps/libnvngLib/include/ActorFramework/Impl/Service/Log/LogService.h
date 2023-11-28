@@ -76,7 +76,7 @@ consteval const char* LogServiceFmt<E_LSLMT_Content>() { return "({},'{}',{},{},
 
 #ifdef LOG_SERVICE_CLIENT
 struct stSnowflakeLogGuidTag;
-typedef Snowflake<stSnowflakeLogGuidTag, uint64_t, 1692871881000> SnowflakeLogGuid;
+typedef Snowflake<stSnowflakeLogGuidTag, SNOW_FLAKE_START_TIME> SnowflakeLogGuid;
 #endif
 
 DECLARE_SERVICE_BASE_BEGIN(Log, SessionDistributeMod, ServiceSession);

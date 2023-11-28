@@ -271,10 +271,6 @@ void RegistCheckIllegalMsgTime(GateClientSession* ses, uint64_t mt, uint64_t st,
         ses->_lastMsgRecvTimeList.emplace(msgType, info);
 }
 
-void DealClientMessage(const std::shared_ptr<GateClientSession>& clientSes, evbuffer* evbuf)
-{
-}
-
 }; // end of namespace nl::af::impl
 
 // vim: fenc=utf8:expandtab:ts=8

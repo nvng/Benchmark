@@ -19,6 +19,7 @@ struct stFestivalActive : public stActorMailBase
 };
 
 // {{{ ActivityMgrBase
+UnorderedMap<int64_t, stTaskInfoPtr> ActivityMgrBase::_taskCfgList;
 bool ActivityMgrBase::InitOnce()
 {
         _activityMgrActor = std::make_shared<ActivityMgrActor>();
@@ -171,6 +172,18 @@ void ActivityMgrBase::UnPack(const MsgActivityMgr& msg)
 
 void ActivityMgrBase::OnPlayerCreate(const PlayerPtr& p)
 {
+        auto group = FestivalGroup::Create(0);
+        auto fes = FestivalGroup::CreateFestival(0);
+        fes->_type = 0;
+        fes->_id = 72;
+        group->_fesList.Add(fes->_id, fes);
+        group->_time._delTime = INT64_MAX;
+        MsgActivityFestivalActivityCfg msg;
+        // msg.set_cfg_id(73);
+
+        MsgPlayerChange playerChange;
+        if (fes->Init(playerChange, p, group, msg))
+                p->_activityMgr._fesGroupList.Add(group->_id, group);
 }
 
 void ActivityMgrBase::OnDataReset(const PlayerPtr& p, MsgPlayerChange& msg)
@@ -187,7 +200,8 @@ void ActivityMgrBase::OnPlayerLogin(const PlayerPtr& p, MsgPlayerInfo& msg)
                 return;
 
         uint64_t cnt = 0;
-        festivalData->_groupCfgList.Foreach([this, &p, &cnt](const auto& msg) {
+        MsgPlayerChange playerChange;
+        festivalData->_groupCfgList.Foreach([this, &p, &playerChange, &cnt](const auto& msg) {
                 if (!FestivalGroup::IsOpen(*msg))
                         return;
 
@@ -196,19 +210,18 @@ void ActivityMgrBase::OnPlayerLogin(const PlayerPtr& p, MsgPlayerInfo& msg)
                 if (!group)
                 {
                         group = FestivalGroup::Create(msg->type());
-                        if (group->Init(p, *msg))
+                        if (group->Init(playerChange, p, *msg))
                         {
                                 _fesGroupList.Add(group->_id, group);
-                                group->OnDataReset(p, *_playerChange);
+                                group->OnDataReset(p, playerChange);
                         }
                 }
         });
         if (cnt >= festivalData->_groupCfgList.Size())
                 _version = festivalData->_version;
 
-        if (_playerChange && _playerChange->ByteSizeLong() > 0)
-                msg.add_player_change_list()->CopyFrom(*_playerChange);
-        _playerChange.reset();
+        if (playerChange.ByteSizeLong() > 0)
+                msg.add_player_change_list()->CopyFrom(playerChange);
 }
 
 void ActivityMgrBase::OnOffline(const PlayerPtr& p)
@@ -277,8 +290,8 @@ SPECIAL_ACTOR_MAIL_HANDLE(ActivityMgrActor, 0x0, MsgActivityFestivalCfg)
         for (auto& val : msg->group_list())
         {
                 auto msgGroup = val.second;
-                LOG_INFO("收到 GMServer 推送下来的 group:{} active_time:{}",
-                         msgGroup.group_guid(), msgGroup.time().active_time());
+                LOG_INFO("收到 GMServer 推送下来的 group:{} timeType:{} active_time:{}",
+                         msgGroup.group_guid(), msgGroup.time().type(), msgGroup.time().active_time());
                 const auto groupGuid = msgGroup.group_guid();
                 for (auto& val : msgGroup.activity_list())
                         testParseFestivalCfgFunc(groupGuid, val.second);
@@ -306,7 +319,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(ActivityMgrActor, 0x0, MsgActivityFestivalCfg)
                                  msgGroup.group_guid(), msgGroup.time().active_time(), GetClock().GetTimeStamp());
                                  */
                         time_t t = GetClock().GetSteadyTime() + msgGroup.time().active_time() - GetClock().GetTimeStamp();
-                        _timer.Start(weakAct, t + 1.0, [weakAct, groupMsg, v{msg->version()}]() {
+                        ::nl::util::SteadyTimer::StaticStart(weakAct, t + 1.0, [weakAct, groupMsg, v{msg->version()}]() {
                                 /*
                                 LOG_INFO("99999999999999999999999999999 id:{} active_time:{} now:{}",
                                          groupMsg->group_guid(), groupMsg->time().active_time(), GetClock().GetTimeStamp());
@@ -362,15 +375,12 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Active, stFestivalActive)
 
         FestivalGroupPtr group = FestivalGroup::Create(msg->_msgGroup->type());
         LOG_INFO("88888888888888888888888888 active_time:{}", msg->_msgGroup->time().active_time());
-        if (group->Init(shared_from_this(), *msg->_msgGroup))
+        auto playerChange = std::make_shared<MsgPlayerChange>();
+        if (group->Init(*playerChange, shared_from_this(), *msg->_msgGroup))
         {
                 _activityMgr._fesGroupList.Add(group->_id, group);
-
-                if (_activityMgr._playerChange && _activityMgr._playerChange->ByteSizeLong() > 0)
-                        Send2Client(E_MCMT_ClientCommon, E_MCCCST_PlayerChange, _activityMgr._playerChange);
-                _activityMgr._playerChange.reset();
-
-                group->OnDataReset(shared_from_this(), *_activityMgr._playerChange);
+                group->OnDataReset(shared_from_this(), *playerChange);
+                Send2Client(E_MCMT_ClientCommon, E_MCCCST_PlayerChange, playerChange);
         }
 
         return nullptr;
@@ -403,8 +413,26 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Mark, MsgActivityMark)
                 Save2DB();
         } while (0);
 
-        Send2Client(E_MCMT_Activity, E_MCATST_Mark, msg);
-        return nullptr;
+        return msg;
+}
+
+ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_OnEvent, MsgActivityOnEvent)
+{
+        auto thisPtr = shared_from_this();
+        auto playerChange = msg->mutable_player_change();
+        for (auto& item : msg->item_list())
+        {
+                auto logGuid = LogService::GetInstance()->GenGuid();
+                _activityMgr.OnEvent(*playerChange
+                                     , thisPtr
+                                     , item.event_type()
+                                     , item.cnt()
+                                     , item.param()
+                                     , E_LSOT_FestivalOnEvent
+                                     , logGuid);
+        }
+
+        return msg;
 }
 
 ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Reward, MsgActivityReward)
@@ -444,8 +472,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Reward, MsgActivityReward)
                 Save2DB();
         } while (0);
 
-        Send2Client(E_MCMT_Activity, E_MCATST_Reward, msg);
-        return nullptr;
+        return msg;
 }
 // }}}
 
@@ -537,8 +564,9 @@ bool Festival::InitCommon(const FestivalGroupPtr& group,
         return true;
 }
 
-bool Festival::Init(const FestivalGroupPtr& group,
+bool Festival::Init(MsgPlayerChange& playerChange,
                     const PlayerPtr& p,
+                    const FestivalGroupPtr& group,
                     const MsgActivityFestivalActivityCfg& msg)
 {
         if (!InitCommon(group, p, msg))
@@ -754,7 +782,7 @@ bool FestivalTaskImpl::Reward(const PlayerPtr& p,
         for (auto& reward : rewardItem->goods_list())
         {
                 auto& item = reward.goods_item();
-                p->AddDrop(msg, item.type(), item.id(), item.num(), E_RT_MainCity, logType, logParam);
+                p->AddDrop(msg, item.type(), item.id(), item.num(), logType, logParam);
         }
 
         FLAG_ADD(_flag, 1);
@@ -762,5 +790,112 @@ bool FestivalTaskImpl::Reward(const PlayerPtr& p,
         return true;
 }
 // }}}
+
+FESTIVAL_REGISTER(0, FestivalGroup, FestivalCommon, FestivalTaskCommon);
+bool FestivalTaskCommon::Reward(const PlayerPtr& p,
+                                const std::shared_ptr<FestivalGroup>& group,
+                                const std::shared_ptr<Festival>& fes,
+                                MsgPlayerChange& msg,
+                                int64_t param,
+                                ELogServiceOrigType logType,
+                                uint64_t logParam)
+{
+        auto cfg = ActivityMgr::_taskCfgList.Get(_id);
+        if (!cfg)
+                return false;
+
+        if (_cnt < cfg->_value)
+                return false;
+
+        std::string str = fmt::format("{}\"id\":{},\"param\":{}{}", "{", _id, param, "}");
+        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 2, logType, logParam);
+        auto errorType = BagMgr::GetInstance()->DoDrop(p, msg, {{ cfg->_reward, 1}}, logType, logParam);
+        if (E_CET_Success != errorType)
+                return false;
+
+        FLAG_ADD(_flag, 1);
+        return true;
+}
+
+bool FestivalCommon::Init(MsgPlayerChange& playerChange
+                          , const PlayerPtr& p
+                          , const FestivalGroupPtr& group
+                          , const MsgActivityFestivalActivityCfg& msg)
+{
+        // LOG_INFO("77777777 id:{}", _id);
+        ActivityMgr::_taskCfgList.Foreach([this](const auto& cfg) {
+                auto task = FestivalGroup::CreateFestivalTask(0);
+                task->_id = cfg->_id;
+                task->_eventType = cfg->_target;
+                task->_refreshType = cfg->_refreshType;
+                _taskList.emplace(task);
+        });
+
+        return true;
+}
+
+void FestivalCommon::OnDataReset(const PlayerPtr& p,
+                                 MsgPlayerChange& msg,
+                                 MsgActivityFestivalGroupCfg& groupCfg)
+{
+        std::vector<int64_t> refreshTypeArr = { 1 };
+        if (0 == GetClock().GetWeekDay())
+                refreshTypeArr.emplace_back(2);
+
+        auto& seq = _taskList.get<by_task_refresh_type>();
+        for (auto t : refreshTypeArr)
+        {
+                auto range = seq.equal_range(t);
+                for (auto it=range.first; range.second!=it; ++it)
+                        (*it)->Reset();
+        }
+}
+
+void FestivalCommon::OnEvent(MsgPlayerChange& msg
+                             , const PlayerPtr& p
+                             , int64_t eventType
+                             , int64_t cnt
+                             , int64_t param
+                             , ELogServiceOrigType logType
+                             , uint64_t logParam)
+{
+        auto& seq = _taskList.get<by_task_event_type>();
+        auto range = seq.equal_range(eventType);
+        for (auto it=range.first; range.second!=it; ++it)
+        {
+                auto task = *it;
+                if (!task)
+                        continue;
+
+                auto taskCfg = ActivityMgr::_taskCfgList.Get(task->_id);
+                if (!taskCfg)
+                        continue;
+
+                switch (taskCfg->_optType)
+                {
+                case 1 : // 等于
+                        if (taskCfg->_misc != param)
+                                continue;
+                        break;
+                case 2 : // 小于等于
+                        if (param > taskCfg->_misc)
+                                continue;
+                        break;
+                case 3 : // 大于等于
+                        if (param < taskCfg->_misc)
+                                continue;
+                        break;
+                default :
+                        continue;
+                        break;
+                }
+
+                task->_cnt += cnt;
+                std::string str = fmt::format("{}\"id\":{},\"type\":{},\"eventType\":{},\"cnt\":{},\"new_cnt\":{},\"param\":{}{}"
+                                              , "{", _id, _type, eventType, cnt, task->_cnt, param, "}");
+                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 1, logType, logParam);
+        }
+}
+
 
 // vim: fenc=utf8:expandtab:ts=8

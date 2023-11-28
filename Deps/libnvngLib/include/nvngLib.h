@@ -29,7 +29,7 @@
 #include "Tools/ConsistencyHash.hpp"
 #include "Tools/ThreadSafeMap.hpp"
 #include "Tools/ThreadSafeSet.hpp"
-// #include "Tools/Shape.hpp"
+#include "Tools/Shape.hpp"
 #include "Tools/Combinations.hpp"
 
 #include "Net/MultiCastWapper.hpp"

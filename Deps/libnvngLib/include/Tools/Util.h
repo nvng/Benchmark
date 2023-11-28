@@ -740,7 +740,6 @@ enum EServerType
 	E_ST_GM,
         E_ST_Log,
 	E_ST_RobotMgr,
-        E_ST_PkgStatus,
 
 	EServerType_ARRAYSIZE,
         E_ST_None,
@@ -753,12 +752,13 @@ struct stServerInfoBase
 {
         virtual ~stServerInfoBase() { }
 
-	int64_t _sid = 0;
+	int64_t _sid = -1;
 	std::string _faName;
 	std::string _ip;
 	int64_t _workersCnt = 1;
         int64_t _actorCntPerWorkers = 1;
 	int64_t _netProcCnt = 1;
+        int64_t _idx = -1;
 	std::vector<uint16_t> _portList;
 };
 typedef std::shared_ptr<stServerInfoBase> stServerInfoBasePtr;

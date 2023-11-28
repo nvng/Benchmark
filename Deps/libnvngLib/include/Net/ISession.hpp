@@ -203,11 +203,11 @@ public :
                             || !NetMgrBase<_Tag>::GetInstance()->_sesList.Add(ses->GetID(), ses))
                         {
                                 auto ctx = ses->_socket.get_executor();
-                                ::nl::util::SteadyTimer::StaticStart(ctx, 0.1, [ses]() {
+                                ::nl::util::SteadyTimer::StaticStart(0.1, [ses]() {
                                         NetMgrBase<_Tag>::GetInstance()->Connect(ses->_connectEndPoint.address().to_string()
                                                                            , ses->_connectEndPoint.port()
                                                                            , std::move(ses->_createSession));
-                                });
+                                }, ctx);
                         }
                         else
                         {

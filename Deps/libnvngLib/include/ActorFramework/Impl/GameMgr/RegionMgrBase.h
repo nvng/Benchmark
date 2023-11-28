@@ -3,9 +3,6 @@
 #include "GameMgrGameSession.h"
 #include "GameMgrLobbySession.h"
 
-struct stSnowflakeRegionGuidTag;
-typedef Snowflake<stSnowflakeRegionGuidTag, uint64_t, 1692871881000> SnowflakeRegionGuid;
-
 class RequestActor;
 
 struct stPlayerInfo

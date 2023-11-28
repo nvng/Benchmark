@@ -31,7 +31,7 @@ typedef std::shared_ptr<stPayCfgInfo> stPayCfgInfoPtr;
 DECLARE_SERVICE_BASE_BEGIN(Pay, SessionDistributeSID, ServiceSession);
 
 struct stSnowflakePayOrderGuidTag;
-typedef Snowflake<stSnowflakePayOrderGuidTag, uint64_t, 1692871881000> SnowflakePayOrderGuid;
+typedef Snowflake<stSnowflakePayOrderGuidTag, SNOW_FLAKE_START_TIME> SnowflakePayOrderGuid;
 
 private :
         PayServiceBase() : SuperType("PayService") { }

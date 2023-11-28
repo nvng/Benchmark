@@ -109,6 +109,7 @@ public :
         FORCE_INLINE const std::string& GetAppName() const { return GetProcName(); }
         FORCE_INLINE int64_t GetRID() const { return ServerListCfgMgr::GetInstance()->_rid; }
         FORCE_INLINE int64_t GetSID() const { return _serverInfo->_sid; }
+        FORCE_INLINE int64_t GetSIDX() const { return _serverInfo->_idx; }
         FORCE_INLINE EServerType GetServerType() const { return _serverType; }
 
         DEFINE_APP_FLAG(InitSuccess);

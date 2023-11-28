@@ -589,7 +589,6 @@ bool RegionMgrBase::Init()
                 return lhs->GetID() < rhs->GetID();
         });
 
-        SnowflakeRegionGuid::Init(GetApp()->GetSID());
 	return true;
 }
 

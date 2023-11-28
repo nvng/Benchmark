@@ -94,13 +94,6 @@ struct stRobotMgrServerInfo : public stServerInfoBase
 typedef std::shared_ptr<stRobotMgrServerInfo> stRobotMgrServerInfoPtr;
 template <> inline EServerType CalServerType<stRobotMgrServerInfo>() { return E_ST_RobotMgr; }
 
-struct stPkgStatusServerInfo : public stServerInfoBase
-{
-        uint16_t _http_port = 0;
-};
-typedef std::shared_ptr<stPkgStatusServerInfo> stPkgStatusServerInfoPtr;
-template <> inline EServerType CalServerType<stPkgStatusServerInfo>() { return E_ST_PkgStatus; }
-
 class ServerListCfgMgr : public Singleton<ServerListCfgMgr>
 {
 public :
@@ -147,6 +140,13 @@ public :
                         }
                 };
 
+                auto distIdx = [this](EServerType st) {
+                        assert(EServerType_IsValid(st));
+                        int64_t idx = -1;
+                        for (auto& val : _serverInfoListByType[st])
+                                val.second->_idx = ++idx;
+                };
+
 		/*
 		auto& controlServer = root["control_server"];
 		SuperServer_.sid_ = controlServer["sid"].GetInt64();
@@ -181,6 +181,7 @@ public :
 				if (!_serverInfoListByType[E_ST_Lobby].emplace(serverInfo->_sid, serverInfo).second)
 					LOG_FATAL("大厅服sid重复!!! sid[{}]", serverInfo->_sid);
 			}
+                        distIdx(E_ST_Lobby);
 		}
 
 		if (root.HasMember("gate_server_list"))
@@ -205,6 +206,7 @@ public :
 				if (!_serverInfoListByType[E_ST_Gate].emplace(serverInfo->_sid, serverInfo).second)
 					LOG_FATAL("网关服sid重复!!! sid[{}]", serverInfo->_sid);
 			}
+                        distIdx(E_ST_Gate);
 		}
 
 		if (root.HasMember("login_server_list"))
@@ -230,6 +232,7 @@ public :
 				if (!_serverInfoListByType[E_ST_Login].emplace(serverInfo->_sid, serverInfo).second)
 					LOG_FATAL("登录服sid重复!!! sid[{}]", serverInfo->_sid);
 			}
+                        distIdx(E_ST_Login);
 		}
 
 		if (root.HasMember("pay_server_list"))
@@ -256,6 +259,7 @@ public :
 				if (!_serverInfoListByType[E_ST_Pay].emplace(serverInfo->_sid, serverInfo).second)
 					LOG_FATAL("登录服sid重复!!! sid[{}]", serverInfo->_sid);
 			}
+                        distIdx(E_ST_Pay);
 		}
 
 		if (root.HasMember("game_server_list"))
@@ -282,6 +286,7 @@ public :
 				if (!_serverInfoListByType[E_ST_Game].emplace(serverInfo->_sid, serverInfo).second)
 					LOG_FATAL("房间服sid重复!!! sid[{}]", serverInfo->_sid);
 			}
+                        distIdx(E_ST_Game);
 		}
 
 		if (root.HasMember("game_mgr_server"))
@@ -305,6 +310,8 @@ public :
 			checkSID(serverInfo->_sid);
 			if (!_serverInfoListByType[E_ST_GameMgr].emplace(serverInfo->_sid, serverInfo).second)
 				LOG_FATAL("房间服管理服sid重复!!! sid[{}]", serverInfo->_sid);
+
+                        distIdx(E_ST_GameMgr);
 		}
 
 		if (root.HasMember("db_server_list"))
@@ -334,6 +341,7 @@ public :
 				if (!_serverInfoListByType[E_ST_DB].emplace(serverInfo->_sid, serverInfo).second)
 					LOG_FATAL("DBServer sid重复!!! sid[{}]", serverInfo->_sid);
 			}
+                        distIdx(E_ST_DB);
 		}
 
 		if (root.HasMember("log_server_list"))
@@ -358,6 +366,7 @@ public :
 				if (!_serverInfoListByType[E_ST_Log].emplace(serverInfo->_sid, serverInfo).second)
 					LOG_FATAL("LogServer sid重复!!! sid[{}]", serverInfo->_sid);
 			}
+                        distIdx(E_ST_Log);
 		}
 
                 if (root.HasMember("gm_server"))
@@ -384,6 +393,8 @@ public :
 
 			if (!_serverInfoListByType[E_ST_GM].emplace(serverInfo->_sid, serverInfo).second)
 				LOG_FATAL("GMServer sid重复!!! sid[{}]", serverInfo->_sid);
+
+                        distIdx(E_ST_GM);
 		}
 
                 if (root.HasMember("robot_mgr_server"))
@@ -400,22 +411,8 @@ public :
 
 			if (!_serverInfoListByType[E_ST_RobotMgr].emplace(serverInfo->_sid, serverInfo).second)
 				LOG_FATAL("RobotMgrServer sid重复!!! sid[{}]", serverInfo->_sid);
-                }
 
-                if (root.HasMember("pkg_status_server"))
-                {
-                        auto& item = root["pkg_status_server"];
-                        auto serverInfo = std::make_shared<stPkgStatusServerInfo>();
-                        serverInfo->_sid = item["sid"].GetInt64();
-                        serverInfo->_faName = item["fa_name"].GetString();
-                        serverInfo->_ip = item["ip"].GetString();
-                        serverInfo->_http_port = item["http_port"].GetInt64();
-
-                        checkIPPort(serverInfo, serverInfo->_http_port);
-                        checkSID(serverInfo->_sid);
-
-                        if (!_serverInfoListByType[E_ST_PkgStatus].emplace(serverInfo->_sid, serverInfo).second)
-                                LOG_FATAL("PkgStatusServer sid重复!!! sid[{}]", serverInfo->_sid);
+                        distIdx(E_ST_RobotMgr);
                 }
 
 		return true;
@@ -574,51 +571,40 @@ public :
 			}
 		}
 
-                auto readMysqlCfgFunc = [](stMySqlConfig& cfg, auto& db, std::string_view dbName) {
-                        cfg._host = db["host"].GetString();
-                        cfg._port = db["port"].GetInt();
-                        cfg._user = db["user"].GetString();
-                        cfg._pwd = db["pwd"].GetString();
-                        cfg._connCnt = db["conn_cnt"].GetInt64();
-                        cfg._thCnt = db["thread_cnt"].GetInt64();
-                        cfg._dbName = db["db"].GetString();
-                        if ("-1" == cfg._dbName)
-                                cfg._dbName = fmt::format("{}_{}", dbName, ServerListCfgMgr::GetInstance()->_rid);
-                };
-
 		if (root.HasMember("mysql"))
                 {
                         auto& mysqlCfg = root["mysql"];
+                        auto readMysqlCfgFunc = [&mysqlCfg](stMySqlConfig& cfg, const char* dbName) mutable {
+                                auto& db = mysqlCfg[dbName];
+                                cfg._host = db["host"].GetString();
+                                cfg._port = db["port"].GetInt();
+                                cfg._user = db["user"].GetString();
+                                cfg._pwd = db["pwd"].GetString();
+                                cfg._connCnt = db["conn_cnt"].GetInt64();
+                                cfg._thCnt = db["thread_cnt"].GetInt64();
+                                cfg._dbName = db["db"].GetString();
+                                if ("-1" == cfg._dbName)
+                                        cfg._dbName = fmt::format("{}_{}", dbName, ServerListCfgMgr::GetInstance()->_rid);
+                        };
+
                         if (mysqlCfg.HasMember("game_db"))
-                                readMysqlCfgFunc(_mysqlCfg, mysqlCfg["game_db"], "game_db");
+                                readMysqlCfgFunc(_mysqlCfg, "game_db");
 
                         if (mysqlCfg.HasMember("game_log"))
-                                readMysqlCfgFunc(_mysqlLogCfg, mysqlCfg["game_log"], "game_log");
-
-                        if (mysqlCfg.HasMember("game_misc"))
-                                readMysqlCfgFunc(_mysqlMiscCfg, mysqlCfg["game_misc"], "game_misc");
+                                readMysqlCfgFunc(_mysqlLogCfg, "game_log");
                 }
-
-		if (_baseCfgDir.empty())
-			_baseCfgDir = root["cfg_dir"].GetString();
 
 		return true;
 	}
 
-	std::string GetConfigAbsolute(const std::string& path)
-	{
-		std::string ret = _baseCfgDir;
-		ret += "/";
-		ret += path;
-		return ret;
-	}
+	FORCE_INLINE std::string GetConfigAbsolute(const std::string& path)
+	{ return _baseCfgDir + "/config_ch/" + path; }
 
 public :
 	stRedisCfg _redisCfg;
 
 	stMySqlConfig _mysqlCfg;
 	stMySqlConfig _mysqlLogCfg;
-	stMySqlConfig _mysqlMiscCfg;
 
 	stGateServerCfgPtr _gateCfg;
         stDBServerCfgPtr _dbCfg;

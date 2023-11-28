@@ -8,80 +8,80 @@ template <NonCopyableConcept _Sy, ArithmeticConcept _Ty, typename _My>
 class RandomSelect2 final
 {
 public :
-	typedef _Sy value_type;
-	typedef _Ty ratio_type;
+	typedef _Sy ValueType;
+	typedef _Ty RatioType;
 
 	// [min, max)
-	typedef _Ty(*RandInRangeFuncType)(_Ty, _Ty);
-	explicit RandomSelect2(RandInRangeFuncType randFunc)
-		: mRandInRange(randFunc)
+	typedef RatioType(*RandInRangeFuncType)(RatioType, RatioType);
+	explicit RandomSelect2(RandInRangeFuncType randFunc = RandInRange<RatioType>)
+		: _randInRange(randFunc)
 	{
 	}
 
 	template <typename... Args>
-	inline bool Add(_Ty r, const Args& ... args)
+	FORCE_INLINE bool Add(RatioType r, const Args& ... args)
 	{
-		std::lock_guard<_My> l(mMutex);
-		auto obj = std::make_shared<_Sy>(r, std::forward<const Args&>(args)...);
-		bool ret = mRandomList.emplace(mSum+r, obj).second;
+		std::lock_guard<_My> l(_mutex);
+		auto obj = std::make_shared<ValueType>(r, std::forward<const Args&>(args)...);
+		bool ret = _randomList.emplace(_sum+r, obj).second;
 		if (ret)
-			mSum += r;
+			_sum += r;
 		return ret;
 	}
 
-	inline bool Add(_Ty r, const std::shared_ptr<const _Sy>& obj)
+	FORCE_INLINE bool Add(RatioType r, const std::shared_ptr<const ValueType>& obj)
 	{
-		std::lock_guard<_My> l(mMutex);
-		bool ret = mRandomList.emplace(mSum+r, obj).second;
+		std::lock_guard<_My> l(_mutex);
+		bool ret = _randomList.emplace(_sum+r, obj).second;
 		if (ret)
-			mSum += r;
+			_sum += r;
 		return ret;
 	}
 
-	inline const _Sy& Get()
+	FORCE_INLINE const ValueType& Get()
 	{
-		return Get(mRandInRange(_Ty(), mSum));
+		return Get(_randInRange(RatioType(), _sum));
 	}
 
-	inline const _Sy& Get(_Ty r)
+	FORCE_INLINE const ValueType& Get(RatioType r)
 	{
-		std::lock_guard<_My> l(mMutex);
-		static const _Sy emptyObj;
-		auto it = mRandomList.upper_bound(r);
-		return mRandomList.end() != it ? *(it->second) : emptyObj;
+		std::lock_guard<_My> l(_mutex);
+		static const ValueType emptyObj;
+		auto it = _randomList.upper_bound(r);
+		return _randomList.end() != it ? *(it->second) : emptyObj;
 	}
 
-	inline _Ty GetSum()
+	FORCE_INLINE RatioType GetSum()
 	{
-		std::lock_guard<_My> l(mMutex);
-		return mSum;
+		std::lock_guard<_My> l(_mutex);
+		return _sum;
 	}
 
-	inline _Ty IsEmpty()
+	FORCE_INLINE RatioType IsEmpty()
 	{
-		std::lock_guard<_My> l(mMutex);
-		return _Ty() == mSum;
+		std::lock_guard<_My> l(_mutex);
+		return RatioType() == _sum;
 	}
 
-	inline void Clear()
+	FORCE_INLINE void Clear()
 	{
-		std::lock_guard<_My> l(mMutex);
-		mSum = _Ty();
-		mRandomList.clear();
+		std::lock_guard<_My> l(_mutex);
+		_sum = RatioType();
+		_randomList.clear();
 	}
 
         template <typename _Fy>
         void Foreach(const _Fy& cb)
         {
-                for (auto& val : mRandomList)
+                for (auto& val : _randomList)
                         cb(val.second);
         }
 
 private :
-	_My mMutex;
-	_Ty mSum = _Ty();
-	const RandInRangeFuncType mRandInRange = nullptr;
-	std::map<_Ty, std::shared_ptr<const _Sy>> mRandomList;
+	_My _mutex;
+	RatioType _sum = RatioType();
+	const RandInRangeFuncType _randInRange = nullptr;
+	std::map<RatioType, std::shared_ptr<const ValueType>> _randomList;
 
 private :
 	DISABLE_COPY_AND_ASSIGN(RandomSelect2);

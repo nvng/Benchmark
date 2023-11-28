@@ -470,7 +470,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_CDKey, E_MCCKST_ReqUse, MsgCDKeyReqUse)
                 _cdkeyList.emplace(ret->group());
                 auto playerChange = ret->mutable_player_change();
                 for (auto& info : ret->reward_list())
-                        AddDrop(*playerChange, info.reward_type(), info.reward_id(), info.num(), E_RT_MainCity, E_LSOT_CDKey, logGuid);
+                        AddDrop(*playerChange, info.reward_type(), info.reward_id(), info.num(), E_LSOT_CDKey, logGuid);
                 Save2DB();
         } while (0);
 

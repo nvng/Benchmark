@@ -60,7 +60,8 @@ public :
 
         int64_t _id = 0;
         int64_t _cnt = 0;
-        int64_t _eventType = 0;
+        int16_t _eventType = 0;
+        int16_t _refreshType = 0;
         int64_t _flag = 0;
 
         FORCE_INLINE static uint64_t GenGuid(int64_t groupGuid, int64_t fesID, int64_t taskID)
@@ -82,6 +83,7 @@ public :
                 msg.set_id(_id);
                 msg.set_cnt(_cnt);
                 msg.set_event_type(_eventType);
+                msg.set_refresh_type(_refreshType);
                 msg.set_flag(_flag);
         }
 
@@ -90,6 +92,7 @@ public :
                _id = msg.id();
                _cnt = msg.cnt();
                _eventType = msg.event_type();
+               _refreshType = msg.refresh_type();
                _flag = msg.flag();
         }
 
@@ -126,6 +129,7 @@ public :
 // {{{ Festival
 struct by_id;
 struct by_task_event_type;
+struct by_task_refresh_type;
 
 typedef boost::multi_index::multi_index_container
 <
@@ -137,9 +141,14 @@ typedef boost::multi_index::multi_index_container
         BOOST_MULTI_INDEX_MEMBER(FestivalTask, int64_t, _id)
         >,
 
-        boost::multi_index::ordered_non_unique<
+        boost::multi_index::hashed_non_unique<
         boost::multi_index::tag<by_task_event_type>,
-        BOOST_MULTI_INDEX_MEMBER(FestivalTask, int64_t, _eventType)
+        BOOST_MULTI_INDEX_MEMBER(FestivalTask, int16_t, _eventType)
+        >,
+
+        boost::multi_index::hashed_non_unique<
+        boost::multi_index::tag<by_task_refresh_type>,
+        BOOST_MULTI_INDEX_MEMBER(FestivalTask, int16_t, _refreshType)
         >
 
 	>
@@ -154,8 +163,9 @@ public :
                         const PlayerPtr& p,
                         const MsgActivityFestivalActivityCfg& msg);
 
-        virtual bool Init(const FestivalGroupPtr& group,
+        virtual bool Init(MsgPlayerChange& playerChange,
                           const PlayerPtr& p,
+                          const FestivalGroupPtr& group,
                           const MsgActivityFestivalActivityCfg& msg);
 
         virtual bool IsOpen(const MsgActivityFestivalActivityCfg& msg);
@@ -251,7 +261,7 @@ public :
 
         static const std::pair<std::shared_ptr<MsgActivityFestivalGroupCfg>, const MsgActivityFestivalActivityCfg&> GetCfg(int64_t groupID, int64_t fesID);
 
-        virtual bool Init(const PlayerPtr& p, const MsgActivityFestivalGroupCfg& msg)
+        virtual bool Init(MsgPlayerChange& playerChange, const PlayerPtr& p, const MsgActivityFestivalGroupCfg& msg)
         {
                 if (!_time.Init(p, msg.time()))
                         return false;
@@ -261,12 +271,12 @@ public :
                 _param = 1;
 
                 auto thisPtr = shared_from_this();
-                auto createFesFunc = [this, &thisPtr, &p](const MsgActivityFestivalActivityCfg& msg) {
+                auto createFesFunc = [this, &playerChange, &thisPtr, &p](const MsgActivityFestivalActivityCfg& msg) {
                         // 非开启状态，直接跳过。
                         if (1 != msg.state())
                                 return true;
                         auto fes = CreateFestival(msg.type());
-                        if (fes->IsOpen(msg) && fes->Init(thisPtr, p, msg))
+                        if (fes->IsOpen(msg) && fes->Init(playerChange, p, thisPtr, msg))
                                 return _fesList.Add(fes->_id, fes);
                         return false;
                 };
@@ -400,8 +410,6 @@ struct stActivityCfg
 typedef std::shared_ptr<stActivityCfg> stActivityCfgPtr;
 
 SPECIAL_ACTOR_DEFINE_BEGIN(ActivityMgrActor, 0xefe);
-public :
-        nl::util::SteadyTimer _timer;
 SPECIAL_ACTOR_DEFINE_END(ActivityMgrActor);
 
 struct stActivityFestivalSyncData
@@ -412,6 +420,18 @@ struct stActivityFestivalSyncData
         UnorderedMap<uint64_t, std::shared_ptr<MsgActivityFestivalActivityCfg::MsgActivityRewardItem>> _rewardCfgList;
         Map<uint64_t, std::shared_ptr<MsgActivityFestivalGroupCfg>> _groupCfgList;
 };
+
+struct stTaskInfo
+{
+        int64_t _id = 0;
+        int64_t _refreshType = 0;
+        int64_t _target = 0;
+        int64_t _optType = 0;
+        int64_t _misc = 0;
+        int64_t _value = 0;
+        int64_t _reward = 0;
+};
+typedef std::shared_ptr<stTaskInfo> stTaskInfoPtr;
 
 class ActivityMgrBase
 {
@@ -431,6 +451,9 @@ public :
         static UnorderedMap<int64_t, stFestivalCfgPtr> _festivalCfgList;
 
 public :
+        static UnorderedMap<int64_t, stTaskInfoPtr> _taskCfgList;
+
+public :
         void Pack(MsgActivityMgr& msg, bool toDB);
         void UnPack(const MsgActivityMgr& msg);
 
@@ -439,12 +462,47 @@ public :
         void OnPlayerLogin(const PlayerPtr& p, MsgPlayerInfo& msg);
         void OnOffline(const PlayerPtr& p);
 
-        void OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
+        void OnEvent(MsgPlayerChange& msg
+                     , const PlayerPtr& p
+                     , int64_t eventType
+                     , int64_t cnt
+                     , int64_t param
+                     , ELogServiceOrigType logType
+                     , uint64_t logParam);
 
 public :
-        std::shared_ptr<MsgPlayerChange> _playerChange;
         int64_t _version = 0;
         UnorderedMap<uint64_t, FestivalGroupPtr> _fesGroupList;
+};
+
+class FestivalTaskCommon : public FestivalTaskImpl
+{
+        typedef FestivalTaskImpl SuperType;
+public :
+        bool Reward(const PlayerPtr& p,
+                    const std::shared_ptr<FestivalGroup>& group,
+                    const std::shared_ptr<Festival>& fes,
+                    MsgPlayerChange& msg,
+                    int64_t param,
+                    ELogServiceOrigType logType,
+                    uint64_t logParam) override;
+};
+
+class FestivalCommon : public Festival
+{
+public :
+        bool Init(MsgPlayerChange& playerChange
+                  , const PlayerPtr& p
+                  , const FestivalGroupPtr& group
+                  , const MsgActivityFestivalActivityCfg& msg) override;
+        void OnDataReset(const PlayerPtr& p, MsgPlayerChange& msg, MsgActivityFestivalGroupCfg& groupCfg) override;
+        void OnEvent(MsgPlayerChange& msg
+                     , const PlayerPtr& p
+                     , int64_t eventType
+                     , int64_t cnt
+                     , int64_t param
+                     , ELogServiceOrigType logType
+                     , uint64_t logParam) override;
 };
 
 // vim: fenc=utf8:expandtab:ts=8

@@ -15,7 +15,7 @@
 #define s11 7
 #define s12 12
 #define s13 17
-#define s14 22
+#define s_14 22
 #define s21 5
 #define s22 9
 #define s23 14
@@ -36,10 +36,10 @@
  *
  * @return one bit32.
  */
-#define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
-#define G(x, y, z) (((x) & (z)) | ((y) & (~z)))
-#define H(x, y, z) ((x) ^ (y) ^ (z))
-#define I(x, y, z) ((y) ^ ((x) | (~z)))
+#define F_(x, y, z) (((x) & (y)) | ((~x) & (z)))
+#define G_(x, y, z) (((x) & (z)) | ((y) & (~z)))
+#define H_(x, y, z) ((x) ^ (y) ^ (z))
+#define I_(x, y, z) ((y) ^ ((x) | (~z)))
 
 /**
  * @Rotate Left.
@@ -56,22 +56,22 @@
  * @Transformations for rounds 1, 2, 3, and 4.
  */
 #define FF(a, b, c, d, x, s, ac) { \
-  (a) += F ((b), (c), (d)) + (x) + ac; \
+  (a) += F_ ((b), (c), (d)) + (x) + ac; \
   (a) = ROTATELEFT ((a), (s)); \
   (a) += (b); \
 }
 #define GG(a, b, c, d, x, s, ac) { \
-  (a) += G ((b), (c), (d)) + (x) + ac; \
+  (a) += G_ ((b), (c), (d)) + (x) + ac; \
   (a) = ROTATELEFT ((a), (s)); \
   (a) += (b); \
 }
 #define HH(a, b, c, d, x, s, ac) { \
-  (a) += H ((b), (c), (d)) + (x) + ac; \
+  (a) += H_ ((b), (c), (d)) + (x) + ac; \
   (a) = ROTATELEFT ((a), (s)); \
   (a) += (b); \
 }
 #define II(a, b, c, d, x, s, ac) { \
-  (a) += I ((b), (c), (d)) + (x) + ac; \
+  (a) += I_ ((b), (c), (d)) + (x) + ac; \
   (a) = ROTATELEFT ((a), (s)); \
   (a) += (b); \
 }

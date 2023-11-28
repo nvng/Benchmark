@@ -55,7 +55,6 @@ public :
 
 bool CheckMsgRecvTimeIllegal(GateClientSession* ses, uint64_t mt, uint64_t st);
 void RegistCheckIllegalMsgTime(GateClientSession* ses, uint64_t mt, uint64_t st, uint8_t maxCnt, uint16_t maxInterval);
-void DealClientMessage(const std::shared_ptr<GateClientSession>& clientSes, evbuffer* evbuf);
 
 }; // end of namespace nl::af::impl
 
