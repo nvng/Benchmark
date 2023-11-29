@@ -8,7 +8,7 @@
 	"type": "cppdbg",
 	"request": "launch",
 	"program": "./GateServer.out",
-	"args": [], 
+	"args": ["--configdir=../bin"], 
 	"cmd": ".",
 	"environment": [], 
 	"externalConsole": true,

@@ -1,24 +1,24 @@
 {
   "rid": 15,
-  "control_server": { "sid": 99, "fa_name": "eth0", "ip": "172.17.0.4", "port": 999 },
-  "game_mgr_server": { "sid": 98, "fa_name": "eth0", "ip": "172.17.0.4", "workers_cnt": 1, "net_proc_cnt": 1 },
+  "control_server": { "sid": 99, "fa_name": "eth0", "ip": "10.0.0.180", "port": 999 },
+  "game_mgr_server": { "sid": 10, "fa_name": "eth0", "ip": "10.0.0.180", "workers_cnt": 1, "net_proc_cnt": 1, "actor_cnt_per_workers":1 },
   "db_server_list": [
-    { "sid": 30, "fa_name": "eth0", "ip": "172.17.0.4", "workers_cnt": 1, "net_proc_cnt": 1 }
+    { "sid": 30, "fa_name": "eth0", "ip": "10.0.0.180", "workers_cnt": 1, "net_proc_cnt": 1, "gen_guid_service_port": 54000 }
   ],
   "gate_server_list": [
-       { "sid": 200, "fa_name": "eth0", "ip": "172.17.0.4", "workers_cnt": 1, "net_proc_cnt": 2 }
-      ,{ "sid": 201, "fa_name": "eth0", "ip": "172.17.0.4", "workers_cnt": 1, "net_proc_cnt": 2 }
-      ,{ "sid": 202, "fa_name": "eth0", "ip": "172.17.0.4", "workers_cnt": 1, "net_proc_cnt": 2 }
-      ,{ "sid": 203, "fa_name": "eth0", "ip": "172.17.0.4", "workers_cnt": 1, "net_proc_cnt": 2 }
+       { "sid": 200, "fa_name": "eth0", "ip": "10.0.0.180", "workers_cnt": 1, "net_proc_cnt": 2, "client_port": 55200 }
+      ,{ "sid": 201, "fa_name": "eth0", "ip": "10.0.0.180", "workers_cnt": 1, "net_proc_cnt": 2, "client_port": 55201 }
+      ,{ "sid": 202, "fa_name": "eth0", "ip": "10.0.0.180", "workers_cnt": 1, "net_proc_cnt": 2, "client_port": 55202 }
+      ,{ "sid": 203, "fa_name": "eth0", "ip": "10.0.0.180", "workers_cnt": 1, "net_proc_cnt": 2, "client_port": 55203 }
   ],
   "login_server_list": [
-    { "sid": 300, "fa_name": "eth0", "ip": "172.17.0.4", "workers_cnt": 1, "net_proc_cnt": 1 }
+          { "sid": 300, "fa_name": "eth0", "ip": "10.0.0.180", "workers_cnt": 1, "net_proc_cnt": 1, "redis_conn_cnt": 1, "actor_cnt_per_workers":1 }
   ],
   "lobby_server_list": [
-        { "sid": 400, "fa_name": "eth0", "ip": "172.17.0.4", "workers_cnt": 2, "net_proc_cnt": 1, "redis_conn_cnt": 1 }
-       ,{ "sid": 401, "fa_name": "eth0", "ip": "172.17.0.4", "workers_cnt": 2, "net_proc_cnt": 1, "redis_conn_cnt": 1 }
+        { "sid": 400, "fa_name": "eth0", "ip": "10.0.0.180", "workers_cnt": 2, "net_proc_cnt": 1, "redis_conn_cnt": 1 }
+       ,{ "sid": 401, "fa_name": "eth0", "ip": "10.0.0.180", "workers_cnt": 2, "net_proc_cnt": 1, "redis_conn_cnt": 1 }
   ],
   "game_server_list": [
-      { "sid": 500, "fa_name": "eth0", "ip": "172.17.0.4", "workers_cnt": 2, "net_proc_cnt": 1 }
+      { "sid": 500, "fa_name": "eth0", "ip": "10.0.0.180", "workers_cnt": 2, "net_proc_cnt": 1 }
   ]
 }

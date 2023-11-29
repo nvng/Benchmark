@@ -52,7 +52,6 @@ using namespace nl::net::server;
 #include "GlobalDef.h"
 #include "GlobalVarActor.h"
 #include "LobbyGateSession.h"
-#include "LogService.h"
 
 #include "Share/GlobalDef.h"
 #include "Share/GlobalSetup.h"
@@ -62,6 +61,7 @@ using namespace nl::af::impl;
 #include "App.h"
 #include "GenGuidService.h"
 #include "MySqlService.h"
+#include "LogService.h"
 
 #endif // __PRE_COMPILE_H__
 

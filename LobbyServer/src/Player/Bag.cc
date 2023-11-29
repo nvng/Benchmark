@@ -411,7 +411,7 @@ EClientErrorType BagMgr::DoDrop(const PlayerPtr& p,
                 return errorType;
 
         for (auto& val : tmpList)
-                p->AddDrop(msg, val.second.second, val.first, val.second.first * (1.0 + r / 10000.0), E_RT_MainCity, logType, logParam);
+                p->AddDrop(msg, val.second.second, val.first, val.second.first * (1.0 + r / 10000.0), logType, logParam);
 
         return E_CET_Success;
 }

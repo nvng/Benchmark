@@ -204,6 +204,7 @@ message MsgSync
         sint64 param_1 = 6;
         sint64 param_2 = 7;
         sint64 param_3 = 8;
+        repeated sint64 param_list = 9;
 }
 
 message MsgPlayerPlayEnd

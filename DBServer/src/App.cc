@@ -1,14 +1,6 @@
 #include "App.h"
 
-AppBase* GetAppBase()
-{
-	return App::GetInstance();
-}
-
-App* GetApp()
-{
-	return App::GetInstance();
-}
+MAIN_FUNC();
 
 App::App(const std::string& appName)
 	: SuperType(appName, E_ST_DB)
@@ -81,18 +73,6 @@ bool App::Init()
         });
 
 	return true;
-}
-
-int main(int argc, char* argv[])
-{
-	App::CreateInstance(argv[0]);
-	INIT_OPT();
-
-	LOG_FATAL_IF(!App::GetInstance()->Init(), "app init error!!!");
-	App::GetInstance()->Start();
-	App::DestroyInstance();
-
-	return 0;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

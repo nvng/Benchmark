@@ -10,15 +10,7 @@
 #include "Tools/ServerList.hpp"
 #include "Tools/TimerMgr.hpp"
 
-AppBase* GetAppBase()
-{
-        return App::GetInstance();
-}
-
-App* GetApp()
-{
-        return App::GetInstance();
-}
+MAIN_FUNC();
 
 App::App(const std::string& appName)
 : SuperType(appName, E_ST_Game)
@@ -109,18 +101,6 @@ bool App::Init()
         // }}}
 
         return true;
-}
-
-int main(int argc, char* argv[])
-{
-        App::CreateInstance(argv[0]);
-        INIT_OPT();
-
-        LOG_FATAL_IF(!App::GetInstance()->Init(), "app init error!!!");
-        App::GetInstance()->Start();
-        App::DestroyInstance();
-
-        return 0;
 }
 
 NET_MSG_HANDLE(GameMgrSession, 0xff, 0xf)

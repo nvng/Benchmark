@@ -8,7 +8,7 @@
 	"type": "cppdbg",
 	"request": "launch",
 	"program": "./Benchmark.out",
-	"args": [], 
+	"args": ["--configdir=../bin"], 
 	"cmd": ".",
 	"environment": [], 
 	"externalConsole": true,

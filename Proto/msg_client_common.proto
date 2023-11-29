@@ -121,6 +121,35 @@ message MsgVIPMgr
   repeated sint64 cnt_list = 20;
 }
 
+message MsgFestivalTime
+{
+  sint64 active_time = 10;
+  sint64 start_time = 20;
+  sint64 opt_start_time = 30;
+  sint64 opt_end_time = 40;
+  sint64 end_time = 50;
+  sint64 del_time = 60;
+}
+
+message MsgFestivalTask
+{
+  sint64 id = 10;
+  sint64 cnt = 20;
+  sint64 event_type = 30;
+  sint64 refresh_type = 40;
+  sint64 flag = 50;
+}
+
+message MsgFestival
+{
+  sint64 id = 10;
+  sint64 type = 20;
+  MsgFestivalTime time = 30;
+  sint64 param = 40;
+  repeated sint64 param_list = 50;
+  repeated MsgFestivalTask fes_task_list = 60;
+}
+
 message MsgPlayerChange
 {
   repeated MsgUpdatePlayerAttr change_attr_list = 1;
@@ -133,6 +162,7 @@ message MsgPlayerChange
   repeated sint64 param_list = 13;
   MsgVIPMgr vip_mgr = 14;
   map<sint64, sint64> pay_time_list = 15;
+  repeated MsgFestivalTask fes_task_list = 16;
 }
 
 message MsgBattleInfo

@@ -33,7 +33,7 @@ enum EPlayerMailDealFlagType
         E_PMDFT_Reward = 0x2;
         E_PMDFT_Del = 0x4;
         E_PMDFT_HasGoods = 0x8;
-};
+}
 
 message MsgPlayerSysMailBriefInfo
 {

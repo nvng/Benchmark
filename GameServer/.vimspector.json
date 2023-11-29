@@ -8,7 +8,7 @@
 	"type": "cppdbg",
 	"request": "launch",
 	"program": "./GameServer.out",
-	"args": [], 
+	"args": ["--configdir=../bin"], 
 	"cmd": ".",
 	"environment": [], 
 	"externalConsole": true,

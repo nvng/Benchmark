@@ -49,6 +49,7 @@ enum ELogServiceOrigType
         E_LSOT_PiFuSet = 0x25;
         E_LSOT_MailReward = 0x26;
         E_LSOT_Gift = 0x27;
+        E_LSOT_FestivalOnEvent = 0x28;
 
         E_LSOT_Pay = 0x10;
         E_LSOT_ShopBuy = 0x11;

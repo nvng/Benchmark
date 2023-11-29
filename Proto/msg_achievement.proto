@@ -24,15 +24,17 @@ enum EMsgClientAchievementSubType
 {
   E_MCAST_Mark = 0x0;
   E_MCAST_Reward = 0x1;
+  E_MCAST_OnEvent = 0x2;
 }
 
 message MsgAchievementItem
 {
   sint64 cfg_id = 10;
   sint64 cnt = 20;
-  repeated sint64 param_list = 30;
-  repeated sint64 reward_idx_list = 40;
-  sint64 param = 50;
+  sint64 event_type = 30;
+  repeated sint64 param_list = 40;
+  repeated sint64 reward_idx_list = 50;
+  sint64 param = 60;
 }
 
 message MsgAchievementMgr
@@ -41,6 +43,21 @@ message MsgAchievementMgr
 }
 
 message MsgAchievementMark
+{
+  EClientErrorType error_type = 1;
+  message MsgAchievementMarkItem
+  {
+    sint64 flag = 1;
+    sint64 id = 2;
+    sint64 cnt = 3;
+    sint64 param = 4;
+  }
+  repeated MsgAchievementMarkItem item_list = 2;
+
+  MsgPlayerChange player_change = 10;
+}
+
+message MsgAchievementOnEvent
 {
   EClientErrorType error_type = 1;
   message MsgAchievementMarkItem

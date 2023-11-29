@@ -39,3 +39,4 @@
 cmake-build*
 .cmake-build*
 log
+compile_commands.json

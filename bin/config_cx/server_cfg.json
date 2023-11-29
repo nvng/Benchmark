@@ -14,8 +14,8 @@
   "game_server": {},
   "redis": {
     "game_db": {
-      "ip": "10.0.0.94",
-      "port": 6379,
+      "ip": "10.0.0.180",
+      "port": 56379,
       "pwd": "",
       "db": "0",
       "conn_cnt": 16,
@@ -24,14 +24,13 @@
   },
   "mysql": {
     "game_db": {
-      "host": "10.0.0.94",
-      "port": 3306,
+      "host": "10.0.0.180",
+      "port": 53306,
       "user": "root",
-      "pwd":"123456",
+      "pwd":"274905258",
       "db": "-1",
       "conn_cnt": 64,
       "thread_cnt": 1
     }
-  },
-  "cfg_dir": "./config_ch"
+  }
 }

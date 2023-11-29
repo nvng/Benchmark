@@ -7,15 +7,7 @@
 #include "Tools/ServerList.hpp"
 #include "Tools/TimerMgr.hpp"
 
-AppBase* GetAppBase()
-{
-	return App::GetInstance();
-}
-
-App* GetApp()
-{
-	return App::GetInstance();
-}
+MAIN_FUNC();
 
 App::App(const std::string& appName)
   : SuperType(appName, E_ST_Gate)
@@ -27,9 +19,9 @@ App::App(const std::string& appName)
 
 App::~App()
 {
-	NetMgrImpl::DestroyInstance();
 	PlayerMgr::DestroyInstance();
         ::nl::net::client::ClientNetMgr::DestroyInstance();
+	NetMgrImpl::DestroyInstance();
 }
 
 bool App::Init()
@@ -114,24 +106,30 @@ bool App::Init()
 	});
 	// }}}
 
+        /*
+        for (int64_t i=0; i<1000 * 1000; ++i)
+        {
+                _mainChannel.push([i]() {
+                        boost::fibers::fiber(std::allocator_arg,
+                                             // boost::fibers::fixedsize_stack{ 32 * 1024 },
+                                             // boost::fibers::protected_fixedsize_stack{ 32 * 1024 },
+                                             boost::fibers::segmented_stack{},
+                                             // boost::fibers::fixedsize_stack{ 128 * 1024 },
+                                             // boost::fibers::fixedsize_stack{ 1024 * 1024 },
+                                             [i]() {
+                                                     boost::this_fiber::sleep_for(std::chrono::seconds(1000000));
+                                                     LOG_INFO("1111111 i[{}]", i);
+                                             }).detach();
+                });
+        }
+        */
+
 	return true;
 }
 
 void App::Stop()
 {
 	SuperType::Stop();
-}
-
-int main(int argc, char* argv[])
-{
-	App::CreateInstance(argv[0]);
-	INIT_OPT();
-
-	LOG_FATAL_IF(!App::GetInstance()->Init(), "app init error!!!");
-	App::GetInstance()->Start();
-	App::DestroyInstance();
-
-	return 0;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

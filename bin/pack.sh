@@ -8,7 +8,7 @@ else
 fi
 
 cpus=`grep -c ^processor /proc/cpuinfo`
-export build_jobs=$[ $cpus / 2 ]
+export build_jobs=$[ $cpus / 4 ]
 
 dirs=`ls -d ../*Server ../Benchmark | awk -F/ '{print $2}'`
 rm -f $dirs
@@ -32,6 +32,9 @@ build_func(){
         cd ../../bin
         cp ../$pg/${pg}.out ./
         rm -rf ../$pg/$dir
+
+        # gzexe $pg.out
+        # rm $pg.out~
 }
 
 export -f build_func
