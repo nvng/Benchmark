@@ -267,6 +267,17 @@ public :
                 return std::dynamic_pointer_cast<db::stReplayMailInfo>(ret->_msg);
         }
 
+        template <typename ... Args>
+        std::shared_ptr<db::stReplayMailInfo> RedisCmd(bredis::command_container_t&& cmdList)
+        {
+                EMPTY_CALL_RET();
+                db::RedisMgrBase<_Tag>::GetInstance()->Exec(ThisType::shared_from_this(), std::move(cmdList));
+                PauseCostTime();
+                auto ret = _ch.value_pop();
+                ResumeCostTime();
+                return std::dynamic_pointer_cast<db::stReplayMailInfo>(ret->_msg);
+        }
+
         FORCE_INLINE std::shared_ptr<stHttpReqReply> HttpReq(std::string_view url, std::string_view body, std::string_view contentType = "application/json;charset=UTF-8")
         {
                 uint16_t guid = GetCallGuid();

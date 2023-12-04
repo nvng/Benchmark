@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ActorFramework/SpecialActor.hpp"
-#include "Tools/ServerList.hpp"
 #include "msg_db.pb.h"
 
 #ifdef MYSQL_SERVICE_SERVER

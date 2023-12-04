@@ -1,5 +1,4 @@
 #include "MySqlService.h"
-#include <unordered_map>
 
 template <>
 bool MySqlService::Init()
