@@ -177,7 +177,7 @@ public :
                                  MsgPlayerChange& msg,
                                  MsgActivityFestivalGroupCfg& groupCfg);
 
-        virtual void OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
+        virtual bool OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
 
         virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t taskID, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
 
@@ -260,6 +260,8 @@ public :
         { static UnorderedMap<int64_t, stFestivalOptPtr> _l; return _l; }
 
         static const std::pair<std::shared_ptr<MsgActivityFestivalGroupCfg>, const MsgActivityFestivalActivityCfg&> GetCfg(int64_t groupID, int64_t fesID);
+        static const std::pair<std::shared_ptr<MsgActivityFestivalGroupCfg>, const MsgActivityFestivalActivityCfg&> GetCfg(int64_t taskID)
+        { return GetCfg(FestivalTask::ParseGroupGuid(taskID), FestivalTask::ParseFesID(taskID)); }
 
         virtual bool Init(MsgPlayerChange& playerChange, const PlayerPtr& p, const MsgActivityFestivalGroupCfg& msg)
         {
@@ -370,11 +372,14 @@ public :
         }
 
         void OnDataReset(const PlayerPtr& p, MsgPlayerChange& msg);
-        virtual void OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam)
+        virtual bool OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam)
         {
-                _fesList.Foreach([&msg, &p, eventType, cnt, param, logType, logParam](const auto& fes) {
-                        fes->OnEvent(msg, p, eventType, cnt, param, logType, logParam);
+                bool ret = false;
+                _fesList.Foreach([&msg, &p, &ret, eventType, cnt, param, logType, logParam](const auto& fes) {
+                        if (fes->OnEvent(msg, p, eventType, cnt, param, logType, logParam))
+                                ret = true;
                 });
+                return ret;
         }
 
         int64_t _id = 0;
@@ -462,7 +467,7 @@ public :
         void OnPlayerLogin(const PlayerPtr& p, MsgPlayerInfo& msg);
         void OnOffline(const PlayerPtr& p);
 
-        void OnEvent(MsgPlayerChange& msg
+        bool OnEvent(MsgPlayerChange& msg
                      , const PlayerPtr& p
                      , int64_t eventType
                      , int64_t cnt
@@ -496,7 +501,7 @@ public :
                   , const FestivalGroupPtr& group
                   , const MsgActivityFestivalActivityCfg& msg) override;
         void OnDataReset(const PlayerPtr& p, MsgPlayerChange& msg, MsgActivityFestivalGroupCfg& groupCfg) override;
-        void OnEvent(MsgPlayerChange& msg
+        bool OnEvent(MsgPlayerChange& msg
                      , const PlayerPtr& p
                      , int64_t eventType
                      , int64_t cnt

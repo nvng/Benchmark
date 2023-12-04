@@ -67,7 +67,7 @@ protected :
         FORCE_INLINE bool IsTerminate() const { return FLAG_HAS(_internalFlag, 1 << E_DBMFT_Terminate); }
 
 public :
-        FORCE_INLINE static constexpr uint64_t GenDataKey(int64_t prefix) { return prefix * 1000 * 1000 * 1000 * 1000LL; }
+        FORCE_INLINE static constexpr uint64_t GenDataKey(int64_t prefix, int64_t id = 0) { return prefix * 1000 * 1000 * 1000 * 1000LL + id; }
         virtual void Terminate()
         {
                 _ioCtx->stop();

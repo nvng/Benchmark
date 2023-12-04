@@ -36,10 +36,21 @@ public :
         }
 };
 
-class LobbyGateSession : public ActorAgentSession<TcpSession, GatePlayerActorAgent, LobbyGateSession, true, Compress::ECompressType::E_CT_ZLib>
+class LobbyGateSession
+        : public ActorAgentSession<TcpSession
+          , GatePlayerActorAgent
+          , LobbyGateSession
+          , true
+          , Compress::ECompressType::E_CT_ZLib
+          , ::nl::net::client::stClientSessionTag>
 {
 public :
-        typedef ActorAgentSession<TcpSession, GatePlayerActorAgent, LobbyGateSession, true, Compress::ECompressType::E_CT_ZLib> SuperType;
+        typedef ActorAgentSession<TcpSession
+                , GatePlayerActorAgent
+                , LobbyGateSession
+                , true
+                , Compress::ECompressType::E_CT_ZLib
+                , ::nl::net::client::stClientSessionTag> SuperType;
 public :
         LobbyGateSession(typename SuperType::SocketType&& s)
                 : SuperType(std::move(s))

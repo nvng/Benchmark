@@ -2,10 +2,21 @@
 
 #include "FighterAgent.hpp"
 
-class GameGateSession : public ActorAgentSession<TcpSession, FighterAgent, GameGateSession, true, Compress::ECompressType::E_CT_ZLib>
+class GameGateSession
+        : public ActorAgentSession<TcpSession
+          , FighterAgent
+          , GameGateSession
+          , true
+          , Compress::ECompressType::E_CT_ZLib
+          , ::nl::net::client::stClientSessionTag>
 {
 public :
-        typedef ActorAgentSession<TcpSession, FighterAgent, GameGateSession, true, Compress::ECompressType::E_CT_ZLib> SuperType;
+        typedef ActorAgentSession<TcpSession
+                , FighterAgent
+                , GameGateSession
+                , true
+                , Compress::ECompressType::E_CT_ZLib
+                , ::nl::net::client::stClientSessionTag> SuperType;
 public :
         GameGateSession(typename SuperType::SocketType&& s)
                 : SuperType(std::move(s))

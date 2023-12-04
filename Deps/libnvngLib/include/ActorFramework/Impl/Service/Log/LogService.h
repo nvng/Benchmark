@@ -55,7 +55,7 @@ consteval const char* LogServiceTableCreate<E_LSLMT_Content>()
                 `pid` bigint(0) NULL DEFAULT NULL COMMENT '玩家ID', \
                 `t` bigint(0) NULL DEFAULT NULL COMMENT '类型', \
                 `p` bigint(0) NULL DEFAULT NULL COMMENT '参数', \
-                `cont` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '内容', \
+                `cont` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '内容', \
                 `time` bigint(0) NULL DEFAULT NULL COMMENT '操作时间', \
                 `lt` bigint(0) NULL DEFAULT NULL COMMENT '操作原因', \
                 `gid` bigint(0) NULL DEFAULT NULL COMMENT '组ID', \
@@ -65,7 +65,7 @@ consteval const char* LogServiceTableCreate<E_LSLMT_Content>()
                 INDEX `idx_time`(`time`) USING BTREE, \
                 INDEX `idx_gid`(`gid`) USING BTREE, \
                 INDEX `idx_pid`(`pid`) USING BTREE \
-                ) ENGINE = InnoDB AUTO_INCREMENT = 0 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;"; \
+                ) ENGINE = InnoDB AUTO_INCREMENT = 0 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;"; \
 }
 
 template <>

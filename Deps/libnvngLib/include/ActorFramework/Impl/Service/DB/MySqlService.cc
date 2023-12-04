@@ -1,580 +1,22 @@
 #include "MySqlService.h"
+#include <unordered_map>
+
+template <>
+bool MySqlService::Init()
+{
+        if (!SuperType::Init())
+                return false;
+
+#ifdef MYSQL_SERVICE_SERVER
+        if (!MySqlMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_mysqlCfg))
+                return false;
+#endif
+        return true;
+}
 
 #ifdef MYSQL_SERVICE_SERVER
 
-// {{{ DBDataSaveActor
-
-bool DBDataSaveActor::Init()
-{
-        if (!SuperType::Init())
-                return false;
-
-        InitDealTimer();
-        return true;
-}
-
-void DBDataSaveActor::InitDealTimer()
-{
-        switch (_idx)
-        {
-        case 0 : DealSave(); break;
-        case 1 : DealLoad(); break;
-        case 2 : DealLoadVersion(); break;
-        default : break;
-        }
-
-        DBDataSaveActorWeakPtr weakPtr = shared_from_this();
-        _timer.Start(weakPtr, 0.05, [weakPtr]() {
-                auto thisPtr = weakPtr.lock();
-                if (thisPtr)
-                        thisPtr->InitDealTimer();
-        });
-}
-
-void DBDataSaveActor::DealSave()
-{
-        auto dbMgrActor = _dbMgrActor.lock();
-        if (!dbMgrActor)
-                return;
-
-        while (true)
-        {
-                Call(MailResult, dbMgrActor, scMySqlActorMailMainType, 0x2, nullptr);
-                if (dbMgrActor->_saveCacheList.empty())
-                        break;
-
-                auto it = dbMgrActor->_saveCacheList.begin();
-                while (dbMgrActor->_saveCacheList.end() != it)
-                {
-                        // DLOG_INFO("1111111111111111111111111 idx:{}", dbMgrActor->GetIdx());
-                        std::string sqlStr = fmt::format("UPDATE data_{} SET data=CASE id ", dbMgrActor->GetIdx());
-                        sqlStr.reserve(MySqlService::scSqlStrInitSize * 16);
-                        std::string versionSqlStr = "END,v=CASE id ";
-                        versionSqlStr.reserve(MySqlService::scSqlStrInitSize);
-                        std::string inStr = "END WHERE id IN(";
-                        inStr.reserve(MySqlService::scSqlStrInitSize);
-
-                        int64_t cnt = 0;
-                        for (; dbMgrActor->_saveCacheList.end()!=it; ++it)
-                        {
-                                ++cnt;
-                                auto info = it->second;
-                                sqlStr += fmt::format("WHEN {} THEN '{}' ", info->_pb->guid(), info->_buf);
-                                versionSqlStr += fmt::format("WHEN {} THEN {} ", info->_pb->guid(), info->_pb->version());
-                                inStr += fmt::format("{},", info->_pb->guid());
-
-                                if (sqlStr.size() + versionSqlStr.size() + inStr.size() > MySqlActor::scMaxAllowedPackageSize * 0.9)
-                                {
-                                        ++it;
-                                        break;
-                                }
-                        }
-
-                        inStr.pop_back();
-                        inStr += ");";
-                        sqlStr += versionSqlStr;
-                        sqlStr += inStr;
-                        PauseCostTime();
-                        // auto oldTime = GetClock().GetTimeNow_Slow();
-                        MySqlMgr::GetInstance()->Exec(sqlStr);
-                        /*
-                           auto endTime = GetClock().GetTimeNow_Slow();
-                           LOG_INFO("1111111111111111111111111 end now[{}] diff[{}] size[{}] cnt[{}]",
-                           endTime, endTime - oldTime, sqlStr.size() / (1024.0 * 1024.0), cnt);
-                           */
-                        ResumeCostTime();
-                        GetApp()->_saveCnt += cnt;
-                        GetApp()->_saveSize += sqlStr.size();
-                }
-        }
-}
-
-void DBDataSaveActor::DealLoad()
-{
-        auto dbMgrActor = _dbMgrActor.lock();
-        if (!dbMgrActor)
-                return;
-
-        while (true)
-        {
-                auto ret = Call(stDBDealList, dbMgrActor, scMySqlActorMailMainType, 0x1, nullptr);
-                if (ret->_list.empty())
-                        break;
-
-                auto it = ret->_list.begin();
-                while (ret->_list.end() != it)
-                {
-                        std::string sqlStr = fmt::format("SELECT id,data from data_{} WHERE id IN(", dbMgrActor->GetIdx());
-                        sqlStr.reserve(MySqlService::scSqlStrInitSize);
-
-                        auto now = GetClock().GetSteadyTime();
-                        int64_t cnt = 0;
-                        for (; ret->_list.end()!=it; ++it)
-                        {
-                                auto info = it->second;
-                                if (now - info->_reqTime <= IActor::scCallRemoteTimeOut)
-                                {
-                                        sqlStr += fmt::format("{},", info->_pb->guid());
-                                        if (++cnt >= 1024)
-                                        {
-                                                ++it;
-                                                break;
-                                        }
-                                }
-                        }
-                        sqlStr.pop_back();
-                        sqlStr += ");";
-
-                        PauseCostTime();
-                        auto result = MySqlMgr::GetInstance()->Exec(sqlStr);
-                        for (auto row : result->rows())
-                        {
-                                auto id = row.at(0).as_int64();
-                                auto it = ret->_list.find(id);
-                                if (ret->_list.end() != it)
-                                {
-                                        // it->second->_pb->set_data(row.at(1).as_string());
-                                        it->second->_bufRef = result;
-                                        it->second->_buf = row.at(1).as_string();
-                                        it->second->CallRet();
-                                }
-                        }
-
-                        ResumeCostTime();
-
-                        GetApp()->_loadCnt += cnt;
-                        GetApp()->_loadSize += sqlStr.size();
-                }
-        }
-}
-
-void DBDataSaveActor::DealLoadVersion()
-{
-        auto dbMgrActor = _dbMgrActor.lock();
-        if (!dbMgrActor)
-                return;
-
-        auto msg = std::make_shared<stDBDealList>();
-        while (true)
-        {
-                Call(stDBDealList, dbMgrActor, scMySqlActorMailMainType, 0x0, msg);
-                const auto& reqList = msg->_reqList;
-                if (reqList.empty())
-                        break;
-
-                GetApp()->_loadVersionCnt += reqList.size();
-
-                auto now = GetClock().GetSteadyTime();
-                auto it = reqList.begin();
-                while (reqList.end() != it)
-                {
-                        std::unordered_map<int64_t, stReqDBDataVersionPtr> tmpList;
-
-                        std::string sqlStr = fmt::format("SELECT id,v FROM data_{} WHERE id IN(", dbMgrActor->GetIdx());
-                        sqlStr.reserve(MySqlService::scSqlStrInitSize);
-                        int64_t cnt = 0;
-                        for (; reqList.end() != it; ++it)
-                        {
-                                auto reqInfo = it->second;
-                                if (now - reqInfo->_reqTime <= IActor::scCallRemoteTimeOut)
-                                {
-                                        tmpList.emplace(it->first, reqInfo);
-                                        sqlStr += fmt::format("{},", reqInfo->_pb->guid());
-                                        if (++cnt >= 1024 * 10)
-                                        {
-                                                ++it;
-                                                break;
-                                        }
-                                }
-                        }
-
-                        if (cnt <= 0)
-                                continue;
-
-                        sqlStr.pop_back();
-                        sqlStr += ");";
-                        GetApp()->_loadVersionSize += sqlStr.size();
-
-                        auto now = GetClock().GetSteadyTime();
-                        PauseCostTime();
-                        auto result = MySqlMgr::GetInstance()->Exec(sqlStr);
-                        for (auto row : result->rows())
-                        {
-                                auto id = row.at(0).as_int64();
-                                auto version = row.at(1).as_int64();
-                                auto it = tmpList.find(id);
-                                if (tmpList.end() != it)
-                                {
-                                        auto reqInfo = it->second;
-                                        auto info = std::make_shared<stVersionInfo>();
-                                        info->_sid = reqInfo->_sid;
-                                        reqInfo->_pb->set_version(version);
-                                        tmpList.erase(it);
-
-                                        info->_id = id;
-                                        info->_version = version;
-                                        info->_overTime = now + 7 * 24 * 3600;
-                                        msg->_versionList.emplace_back(info);
-                                }
-                        }
-                        ResumeCostTime();
-
-                        if (tmpList.empty())
-                                continue;
-
-                        sqlStr.clear();
-                        sqlStr += fmt::format("INSERT INTO data_{}(id, v, data) VALUES", dbMgrActor->GetIdx());
-                        for (auto& val : tmpList)
-                        {
-                                auto reqInfo = val.second;
-                                sqlStr += fmt::format("({},0,''),", reqInfo->_pb->guid());
-
-                                auto info = std::make_shared<stVersionInfo>();
-                                info->_sid = reqInfo->_sid;
-                                info->_id = reqInfo->_pb->guid();
-                                info->_overTime = now + 7 * 24 * 3600;
-                                msg->_versionList.emplace_back(info);
-                        }
-                        sqlStr.pop_back();
-                        sqlStr += ";";
-                        GetApp()->_loadVersionSize += sqlStr.size();
-                        PauseCostTime();
-                        MySqlMgr::GetInstance()->Exec(sqlStr);
-                        ResumeCostTime();
-                }
-        }
-}
-
-// }}}
-
-// {{{ MySqlActor
-std::atomic_uint64_t MySqlActor::scMaxAllowedPackageSize = 0;
-
-bool MySqlActor::Init()
-{
-        if (!SuperType::Init())
-                return false;
-
-        _saveActor->_dbMgrActor = shared_from_this();
-        _saveActor->Start();
-
-        _loadActor->_dbMgrActor = shared_from_this();
-        _loadActor->Start();
-
-        _loadVersionActor->_dbMgrActor = shared_from_this();
-        _loadVersionActor->Start();
-
-        std::string sqlStr = fmt::format("CREATE TABLE IF NOT EXISTS `data_{}` ( \
-                             `id` bigint(0) NOT NULL, \
-                             `v` bigint(0) NOT NULL, \
-                             `data` longtext NOT NULL, \
-                             PRIMARY KEY (`id`) USING BTREE \
-                             ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;",
-                             GetIdx());
-        PauseCostTime();
-        MySqlMgr::GetInstance()->Exec(sqlStr);
-        ResumeCostTime();
-
-        if (0 == GetIdx())
-        {
-                sqlStr = "SHOW VARIABLES LIKE 'max_allowed_packet'";
-                auto result = MySqlMgr::GetInstance()->Exec(sqlStr);
-                scMaxAllowedPackageSize = std::atoll(result->rows()[0][1].as_string().data());
-        }
-
-        InitDealTimer();
-        InitDelVersionTimer();
-
-        return true;
-}
-
-void MySqlActor::InitDealTimer()
-{
-        DealReqDBDataVersion();
-        DealLoadDBData();
-        DealSaveDBData();
-
-        MySqlActorWeakPtr weakPtr = shared_from_this();
-        _timer.Start(weakPtr, 0.05, [weakPtr]() {
-                auto thisPtr = weakPtr.lock();
-                if (thisPtr)
-                        thisPtr->InitDealTimer();
-        });
-}
-
-bool MySqlActor::DealReqDBDataVersion()
-{
-        decltype(_reqVersionCacheList) tmpList;
-        {
-                std::lock_guard l(_reqVersionCacheListMutex);
-                tmpList = std::move(_reqVersionCacheList);
-                _reqVersionCacheList.reserve(1024);
-        }
-
-        if (tmpList.empty())
-                return false;
-
-        const auto now = GetClock().GetSteadyTime();
-        for (auto& val : tmpList)
-        {
-                auto msg = val.second;
-                auto ses = msg->GetSession();
-                if (!ses || now - msg->_reqTime > IActor::scCallRemoteTimeOut)
-                        continue;
-
-                auto pb = msg->_pb;
-                auto& seq = _versionInfoList.get<by_id>();
-                auto it = seq.find(pb->guid());
-                if (seq.end() != it)
-                {
-                        auto info = *it;
-                        if (UINT32_MAX != info->_sid && ses->GetSID() != info->_sid)
-                        {
-                                LOG_INFO("玩家[{}] sid不匹配!!! sSID[{}] SID[{}]",
-                                         info->_id, ses->GetSID(), info->_sid);
-                                pb->set_error_type(E_IET_DBDataSIDError);
-                        }
-                        else
-                        {
-                                info->_sid = ses->GetSID();
-                                pb->set_version(info->_version);
-                                seq.erase(it);
-                                info->_overTime = now + 7 * 24 * 3600;
-                                _versionInfoList.emplace(info);
-                        }
-
-                        msg->CallRet();
-                }
-                else
-                {
-                        _reqList.emplace(msg->_pb->guid(), msg);
-                }
-        }
-
-        return true;
-}
-
-SPECIAL_ACTOR_MAIL_HANDLE(MySqlActor, 0x0, stDBDealList)
-{
-        // 先存储版本信息，再返回。
-        for (auto& info : msg->_versionList)
-                _versionInfoList.emplace(info);
-        msg->_versionList.clear();
-
-        for (auto& val : msg->_reqList)
-                val.second->CallRet();
-
-        msg->_reqList = std::move(_reqList);
-        return msg;
-}
-
-
-bool MySqlActor::DealSaveDBData()
-{
-        decltype(_reqSaveCacheList) tmpList;
-        {
-                std::lock_guard l(_reqSaveCacheListMutex);
-                tmpList = std::move(_reqSaveCacheList);
-        }
-
-        if (tmpList.empty())
-                return false;
-
-        for (auto& val : tmpList)
-        {
-                auto msg = val.second;
-                do
-                {
-                        // TODO: DBServer 重启后，会出现找不到 version 信息情况。
-                        auto& seq = _versionInfoList.get<by_id>();
-                        auto it = seq.find(msg->_pb->guid());
-                        if (seq.end() != it)
-                        {
-                                auto info = *it;
-                                if (msg->_sid != info->_sid)
-                                {
-                                        LOG_WARN("玩家[{}] sid不匹配!!! sSID[{}] SID[{}]",
-                                                 msg->_pb->guid(), msg->_sid, info->_sid);
-                                        break;
-                                }
-                                seq.erase(it);
-
-                                if (E_IET_DBDataDelete == msg->_pb->error_type())
-                                {
-                                        // LOG_INFO("玩家[{}] 被删除!!!", msg->_pb->guid());
-                                        info->_sid = UINT32_MAX;
-                                }
-                                else
-                                {
-                                        // LOG_INFO("玩家[{}] 存储!!!", msg->_pb->guid());
-                                        info->_sid = msg->_sid;
-                                }
-
-                                info->_version = msg->_pb->version();
-                                info->_overTime = GetClock().GetSteadyTime() + 7 * 24 * 3600;
-                                _versionInfoList.emplace(info);
-
-                                _saveList[msg->_pb->guid()] = msg;
-                        }
-                        else
-                        {
-                                LOG_WARN("玩家[{}] SaveDBData 时 version 信息未找到!!!", msg->_pb->guid());
-                                break;
-                        }
-                } while (0);
-        }
-
-        return true;
-}
-
-SPECIAL_ACTOR_MAIL_HANDLE(MySqlActor, 0x2)
-{
-        _saveCacheList = std::move(_saveList);
-        static auto ret = std::make_shared<MailResult>();
-        return ret;
-}
-
-bool MySqlActor::DealLoadDBData()
-{
-        decltype(_loadCacheList) tmpList;
-        {
-                std::lock_guard l(_loadCacheListMutex);
-                tmpList = std::move(_loadCacheList);
-                _loadCacheList.reserve(1024);
-        }
-
-        if (tmpList.empty())
-                return false;
-
-        const auto now = GetClock().GetSteadyTime();
-        for (auto& val : tmpList)
-        {
-                auto msg = val.second;
-                if (now - msg->_reqTime > IActor::scCallRemoteTimeOut)
-                        continue;
-
-                EInternalErrorType errorType = E_IET_None;
-                do
-                {
-                        auto& seq = _versionInfoList.get<by_id>();
-                        auto it = seq.find(msg->_pb->guid());
-                        if (seq.end() != it)
-                        {
-                                auto info = *it;
-                                if (msg->_sid != info->_sid)
-                                {
-                                        LOG_INFO("玩家[{}] sid不匹配!!! sSID[{}] SID[{}]",
-                                                 msg->_pb->guid(), msg->_sid, info->_sid);
-                                        errorType = E_IET_DBDataSIDError;
-                                        break;
-                                }
-
-                                // 先在本地缓存查找，再查找数据库，保证数据最新。
-                                auto it = _saveList.find(msg->_pb->guid());
-                                if (_saveList.end() != it)
-                                {
-                                        msg->_pb = it->second->_pb;
-                                        msg->_bufRef = it->second->_bufRef;
-                                        msg->_buf = it->second->_buf;
-                                        errorType = E_IET_Success;
-                                        break;
-                                }
-                                else
-                                {
-                                        it = _saveCacheList.find(msg->_pb->guid());
-                                        if (_saveCacheList.end() != it) 
-                                        {
-                                                msg->_pb = it->second->_pb;
-                                                msg->_bufRef = it->second->_bufRef;
-                                                msg->_buf = it->second->_buf;
-                                                errorType = E_IET_Success;
-                                                break;
-                                        }
-                                }
-                        }
-                        else
-                        {
-                                LOG_INFO("玩家[{}] LoadDBData 时 version 信息未找到!!!", msg->_pb->guid());
-                                errorType = E_IET_DBDataSIDError;
-                                break;
-                        }
-
-                        _loadList[msg->_pb->guid()] = msg;
-                        errorType = E_IET_None;
-                } while (0);
-
-                if (E_IET_None != errorType)
-                {
-                        msg->_pb->set_error_type(errorType);
-                        msg->CallRet();
-                }
-        }
-
-        return true;
-}
-
-SPECIAL_ACTOR_MAIL_HANDLE(MySqlActor, 0x1)
-{
-        auto ret = std::make_shared<stDBDealList>();
-        ret->_list = std::move(_loadList);
-        return ret;
-}
-
-void MySqlActor::InitDelVersionTimer()
-{
-        auto& seq = _versionInfoList.get<by_overtime>();
-        auto ie = seq.upper_bound(GetClock().GetSteadyTime());
-        seq.erase(seq.begin(), ie);
-
-        MySqlActorWeakPtr weakPtr = shared_from_this();
-        _delVertionTimer.Start(weakPtr, 60 * 60, [weakPtr]() {
-                auto thisPtr = weakPtr.lock();
-                if (thisPtr)
-                        thisPtr->InitDelVersionTimer();
-        });
-}
-
-void MySqlActor::InitTerminateTimer()
-{
-        std::lock_guard l(_reqSaveCacheListMutex);
-        if (_reqSaveCacheList.empty()
-            && _saveList.empty()
-            && _saveCacheList.empty())
-        {
-                _saveActor->Terminate();
-                _loadActor->Terminate();
-                _loadVersionActor->Terminate();
-
-                // 必要要在其它协程等待以上三个 actor 退出后才能调用 SuperType::Terminate()。
-                // SuperType::Terminate();
-        }
-        else
-        {
-                LOG_INFO("idx[{}] rsc[{}] s[{}] sc[{}]",
-                         _idx, _reqSaveCacheList.size(), _saveList.size(), _saveCacheList.size());
-
-                MySqlActorWeakPtr weakPtr = shared_from_this();
-                _delVertionTimer.Start(weakPtr, 1, [weakPtr]() {
-                        auto thisPtr = weakPtr.lock();
-                        if (thisPtr)
-                                thisPtr->InitTerminateTimer();
-                });
-        }
-}
-
-void MySqlActor::WaitForTerminate()
-{
-        _saveActor->WaitForTerminate();
-        _loadActor->WaitForTerminate();
-        _loadVersionActor->WaitForTerminate();
-
-        SuperType::Terminate();
-        SuperType::WaitForTerminate();
-}
-
-// }}}
-
-// {{{ MySqlService
+static std::atomic_uint64_t scMaxAllowedPackageSize = 32 * 1024 * 1024;
 
 template <>
 void MySqlService::Terminate()
@@ -605,96 +47,588 @@ void MySqlService::WaitForTerminate()
         }
 }
 
-SERVICE_NET_HANDLE(MySqlService::SessionType, E_MIMT_DB, E_MIDBST_DBDataVersion, MsgDBDataVersion)
+// }}}
+
+SERVICE_NET_HANDLE(MySqlService::SessionType, E_MIMT_DB, E_MIDBST_ReqDBData, MailReqDBDataList)
 {
-        auto actor = MySqlService::GetInstance()->GetMgrActor(msg->guid());
-        if (actor)
-        { 
-                auto info = std::make_shared<stReqDBDataVersionImpl<MySqlService::SessionType>>();
-                info->_ses = shared_from_this();
-                info->_pb = msg;
-                info->_msgHead = msgHead;
-                info->_sid = GetSID();
-                info->_reqTime = GetClock().GetSteadyTime();
-
-                std::lock_guard l(actor->_reqVersionCacheListMutex);
-                actor->_reqVersionCacheList[msg->guid()] = info;
-        }
-        else
+        auto req = std::make_shared<DBReqWapper>(shared_from_this(), msgHead, msg);
+        for (int64_t i=0; i<msg->list_size(); ++i)
         {
-                LOG_WARN("玩家[{}] 分配 MySqlActor 失败!!!", msg->guid());
-        }
-}
-
-SERVICE_NET_HANDLE(MySqlService::SessionType, E_MIMT_DB, E_MIDBST_SaveDBData, MsgDBData, buf, bufRef)
-{
-        auto actor = MySqlService::GetInstance()->GetMgrActor(msg->guid());
-        if (actor)
-        {
-                auto info = std::make_shared<stDBDataImpl<MySqlService::SessionType>>();
-                info->_ses = shared_from_this();
-                info->_pb = msg;
-                info->_bufRef = bufRef;
-                info->_buf = std::string_view((const char*)buf, bufSize);
-                info->_msgHead = msgHead;
-                info->_sid = GetSID();
-                info->_reqTime = GetClock().GetSteadyTime();
-
+                auto item = msg->mutable_list(i);
+                const auto taskType = item->task_type();
+                if (E_MySql_TT_None == taskType || !EMySqlTaskType_IsValid(taskType))
                 {
-                        std::lock_guard l(actor->_reqSaveCacheListMutex);
-                        actor->_reqSaveCacheList[std::make_pair(msg->guid(), info->_sid)] = info;
+                        item->set_error_type(E_IET_DBDataTaskTypeError);
+                        continue;
                 }
 
-                msg->set_error_type(E_IET_Success);
-                SendPB(msg,
-                       E_MIMT_DB,
-                       E_MIDBST_SaveDBData,
-                       MySqlService::SessionType::MsgHeaderType::E_RMT_CallRet,
-                       msgHead._guid,
-                       msgHead._to,
-                       msgHead._from);
-        } else {
-                LOG_WARN("玩家[{}] 分配 MySqlActor 失败!!!", msg->guid());
+                auto act = MySqlService::GetInstance()->GetMgrActor(item->guid());
+                if (act)
+                {
+                        IMySqlTaskPtr task;
+                        switch (taskType)
+                        {
+                        case E_MySql_TT_Version : task = std::make_shared<MySqlVersionTask>(); break;
+                        case E_MySql_TT_Load :    task = std::make_shared<MySqlLoadTask>(); break;
+                        case E_MySql_TT_Save :    task = std::make_shared<MySqlSaveTask>(); break;
+                        default : break;
+                        }
+
+                        if (task)
+                        {
+                                if (E_MySql_TT_Save == taskType)
+                                {
+                                        task->_ref = msg;
+                                        task->_data = std::move(item->data());
+                                }
+                                else
+                                {
+                                        task->_ref = req;
+                                }
+
+                                task->_pb = item;
+                                task->_sid = GetSID();
+                                task->_reqTime = GetClock().GetSteadyTime();
+
+                                std::lock_guard l(act->_taskArrMutex[taskType]);
+                                act->_taskArr[taskType][item->guid()] = task;
+                        }
+                        else
+                        {
+                                LOG_FATAL("");
+                        }
+                }
         }
 }
 
-SERVICE_NET_HANDLE(MySqlService::SessionType, E_MIMT_DB, E_MIDBST_LoadDBData, MsgDBData)
-{
-        DLOG_WARN("玩家[{}] 向 MySql 请求玩家数据!!!", msg->guid());
-        auto actor = MySqlService::GetInstance()->GetMgrActor(msg->guid());
-        if (actor)
-        {
-                auto info = std::make_shared<stDBDataImpl<MySqlService::SessionType>>();
-                info->_ses = shared_from_this();
-                info->_pb = msg;
-                info->_msgHead = msgHead;
-                info->_sid = GetSID();
-                info->_reqTime = GetClock().GetSteadyTime();
-
-                std::lock_guard l(actor->_loadCacheListMutex);
-                actor->_loadCacheList[msg->guid()] = info;
-        }
-        else
-        {
-                LOG_WARN("玩家[{}] 分配 MySqlActor 失败!!!", msg->guid());
-        }
-}
-
-#endif
-
-template <>
-bool MySqlService::Init()
+bool MySqlActor::Init()
 {
         if (!SuperType::Init())
                 return false;
 
-#ifdef MYSQL_SERVICE_SERVER
-        if (!MySqlMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_mysqlCfg))
-                return false;
-#endif
+        auto thisPtr = shared_from_this();
+        for (int64_t i=E_MySql_TT_None+1; i<EMySqlTaskType_ARRAYSIZE; ++i)
+        {
+                _execActorArr[i] = std::make_shared<MySqlExecActor>(thisPtr, _idx, static_cast<EMySqlTaskType>(i));
+                _execActorArr[i]->Start();
+        }
+
+        std::string sqlStr = fmt::format("CREATE TABLE IF NOT EXISTS `data_{}` ( \
+                             `id` bigint(0) NOT NULL, \
+                             `v` bigint(0) NOT NULL, \
+                             `data` longtext NOT NULL, \
+                             PRIMARY KEY (`id`) USING BTREE \
+                             ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;",
+                             GetIdx());
+        PauseCostTime();
+        MySqlMgr::GetInstance()->Exec(sqlStr);
+        ResumeCostTime();
+
+        if (0 == GetIdx())
+        {
+                sqlStr = "SHOW VARIABLES LIKE 'max_allowed_packet'";
+                auto result = MySqlMgr::GetInstance()->Exec(sqlStr);
+                scMaxAllowedPackageSize = std::atoll(result->rows()[0][1].as_string().data());
+        }
+
+        InitDealTaskTimer();
+        InitDelVersionTimer();
+
         return true;
 }
 
-// }}}
+void MySqlActor::InitDealTaskTimer()
+{
+        // 必须使用 Timer。
+        // 1，不能使用 boost::this_fiber::sleep_*，Actor 还需要接收其它邮件。
+        // 2，不要使用 try_push，这样会降低性能，每个 task 都需要 try_push 一次。
+
+        auto weakPtr = weak_from_this();
+        _timer.Start(weakPtr, 0.1, [weakPtr]() {
+                auto thisPtr = weakPtr.lock();
+                if (thisPtr)
+                {
+                        thisPtr->DealTask();
+                        thisPtr->InitDealTaskTimer();
+                }
+        });
+}
+
+void MySqlActor::InitDelVersionTimer()
+{
+        auto& seq = _versionInfoList.get<by_overtime>();
+        auto ie = seq.upper_bound(GetClock().GetSteadyTime());
+        seq.erase(seq.begin(), ie);
+
+        MySqlActorWeakPtr weakPtr = shared_from_this();
+        _delVertionTimer.Start(weakPtr, 60 * 60, [weakPtr]() {
+                auto thisPtr = weakPtr.lock();
+                if (thisPtr)
+                        thisPtr->InitDelVersionTimer();
+        });
+}
+
+void MySqlActor::DealTask()
+{
+        auto thisPtr = shared_from_this();
+        while (true)
+        {
+                bool allEmpty = true;
+                for (int64_t i=E_MySql_TT_None+1; i<EMySqlTaskType_ARRAYSIZE; ++i)
+                {
+                        std::unordered_map<uint64_t, IMySqlTaskPtr> tmpList;
+                        {
+                                std::lock_guard l(_taskArrMutex[i]);
+                                tmpList = std::move(_taskArr[i]);
+                                _taskArr[i].reserve(1024);
+                        }
+
+                        if (tmpList.empty())
+                                continue;
+
+                        allEmpty = false;
+                        auto it = tmpList.begin();
+                        for (; tmpList.end()!=it; ++it)
+                        {
+                                auto task = it->second;
+                                if (!task->DealFromCache(thisPtr))
+                                        _loadCacheTaskArr[i][task->_pb->guid()] = task;
+                        }
+                }
+
+                if (allEmpty)
+                        break;
+        }
+}
+
+void MySqlActor::InitTerminateTimer()
+{
+        bool allEmpty = true;
+        for (int64_t i=E_MySql_TT_None+1; i<EMySqlTaskType_ARRAYSIZE; ++i)
+        {
+                std::lock_guard l(_taskArrMutex[i]);
+                if (!_taskArr[i].empty()
+                    || !_loadCacheTaskArr[i].empty()
+                    || !_loadTaskArr[i].empty())
+                {
+                        allEmpty = false;
+                        break;
+                }
+        }
+
+        if (allEmpty)
+        {
+                for (int64_t i=E_MySql_TT_None+1; i<EMySqlTaskType_ARRAYSIZE; ++i)
+                        _execActorArr[i]->Terminate();
+
+                // 必要要在其它协程等待以上所有 actor 退出后才能调用 SuperType::Terminate()。
+                // SuperType::Terminate();
+        }
+        else
+        {
+                int64_t taskCnt = 0;
+                int64_t loadCacheTaskCnt = 0;
+                int64_t loadTaskCnt = 0;
+                for (int64_t i=E_MySql_TT_None+1; i<EMySqlTaskType_ARRAYSIZE; ++i)
+                {
+                        std::lock_guard l(_taskArrMutex[i]);
+                        taskCnt += _taskArr[i].size();
+                        loadCacheTaskCnt += _loadCacheTaskArr[i].size();
+                        loadTaskCnt += _loadTaskArr[i].size();
+                }
+
+                LOG_INFO("idx[{}] tc[{}] lctc[{}] ltc[{}]", _idx, taskCnt, loadCacheTaskCnt, loadTaskCnt);
+
+                MySqlActorWeakPtr weakPtr = weak_from_this();
+                _delVertionTimer.Start(weakPtr, 1.0, [weakPtr]() {
+                        auto thisPtr = weakPtr.lock();
+                        if (thisPtr)
+                                thisPtr->InitTerminateTimer();
+                });
+        }
+}
+
+void MySqlActor::WaitForTerminate()
+{
+        for (int64_t i=E_MySql_TT_None+1; i<EMySqlTaskType_ARRAYSIZE; ++i)
+                _execActorArr[i]->WaitForTerminate();
+
+        SuperType::Terminate();
+        SuperType::WaitForTerminate();
+}
+
+SPECIAL_ACTOR_MAIL_HANDLE(MySqlActor, 0x0, MailUInt)
+{
+        const auto taskType = msg->val();
+        switch (taskType)
+        {
+        case E_MySql_TT_Version :
+                for (auto& info : _versionInfoCacheList)
+                        _versionInfoList.emplace(info);
+                _versionInfoCacheList.clear();
+                if (_versionInfoCacheList.size() > 1024)
+                {
+                        std::exchange(_versionInfoCacheList, {});
+                        _versionInfoCacheList.reserve(1024);
+                }
+                break;
+        default :
+                break;
+        }
+
+        _loadTaskArr[taskType] = std::move(_loadCacheTaskArr[taskType]);
+        _loadCacheTaskArr[taskType].reserve(1024);
+        return msg;
+}
+
+bool MySqlExecActor::Init()
+{
+        if (!SuperType::Init())
+                return false;
+
+        InitExecTimer();
+        return true;
+}
+
+void MySqlExecActor::InitExecTimer()
+{
+        Exec();
+
+        auto weakPtr = weak_from_this();
+        _timer.Start(weakPtr, 0.1, [weakPtr]() {
+                auto thisPtr = weakPtr.lock();
+                if (thisPtr)
+                        thisPtr->InitExecTimer();
+        });
+}
+
+void MySqlExecActor::Exec()
+{
+        // LOG_INFO("2222222222222222 _idx[{}] taskType[{}]", _idx, _taskType);
+        auto act = _mysqlAct.lock();
+        if (!act)
+                return;
+
+        auto thisPtr = shared_from_this();
+        auto mail = std::make_shared<MailUInt>();
+        mail->set_val(_taskType);
+        while (true)
+        {
+                Call(MailUInt, act, scMySqlActorMailMainType, 0x0, mail);
+                const auto& loadList = act->_loadTaskArr[_taskType];
+                if (loadList.empty())
+                        break;
+
+                auto task = loadList.begin()->second;
+                task->Exec(act, thisPtr, loadList);
+        }
+}
+
+bool MySqlVersionTask::DealFromCache(const std::shared_ptr<MySqlActor>& act)
+{
+        auto& seq = act->_versionInfoList.get<by_id>();
+        auto it = seq.find(_pb->guid());
+        if (seq.end() != it)
+        {
+                auto info = *it;
+                if (UINT32_MAX != info->_sid && _sid != info->_sid)
+                {
+                        LOG_INFO("玩家[{}] sid不匹配!!! sSID[{}] SID[{}]",
+                                 info->_id, _sid, info->_sid);
+                        _pb->set_error_type(E_IET_DBDataSIDError);
+                }
+                else
+                {
+                        info->_sid = _sid;
+                        _pb->set_version(info->_version);
+                        seq.erase(it);
+                        info->_overTime = GetClock().GetSteadyTime() + 7 * 24 * 3600;
+                        act->_versionInfoList.emplace(info);
+                }
+                return true;
+        }
+        else
+        {
+                return false;
+        }
+}
+
+void MySqlVersionTask::Exec(const MySqlActorPtr& act
+                            , const MySqlExecActorPtr& execAct
+                            , const std::unordered_map<uint64_t, IMySqlTaskPtr>& taskList)
+{
+        GetApp()->_loadVersionCnt += taskList.size();
+
+        auto now = GetClock().GetSteadyTime();
+        auto it = taskList.begin();
+        while (taskList.end() != it)
+        {
+                std::unordered_map<uint64_t, IMySqlTaskPtr> tmpList;
+
+                std::string sqlStr = fmt::format("SELECT id,v FROM data_{} WHERE id IN(", execAct->_idx);
+                sqlStr.reserve(MySqlService::scSqlStrInitSize);
+                int64_t cnt = 0;
+                for (; taskList.end() != it; ++it)
+                {
+                        auto task = it->second;
+                        if (now - task->_reqTime <= IActor::scCallRemoteTimeOut)
+                        {
+                                tmpList.emplace(it->first, task);
+                                sqlStr += fmt::format("{},", task->_pb->guid());
+                                if (++cnt >= 1024 * 10)
+                                {
+                                        ++it;
+                                        break;
+                                }
+                        }
+                }
+
+                if (cnt <= 0)
+                        continue;
+
+                sqlStr.pop_back();
+                sqlStr += ");";
+                GetApp()->_loadVersionSize += sqlStr.size();
+
+                auto now = GetClock().GetSteadyTime();
+                execAct->PauseCostTime();
+                auto result = MySqlMgr::GetInstance()->Exec(sqlStr);
+                for (auto row : result->rows())
+                {
+                        auto id = row.at(0).as_int64();
+                        auto version = row.at(1).as_int64();
+
+                        auto it = tmpList.find(id);
+                        if (tmpList.end() != it)
+                        {
+                                auto task = it->second;
+                                tmpList.erase(it);
+
+                                task->_pb->set_version(version);
+                                auto info = std::make_shared<stVersionInfo>();
+                                info->_sid = task->_sid;
+                                info->_id = id;
+                                info->_version = version;
+                                info->_overTime = now + 7 * 24 * 3600;
+                                act->_versionInfoCacheList.emplace_back(info);
+                        }
+                }
+                execAct->ResumeCostTime();
+
+                if (tmpList.empty())
+                        continue;
+
+                sqlStr.clear();
+                sqlStr += fmt::format("INSERT INTO data_{}(id, v, data) VALUES", execAct->_idx);
+                for (auto& val : tmpList)
+                {
+                        auto task = val.second;
+                        sqlStr += fmt::format("({},0,''),", task->_pb->guid());
+
+                        auto info = std::make_shared<stVersionInfo>();
+                        info->_sid = task->_sid;
+                        info->_id = task->_pb->guid();
+                        info->_overTime = now + 7 * 24 * 3600;
+                        act->_versionInfoCacheList.emplace_back(info);
+                }
+                sqlStr.pop_back();
+                sqlStr += ";";
+                GetApp()->_loadVersionSize += sqlStr.size();
+                execAct->PauseCostTime();
+                MySqlMgr::GetInstance()->Exec(sqlStr);
+                execAct->ResumeCostTime();
+        }
+}
+
+bool MySqlLoadTask::DealFromCache(const std::shared_ptr<MySqlActor>& act)
+{
+        const auto now = GetClock().GetSteadyTime();
+        if (now - _reqTime > IActor::scCallRemoteTimeOut)
+                return true;
+
+        auto& seq = act->_versionInfoList.get<by_id>();
+        auto it = seq.find(_pb->guid());
+        if (seq.end() != it)
+        {
+                auto info = *it;
+                if (_sid != info->_sid)
+                {
+                        LOG_INFO("玩家[{}] sid不匹配!!! sSID[{}] SID[{}]",
+                                 _pb->guid(), _sid, info->_sid);
+                        _pb->set_error_type(E_IET_DBDataSIDError);
+                        return true;
+                }
+
+                // 先在本地缓存查找，再查找数据库，保证数据最新。
+                auto it = act->_loadCacheTaskArr[_taskType].find(_pb->guid());
+                if (act->_loadCacheTaskArr[_taskType].end() != it)
+                {
+                        auto task = it->second;
+                        _pb->CopyFrom(*task->_pb);
+                        _pb->set_error_type(E_IET_Success);
+                        return true;
+                }
+                else
+                {
+                        it = act->_loadTaskArr[_taskType].find(_pb->guid());
+                        if (act->_loadTaskArr[_taskType].end() != it) 
+                        {
+                                auto task = it->second;
+                                _pb->CopyFrom(*task->_pb);
+                                _pb->set_error_type(E_IET_Success);
+                                return true;
+                        }
+                }
+        }
+        else
+        {
+                LOG_INFO("玩家[{}] LoadDBData 时 version 信息未找到!!!", _pb->guid());
+                _pb->set_error_type(E_IET_DBDataSIDError);
+                return true;
+        }
+
+        return false;
+}
+
+void MySqlLoadTask::Exec(const std::shared_ptr<MySqlActor>& act
+                         , const std::shared_ptr<MySqlExecActor>& execAct
+                         , const std::unordered_map<uint64_t, std::shared_ptr<IMySqlTask>>& reqList)
+{
+        auto it = reqList.begin();
+        while (reqList.end() != it)
+        {
+                std::string sqlStr = fmt::format("SELECT id,data from data_{} WHERE id IN(", execAct->_idx);
+                sqlStr.reserve(MySqlService::scSqlStrInitSize);
+
+                auto now = GetClock().GetSteadyTime();
+                int64_t cnt = 0;
+                for (; reqList.end()!=it; ++it)
+                {
+                        auto task = it->second;
+                        if (now - task->_reqTime <= IActor::scCallRemoteTimeOut)
+                        {
+                                sqlStr += fmt::format("{},", task->_pb->guid());
+                                if (++cnt >= 1024)
+                                {
+                                        ++it;
+                                        break;
+                                }
+                        }
+                }
+                sqlStr.pop_back();
+                sqlStr += ");";
+
+                execAct->PauseCostTime();
+                auto result = MySqlMgr::GetInstance()->Exec(sqlStr);
+                for (auto row : result->rows())
+                {
+                        auto id = row.at(0).as_int64();
+                        auto it = reqList.find(id);
+                        if (reqList.end() != it)
+                        {
+                                auto task = it->second;
+                                _pb->set_data(row.at(1).as_string());
+                                // task->_bufRef = result;
+                                // task->_buf = row.at(1).as_string();
+                        }
+                }
+
+                execAct->ResumeCostTime();
+
+                GetApp()->_loadCnt += cnt;
+                GetApp()->_loadSize += sqlStr.size();
+        }
+}
+
+bool MySqlSaveTask::DealFromCache(const std::shared_ptr<MySqlActor>& act)
+{
+        // TODO: DBServer 重启后，会出现找不到 version 信息情况。
+        auto& seq = act->_versionInfoList.get<by_id>();
+        auto it = seq.find(_pb->guid());
+        if (seq.end() != it)
+        {
+                auto info = *it;
+                if (_sid != info->_sid)
+                {
+                        LOG_WARN("玩家[{}] sid不匹配!!! sSID[{}] SID[{}]",
+                                 _pb->guid(), _sid, info->_sid);
+                        _pb->set_error_type(E_IET_DBDataSIDError);
+                        return true;
+                }
+                seq.erase(it);
+
+                if (E_IET_DBDataDelete == _pb->error_type())
+                {
+                        // LOG_INFO("玩家[{}] 被删除!!!", msg->_pb->guid());
+                        info->_sid = UINT32_MAX;
+                }
+                else
+                {
+                        // LOG_INFO("玩家[{}] 存储!!!", msg->_pb->guid());
+                        info->_sid = _sid;
+                }
+
+                info->_version = _pb->version();
+                info->_overTime = GetClock().GetSteadyTime() + 7 * 24 * 3600;
+                act->_versionInfoList.emplace(info);
+                return false;
+        }
+        else
+        {
+                LOG_WARN("玩家[{}] SaveDBData 时 version 信息未找到!!!", _pb->guid());
+                _pb->set_error_type(E_IET_DBDataSIDError);
+                return true;
+        }
+}
+
+void MySqlSaveTask::Exec(const std::shared_ptr<MySqlActor>& act
+                         , const std::shared_ptr<MySqlExecActor>& execAct
+                         , const std::unordered_map<uint64_t, std::shared_ptr<IMySqlTask>>& reqList)
+{
+        auto it = reqList.begin();
+        while (reqList.end() != it)
+        {
+                // DLOG_INFO("1111111111111111111111111 idx:{}", dbMgrActor->GetIdx());
+                std::string sqlStr = fmt::format("UPDATE data_{} SET data=CASE id ", execAct->_idx);
+                sqlStr.reserve(MySqlService::scSqlStrInitSize * 16);
+                std::string versionSqlStr = "END,v=CASE id ";
+                versionSqlStr.reserve(MySqlService::scSqlStrInitSize);
+                std::string inStr = "END WHERE id IN(";
+                inStr.reserve(MySqlService::scSqlStrInitSize);
+
+                for (; reqList.end()!=it; ++it)
+                {
+                        auto pb = it->second->_pb;
+                        sqlStr += fmt::format("WHEN {} THEN '{}' ", pb->guid(), it->second->_data);
+                        versionSqlStr += fmt::format("WHEN {} THEN {} ", pb->guid(), pb->version());
+                        inStr += fmt::format("{},", pb->guid());
+
+                        if (sqlStr.size() + versionSqlStr.size() + inStr.size() > scMaxAllowedPackageSize * 0.9)
+                        {
+                                ++it;
+                                break;
+                        }
+                }
+
+                inStr.pop_back();
+                inStr += ");";
+                sqlStr += versionSqlStr;
+                sqlStr += inStr;
+                execAct->PauseCostTime();
+                // auto oldTime = GetClock().GetTimeNow_Slow();
+                MySqlMgr::GetInstance()->Exec(sqlStr);
+                /*
+                   auto endTime = GetClock().GetTimeNow_Slow();
+                   LOG_INFO("1111111111111111111111111 end now[{}] diff[{}] size[{}] cnt[{}]",
+                   endTime, endTime - oldTime, sqlStr.size() / (1024.0 * 1024.0), cnt);
+                   */
+                execAct->ResumeCostTime();
+                GetApp()->_saveSize += sqlStr.size();
+        }
+
+        GetApp()->_saveCnt += reqList.size();
+}
+
+#endif
 
 // vim: fenc=utf8:expandtab:ts=8

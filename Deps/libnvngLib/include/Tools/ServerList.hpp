@@ -4,13 +4,27 @@
 #include <rapidjson/document.h>
 #include <vector>
 
+#define PARSE_PORT_FROM_JSON(p, m) \
+        p = item[m].GetInt64(); \
+        serverInfo->_portList.emplace_back(p)
+
+#define DIST_PORT_IMPL(p) \
+        p = start + (idx++); \
+        _portList.emplace_back(p)
 
 template <typename _Ty> inline EServerType CalServerType() { LOG_ERROR(""); return E_ST_None; }
 
 struct stLobbyServerInfo : public stServerInfoBase
 {
-	uint16_t _gate_port = 0;
-	uint16_t _game_port = 0;
+        stLobbyServerInfo() : stServerInfoBase(E_ST_Lobby) { }
+        void DistPort(int64_t start, int64_t& idx) override
+        {
+                DIST_PORT_IMPL(_gate_port);
+                DIST_PORT_IMPL(_game_port);
+        }
+
+        uint16_t _gate_port = 0;
+        uint16_t _game_port = 0;
 };
 typedef std::shared_ptr<stLobbyServerInfo> stLobbyServerInfoPtr;
 typedef std::weak_ptr<stLobbyServerInfo> stLobbyServerInfoWeakPtr;
@@ -18,7 +32,13 @@ template <> inline EServerType CalServerType<stLobbyServerInfo>() { return E_ST_
 
 struct stGateServerInfo : public stServerInfoBase
 {
-	uint16_t _client_port = 0;
+        stGateServerInfo() : stServerInfoBase(E_ST_Gate) { }
+        void DistPort(int64_t start, int64_t& idx) override
+        {
+                // DIST_PORT_IMPL(_client_port);
+        }
+
+        uint16_t _client_port = 0;
 };
 typedef std::shared_ptr<stGateServerInfo> stGateServerInfoPtr;
 typedef std::weak_ptr<stGateServerInfo> stGateServerInfoWeakPtr;
@@ -26,7 +46,12 @@ template <> inline EServerType CalServerType<stGateServerInfo>() { return E_ST_G
 
 struct stLoginServerInfo : public stServerInfoBase
 {
-	uint16_t _gate_port = 0;
+        stLoginServerInfo() : stServerInfoBase(E_ST_Login) { }
+        void DistPort(int64_t start, int64_t& idx) override
+        {
+                DIST_PORT_IMPL(_gate_port);
+        }
+        uint16_t _gate_port = 0;
 };
 typedef std::shared_ptr<stLoginServerInfo> stLoginServerInfoPtr;
 typedef std::weak_ptr<stLoginServerInfo> stLoginServerInfoWeakPtr;
@@ -34,7 +59,13 @@ template <> inline EServerType CalServerType<stLoginServerInfo>() { return E_ST_
 
 struct stPayServerInfo : public stServerInfoBase
 {
-	uint16_t _lobby_port = 0;
+        stPayServerInfo() : stServerInfoBase(E_ST_Pay) { }
+        void DistPort(int64_t start, int64_t& idx) override
+        {
+                DIST_PORT_IMPL(_lobby_port);
+                // DIST_PORT_IMPL(_web_port);
+        }
+        uint16_t _lobby_port = 0;
         uint16_t _web_port = 0;
 };
 typedef std::shared_ptr<stPayServerInfo> stPayServerInfoPtr;
@@ -43,7 +74,12 @@ template <> inline EServerType CalServerType<stPayServerInfo>() { return E_ST_Pa
 
 struct stGameServerInfo : public stServerInfoBase
 {
-	uint16_t _gate_port = 0;
+        stGameServerInfo() : stServerInfoBase(E_ST_Game) { }
+        void DistPort(int64_t start, int64_t& idx) override
+        {
+                DIST_PORT_IMPL(_gate_port);
+        }
+        uint16_t _gate_port = 0;
 };
 typedef std::shared_ptr<stGameServerInfo> stGameServerInfoPtr;
 typedef std::weak_ptr<stGameServerInfo> stGameServerInfoWeakPtr;
@@ -51,8 +87,14 @@ template <> inline EServerType CalServerType<stGameServerInfo>() { return E_ST_G
 
 struct stGameMgrServerInfo : public stServerInfoBase
 {
-	uint16_t _lobby_port = 0;
-	uint16_t _game_port = 0;
+        stGameMgrServerInfo() : stServerInfoBase(E_ST_GameMgr) { }
+        void DistPort(int64_t start, int64_t& idx) override
+        {
+                DIST_PORT_IMPL(_lobby_port);
+                DIST_PORT_IMPL(_game_port);
+        }
+        uint16_t _lobby_port = 0;
+        uint16_t _game_port = 0;
 };
 typedef std::shared_ptr<stGameMgrServerInfo> stGameMgrServerInfoPtr;
 typedef std::weak_ptr<stGameMgrServerInfo> stGameMgrServerInfoWeakPtr;
@@ -60,7 +102,14 @@ template <> inline EServerType CalServerType<stGameMgrServerInfo>() { return E_S
 
 struct stDBServerInfo : public stServerInfoBase
 {
-	uint16_t _lobby_port = 0;
+        stDBServerInfo() : stServerInfoBase(E_ST_DB) { }
+        void DistPort(int64_t start, int64_t& idx) override
+        {
+                DIST_PORT_IMPL(_lobby_port);
+                DIST_PORT_IMPL(_login_port);
+                DIST_PORT_IMPL(_gen_guid_service_port);
+        }
+        uint16_t _lobby_port = 0;
         uint16_t _login_port = 0;
         uint16_t _gen_guid_service_port = 0;
 };
@@ -70,9 +119,19 @@ template <> inline EServerType CalServerType<stDBServerInfo>() { return E_ST_DB;
 
 struct stGMServerInfo : public stServerInfoBase
 {
-	uint16_t _lobby_port = 0;
-	uint16_t _http_gm_port = 0;
-	uint16_t _http_activity_port = 0;
+        stGMServerInfo() : stServerInfoBase(E_ST_GM) { }
+        void DistPort(int64_t start, int64_t& idx) override
+        {
+                DIST_PORT_IMPL(_lobby_port);
+                // DIST_PORT_IMPL(_http_gm_port);
+                // DIST_PORT_IMPL(_http_activity_port);
+                DIST_PORT_IMPL(_cdkey_port);
+                DIST_PORT_IMPL(_gm_port);
+                DIST_PORT_IMPL(_announcement_port);
+        }
+        uint16_t _lobby_port = 0;
+        uint16_t _http_gm_port = 0;
+        uint16_t _http_activity_port = 0;
         uint16_t _cdkey_port = 0;
         uint16_t _gm_port = 0;
         uint16_t _announcement_port = 0;
@@ -82,14 +141,24 @@ template <> inline EServerType CalServerType<stGMServerInfo>() { return E_ST_GM;
 
 struct stLogServerInfo : public stServerInfoBase
 {
-	uint16_t _lobby_port = 0;
+        stLogServerInfo() : stServerInfoBase(E_ST_Log) { }
+        void DistPort(int64_t start, int64_t& idx) override
+        {
+                DIST_PORT_IMPL(_lobby_port);
+        }
+        uint16_t _lobby_port = 0;
 };
 typedef std::shared_ptr<stLogServerInfo> stLogServerInfoPtr;
 template <> inline EServerType CalServerType<stLogServerInfo>() { return E_ST_Log; }
 
 struct stRobotMgrServerInfo : public stServerInfoBase
 {
-	uint16_t _game_port = 0;
+        stRobotMgrServerInfo() : stServerInfoBase(E_ST_RobotMgr) { }
+        void DistPort(int64_t start, int64_t& idx) override
+        {
+                DIST_PORT_IMPL(_game_port);
+        }
+        uint16_t _game_port = 0;
 };
 typedef std::shared_ptr<stRobotMgrServerInfo> stRobotMgrServerInfoPtr;
 template <> inline EServerType CalServerType<stRobotMgrServerInfo>() { return E_ST_RobotMgr; }
@@ -97,366 +166,292 @@ template <> inline EServerType CalServerType<stRobotMgrServerInfo>() { return E_
 class ServerListCfgMgr : public Singleton<ServerListCfgMgr>
 {
 public :
-	bool Init(std::string cfgFile)
-	{
-		std::ifstream ifs;
-		ifs.open(cfgFile);
-		if (!ifs.is_open())
-			return false;
+        bool Init(std::string cfgFile)
+        {
+                std::ifstream ifs;
+                ifs.open(cfgFile);
+                if (!ifs.is_open())
+                        return false;
 
-		ifs.seekg(0, std::ios::end);
-		int64_t length = ifs.tellg();
-		ifs.seekg(0, std::ios::beg);
-		char* buffer = new char[length];
-		bzero(buffer, length);
-		ifs.read(buffer, length);
-		ifs.close();
+                ifs.seekg(0, std::ios::end);
+                int64_t length = ifs.tellg();
+                ifs.seekg(0, std::ios::beg);
+                char* buffer = new char[length];
+                bzero(buffer, length);
+                ifs.read(buffer, length);
+                ifs.close();
 
-		rapidjson::Document root;
-		if (root.Parse(buffer, length).HasParseError())
-			return false;
-		delete[] buffer;
+                rapidjson::Document root;
+                if (root.Parse(buffer, length).HasParseError())
+                        return false;
+                delete[] buffer;
 
-		_rid = root["rid"].GetInt64();
-		std::set<int64_t> sidList;
-		auto checkSID = [&sidList](uint64_t sid) {
-			LOG_FATAL_IF(!sidList.emplace(sid).second, "sid[{}] 重复!!!", sid);
-		};
-
-		std::set<std::pair<std::string, uint16_t>> ipPortList;
-		auto checkIPPort = [&ipPortList](const stServerInfoBasePtr& info, uint16_t port) {
-			LOG_FATAL_IF(!ipPortList.emplace(std::make_pair(info->_ip, port)).second,
-				     "ip[{}] port[{}] 重复!!!", info->_ip, port);
-			info->_portList.emplace_back(port);
-		};
-
-                auto distPort = [this](int64_t sid, int64_t offset) -> int64_t {
-                        switch (offset)
-                        {
-                        case 0 : return _rid * 1000 + sid; break;
-                        case 1 : return _rid * 1000 + 20000 + sid; break;
-                        case 2 : return _rid * 1000 + 40000 + sid; break;
-                        default : LOG_FATAL("监听端口太多!!!"); return -1; break;
-                        }
+                _rid = root["rid"].GetInt64();
+                _startPort = root["start_port"].GetInt64();
+                _endPort = root["end_port"].GetInt64();
+                std::set<int64_t> sidList;
+                auto checkSID = [&sidList](uint64_t sid) {
+                        LOG_FATAL_IF(!sidList.emplace(sid).second, "sid[{}] 重复!!!", sid);
                 };
 
-                auto distIdx = [this](EServerType st) {
-                        assert(EServerType_IsValid(st));
-                        int64_t idx = -1;
-                        for (auto& val : _serverInfoListByType[st])
-                                val.second->_idx = ++idx;
-                };
+                auto parseBaseFunc = [this, &checkSID](const stServerInfoBasePtr& serverInfo, const auto& item) {
+                        assert(EServerType_IsValid(serverInfo->_st));
 
-		/*
-		auto& controlServer = root["control_server"];
-		SuperServer_.sid_ = controlServer["sid"].GetInt64();
-		SuperServer_.addr_.ip_ = controlServer["ip"].GetString();
-		SuperServer_.addr_.port_ = controlServer["port"].GetInt64();
-		checkSID(SuperType_.sid_);
-		*/
+                        serverInfo->_sid = item["sid"].GetInt64();
+                        checkSID(serverInfo->_sid);
+                        serverInfo->_faName = item["fa_name"].GetString();
+                        serverInfo->_ip = item["ip"].GetString();
 
-		if (root.HasMember("lobby_server_list"))
-		{
-			auto& serverArr = root["lobby_server_list"];
-			LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
-			for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
-			{
-				auto& item = serverArr[i];
-
-				auto serverInfo = std::make_shared<stLobbyServerInfo>();
-				serverInfo->_sid = item["sid"].GetInt64();
-				serverInfo->_faName = item["fa_name"].GetString();
-				serverInfo->_ip = item["ip"].GetString();
-				serverInfo->_gate_port = distPort(serverInfo->_sid, 0);
-				serverInfo->_game_port = distPort(serverInfo->_sid, 1);
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
-
-                                if (-1 == serverInfo->_workersCnt)
-                                        serverInfo->_workersCnt = std::thread::hardware_concurrency();
-
-				checkIPPort(serverInfo, serverInfo->_gate_port);
-				checkIPPort(serverInfo, serverInfo->_game_port);
-				checkSID(serverInfo->_sid);
-				if (!_serverInfoListByType[E_ST_Lobby].emplace(serverInfo->_sid, serverInfo).second)
-					LOG_FATAL("大厅服sid重复!!! sid[{}]", serverInfo->_sid);
-			}
-                        distIdx(E_ST_Lobby);
-		}
-
-		if (root.HasMember("gate_server_list"))
-		{
-			auto& serverArr = root["gate_server_list"];
-			LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
-			for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
-			{
-				auto& item = serverArr[i];
-
-				auto serverInfo = std::make_shared<stGateServerInfo>();
-				serverInfo->_sid = item["sid"].GetInt64();
-				serverInfo->_faName = item["fa_name"].GetString();
-				serverInfo->_ip = item["ip"].GetString();
-				serverInfo->_client_port = item["client_port"].GetInt64();
-
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
-
-				checkIPPort(serverInfo, serverInfo->_client_port);
-				checkSID(serverInfo->_sid);
-				if (!_serverInfoListByType[E_ST_Gate].emplace(serverInfo->_sid, serverInfo).second)
-					LOG_FATAL("网关服sid重复!!! sid[{}]", serverInfo->_sid);
-			}
-                        distIdx(E_ST_Gate);
-		}
-
-		if (root.HasMember("login_server_list"))
-		{
-			auto& serverArr = root["login_server_list"];
-			LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
-			for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
-			{
-				auto& item = serverArr[i];
-
-				auto serverInfo = std::make_shared<stLoginServerInfo>();
-				serverInfo->_sid = item["sid"].GetInt64();
-				serverInfo->_faName = item["fa_name"].GetString();
-				serverInfo->_ip = item["ip"].GetString();
-				serverInfo->_gate_port = distPort(serverInfo->_sid, 0);
-
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
-				serverInfo->_actorCntPerWorkers = item["actor_cnt_per_workers"].GetInt64();
-
-				checkIPPort(serverInfo, serverInfo->_gate_port);
-				checkSID(serverInfo->_sid);
-				if (!_serverInfoListByType[E_ST_Login].emplace(serverInfo->_sid, serverInfo).second)
-					LOG_FATAL("登录服sid重复!!! sid[{}]", serverInfo->_sid);
-			}
-                        distIdx(E_ST_Login);
-		}
-
-		if (root.HasMember("pay_server_list"))
-		{
-			auto& serverArr = root["pay_server_list"];
-			LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
-			for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
-			{
-				auto& item = serverArr[i];
-
-				auto serverInfo = std::make_shared<stPayServerInfo>();
-				serverInfo->_sid = item["sid"].GetInt64();
-				serverInfo->_faName = item["fa_name"].GetString();
-				serverInfo->_ip = item["ip"].GetString();
-				serverInfo->_lobby_port = distPort(serverInfo->_sid, 0);
-				serverInfo->_web_port = item["http_port"].GetInt64();
-
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
-				serverInfo->_actorCntPerWorkers = item["actor_cnt_per_workers"].GetInt64();
-
-				checkIPPort(serverInfo, serverInfo->_lobby_port);
-				checkSID(serverInfo->_sid);
-				if (!_serverInfoListByType[E_ST_Pay].emplace(serverInfo->_sid, serverInfo).second)
-					LOG_FATAL("登录服sid重复!!! sid[{}]", serverInfo->_sid);
-			}
-                        distIdx(E_ST_Pay);
-		}
-
-		if (root.HasMember("game_server_list"))
-		{
-			auto& serverArr = root["game_server_list"];
-			LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
-			for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
-			{
-				auto& item = serverArr[i];
-
-				auto serverInfo = std::make_shared<stGameServerInfo>();
-				serverInfo->_sid = item["sid"].GetInt64();
-				serverInfo->_faName = item["fa_name"].GetString();
-				serverInfo->_ip = item["ip"].GetString();
-				serverInfo->_gate_port = distPort(serverInfo->_sid, 0);
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
-
-                                if (-1 == serverInfo->_workersCnt)
-                                        serverInfo->_workersCnt = std::thread::hardware_concurrency();
-
-				checkIPPort(serverInfo, serverInfo->_gate_port);
-				checkSID(serverInfo->_sid);
-				if (!_serverInfoListByType[E_ST_Game].emplace(serverInfo->_sid, serverInfo).second)
-					LOG_FATAL("房间服sid重复!!! sid[{}]", serverInfo->_sid);
-			}
-                        distIdx(E_ST_Game);
-		}
-
-		if (root.HasMember("game_mgr_server"))
-		{
-			auto& item = root["game_mgr_server"];
-			auto serverInfo = std::make_shared<stGameMgrServerInfo>();
-			serverInfo->_sid = item["sid"].GetInt64();
-			serverInfo->_faName = item["fa_name"].GetString();
-			serverInfo->_ip = item["ip"].GetString();
-			serverInfo->_game_port = distPort(serverInfo->_sid, 0);
-			serverInfo->_lobby_port = distPort(serverInfo->_sid, 1);
-			serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
-			serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
-                        serverInfo->_actorCntPerWorkers = item["actor_cnt_per_workers"].GetInt64();
-
+                        if (item.HasMember("workers_cnt"))
+                                serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
                         if (-1 == serverInfo->_workersCnt)
                                 serverInfo->_workersCnt = std::thread::hardware_concurrency();
 
-			checkIPPort(serverInfo, serverInfo->_game_port);
-			checkIPPort(serverInfo, serverInfo->_lobby_port);
-			checkSID(serverInfo->_sid);
-			if (!_serverInfoListByType[E_ST_GameMgr].emplace(serverInfo->_sid, serverInfo).second)
-				LOG_FATAL("房间服管理服sid重复!!! sid[{}]", serverInfo->_sid);
+                        if (item.HasMember("actor_cnt_per_workers"))
+                                serverInfo->_actorCntPerWorkers = item["actor_cnt_per_workers"].GetInt64();
 
-                        distIdx(E_ST_GameMgr);
-		}
+                        if (item.HasMember("net_proc_cnt"))
+                                serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
 
-		if (root.HasMember("db_server_list"))
-		{
-			auto& serverArr = root["db_server_list"];
-			LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
-			for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
-			{
-				auto& item = serverArr[i];
-				auto serverInfo = std::make_shared<stDBServerInfo>();
-				serverInfo->_sid = item["sid"].GetInt64();
-				serverInfo->_faName = item["fa_name"].GetString();
-				serverInfo->_ip = item["ip"].GetString();
-				serverInfo->_lobby_port = distPort(serverInfo->_sid, 0);
-				serverInfo->_login_port = distPort(serverInfo->_sid, 1);
-				serverInfo->_gen_guid_service_port = item["gen_guid_service_port"].GetInt64();
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
+                        if (!_serverInfoListByType[serverInfo->_st].emplace(serverInfo->_sid, serverInfo).second)
+                                LOG_FATAL("st[{}] sid重复!!! sid[{}]", serverInfo->_st, serverInfo->_sid);
 
-                                if (-1 == serverInfo->_workersCnt)
-                                        serverInfo->_workersCnt = std::thread::hardware_concurrency();
+                        int64_t idx = -1;
+                        for (auto& val : _serverInfoListByType[serverInfo->_st])
+                                val.second->_idx = ++idx;
+                };
 
-				checkIPPort(serverInfo, serverInfo->_lobby_port);
-				checkIPPort(serverInfo, serverInfo->_login_port);
-				checkIPPort(serverInfo, serverInfo->_gen_guid_service_port);
-				checkSID(serverInfo->_sid);
-				if (!_serverInfoListByType[E_ST_DB].emplace(serverInfo->_sid, serverInfo).second)
-					LOG_FATAL("DBServer sid重复!!! sid[{}]", serverInfo->_sid);
-			}
-                        distIdx(E_ST_DB);
-		}
+                /*
+                   auto& controlServer = root["control_server"];
+                   SuperServer_.sid_ = controlServer["sid"].GetInt64();
+                   SuperServer_.addr_.ip_ = controlServer["ip"].GetString();
+                   SuperServer_.addr_.port_ = controlServer["port"].GetInt64();
+                   checkSID(SuperType_.sid_);
+                   */
 
-		if (root.HasMember("log_server_list"))
-		{
-			auto& serverArr = root["log_server_list"];
-			LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
-			for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
-			{
-				auto& item = serverArr[i];
-				auto serverInfo = std::make_shared<stLogServerInfo>();
-				serverInfo->_sid = item["sid"].GetInt64();
-				serverInfo->_faName = item["fa_name"].GetString();
-				serverInfo->_ip = item["ip"].GetString();
-                                serverInfo->_lobby_port = item["lobby_port"].GetInt64();
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
+                if (root.HasMember("lobby_server_list"))
+                {
+                        auto& serverArr = root["lobby_server_list"];
+                        LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
+                        for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
+                        {
+                                auto& item = serverArr[i];
+                                auto serverInfo = std::make_shared<stLobbyServerInfo>();
+                                parseBaseFunc(serverInfo, item);
+                        }
+                }
 
-                                if (-1 == serverInfo->_workersCnt)
-                                        serverInfo->_workersCnt = std::thread::hardware_concurrency();
+                if (root.HasMember("gate_server_list"))
+                {
+                        auto& serverArr = root["gate_server_list"];
+                        LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
+                        for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
+                        {
+                                auto& item = serverArr[i];
+                                auto serverInfo = std::make_shared<stGateServerInfo>();
+                                parseBaseFunc(serverInfo, item);
+                                PARSE_PORT_FROM_JSON(serverInfo->_client_port, "client_port");
+                        }
+                }
 
-				checkIPPort(serverInfo, serverInfo->_lobby_port);
-				checkSID(serverInfo->_sid);
-				if (!_serverInfoListByType[E_ST_Log].emplace(serverInfo->_sid, serverInfo).second)
-					LOG_FATAL("LogServer sid重复!!! sid[{}]", serverInfo->_sid);
-			}
-                        distIdx(E_ST_Log);
-		}
+                if (root.HasMember("login_server_list"))
+                {
+                        auto& serverArr = root["login_server_list"];
+                        LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
+                        for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
+                        {
+                                auto& item = serverArr[i];
+                                auto serverInfo = std::make_shared<stLoginServerInfo>();
+                                parseBaseFunc(serverInfo, item);
+                        }
+                }
+
+                if (root.HasMember("pay_server_list"))
+                {
+                        auto& serverArr = root["pay_server_list"];
+                        LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
+                        for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
+                        {
+                                auto& item = serverArr[i];
+
+                                auto serverInfo = std::make_shared<stPayServerInfo>();
+                                parseBaseFunc(serverInfo, item);
+                                PARSE_PORT_FROM_JSON(serverInfo->_web_port, "http_port");
+                        }
+                }
+
+                if (root.HasMember("game_server_list"))
+                {
+                        auto& serverArr = root["game_server_list"];
+                        LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
+                        for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
+                        {
+                                auto& item = serverArr[i];
+                                auto serverInfo = std::make_shared<stGameServerInfo>();
+                                parseBaseFunc(serverInfo, item);
+                        }
+                }
+
+                if (root.HasMember("game_mgr_server"))
+                {
+                        auto& item = root["game_mgr_server"];
+                        auto serverInfo = std::make_shared<stGameMgrServerInfo>();
+                        parseBaseFunc(serverInfo, item);
+                }
+
+                if (root.HasMember("db_server_list"))
+                {
+                        auto& serverArr = root["db_server_list"];
+                        LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
+                        for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
+                        {
+                                auto& item = serverArr[i];
+                                auto serverInfo = std::make_shared<stDBServerInfo>();
+                                parseBaseFunc(serverInfo, item);
+                        }
+                }
+
+                if (root.HasMember("log_server_list"))
+                {
+                        auto& serverArr = root["log_server_list"];
+                        LOG_FATAL_IF(!CHECK_2N(serverArr.Size()), "");
+                        for (int32_t i=0; i<static_cast<int32_t>(serverArr.Size()); ++i)
+                        {
+                                auto& item = serverArr[i];
+                                auto serverInfo = std::make_shared<stLogServerInfo>();
+                                parseBaseFunc(serverInfo, item);
+                        }
+                }
 
                 if (root.HasMember("gm_server"))
-		{
-			auto& item = root["gm_server"];
-			auto serverInfo = std::make_shared<stGMServerInfo>();
-			serverInfo->_sid = item["sid"].GetInt64();
-			serverInfo->_faName = item["fa_name"].GetString();
-			serverInfo->_ip = item["ip"].GetString();
-			serverInfo->_lobby_port = distPort(serverInfo->_sid, 0);
-			serverInfo->_http_gm_port = item["http_gm_port"].GetInt64();
-			serverInfo->_http_activity_port = item["http_activity_port"].GetInt64();
-			serverInfo->_cdkey_port = item["cdkey_port"].GetInt64();
-			serverInfo->_gm_port = item["gm_port"].GetInt64();
-			serverInfo->_announcement_port = item["announcement_port"].GetInt64();
-
-			checkIPPort(serverInfo, serverInfo->_lobby_port);
-			checkIPPort(serverInfo, serverInfo->_http_gm_port);
-			checkIPPort(serverInfo, serverInfo->_http_activity_port);
-			checkIPPort(serverInfo, serverInfo->_cdkey_port);
-			checkIPPort(serverInfo, serverInfo->_gm_port);
-			checkIPPort(serverInfo, serverInfo->_announcement_port);
-			checkSID(serverInfo->_sid);
-
-			if (!_serverInfoListByType[E_ST_GM].emplace(serverInfo->_sid, serverInfo).second)
-				LOG_FATAL("GMServer sid重复!!! sid[{}]", serverInfo->_sid);
-
-                        distIdx(E_ST_GM);
-		}
+                {
+                        auto& item = root["gm_server"];
+                        auto serverInfo = std::make_shared<stGMServerInfo>();
+                        parseBaseFunc(serverInfo, item);
+                        PARSE_PORT_FROM_JSON(serverInfo->_http_gm_port, "http_gm_port");
+                        PARSE_PORT_FROM_JSON(serverInfo->_http_activity_port, "http_activity_port");
+                }
 
                 if (root.HasMember("robot_mgr_server"))
                 {
                         auto& item = root["robot_mgr_server"];
                         auto serverInfo = std::make_shared<stRobotMgrServerInfo>();
-                        serverInfo->_sid = item["sid"].GetInt64();
-                        serverInfo->_faName = item["fa_name"].GetString();
-                        serverInfo->_ip = item["ip"].GetString();
-                        serverInfo->_game_port = distPort(serverInfo->_sid, 0);
-
-			checkIPPort(serverInfo, serverInfo->_game_port);
-			checkSID(serverInfo->_sid);
-
-			if (!_serverInfoListByType[E_ST_RobotMgr].emplace(serverInfo->_sid, serverInfo).second)
-				LOG_FATAL("RobotMgrServer sid重复!!! sid[{}]", serverInfo->_sid);
-
-                        distIdx(E_ST_RobotMgr);
+                        parseBaseFunc(serverInfo, item);
                 }
 
-		return true;
-	}
+                std::map<std::string, std::map<EServerType, std::map<int64_t, stServerInfoBasePtr>>> serverInfoList;
+                for (auto& val : _serverInfoListByType)
+                {
+                        const EServerType st = val.first;
+                        for (auto& innVal : val.second)
+                        {
+                                auto sid = innVal.first;
+                                auto info = innVal.second;
 
-	void ForeachInternal(EServerType type, const auto& cb)
-	{
-		for (auto& val : _serverInfoListByType[type])
-			cb(val.second);
-	}
+                                auto& ipList = serverInfoList[info->_ip];
+                                auto& stList = ipList[st];
+                                stList[sid] = info;
+                        }
+                }
 
-	template <typename _Ty>
-	void Foreach(const auto& cb)
-	{
-		for (auto& val : _serverInfoListByType[CalServerType<_Ty>()])
-			cb(std::dynamic_pointer_cast<_Ty>(val.second));
-	}
+                for (auto& val : serverInfoList)
+                {
+                        // IP不同，从头开始分配。
+                        int64_t idx = 0;
+                        for (auto& val_1 : val.second)
+                        {
+                                for (auto& val_2 : val_1.second)
+                                {
+                                        val_2.second->DistPort(_startPort, idx);
+                                        assert(_startPort+idx-1 <= _endPort);
+                                        LOG_FATAL_IF(_startPort+idx-1 > _endPort, "");
+                                }
+                        }
+                }
 
-	template <typename _Ty>
-	FORCE_INLINE int64_t GetSize() { return _serverInfoListByType[CalServerType<_Ty>()].size(); }
+                std::set<std::pair<std::string, uint16_t>> ipPortList;
+                for (auto& val : _serverInfoListByType)
+                {
+                        for (auto& val_1 : val.second)
+                        {
+                                auto info = val_1.second;
+                                for (auto port : info->_portList)
+                                {
+                                        // LOG_INFO("sid[{}] st[{}] ip[{}] port[{}]", info->_sid, val.first, info->_ip, port);
+                                        LOG_FATAL_IF(0 == port || !ipPortList.emplace(std::make_pair(info->_ip, port)).second,
+                                                     "rid[{}] sid[{}] ip[{}] port[{}] 重复!!!", _rid, info->_sid, info->_ip, port);
+                                }
+                        }
+                }
 
-	template <typename _Ty>
-	FORCE_INLINE std::shared_ptr<_Ty> GetFirst()
-	{
-		auto& l = _serverInfoListByType[CalServerType<_Ty>()];
-		return !l.empty() ? std::dynamic_pointer_cast<_Ty>(l.begin()->second) : std::shared_ptr<_Ty>();
-	}
+                return true;
+        }
 
-	template <typename _Ty>
-	int64_t CalSidIdx(int64_t sid)
-	{
-		int64_t i = -1;
-		for (auto& val : _serverInfoListByType[CalServerType<_Ty>()])
-		{
-			++i;
-			if (sid == val.second->_sid)
-				return i;
-		}
-		return INVALID_SERVER_IDX;
-	}
+        void PrintPortDistInfo()
+        {
+                std::map<std::pair<std::string, int64_t>, stServerInfoBasePtr> tmpList;
+                for (auto& val : ServerListCfgMgr::GetInstance()->_serverInfoListByType)
+                {
+                        for (auto& val_1 : val.second)
+                        {
+                                auto info = val_1.second;
+                                for (auto port : info->_portList)
+                                {
+                                        auto key = std::make_pair(info->_ip, port);
+                                        tmpList.emplace(key, info);
+                                }
+                        }
+                }
+
+                for (auto& val : tmpList)
+                {
+                        auto info = val.second;
+                        LOG_INFO("rid[{}] st[{}] sid[{}] ip[{}] port[{}]"
+                                 , _rid, info->_st, info->_sid, info->_ip, val.first.second);
+                }
+        }
+
+        void ForeachInternal(EServerType type, const auto& cb)
+        {
+                for (auto& val : _serverInfoListByType[type])
+                        cb(val.second);
+        }
+
+        template <typename _Ty>
+                void Foreach(const auto& cb)
+                {
+                        for (auto& val : _serverInfoListByType[CalServerType<_Ty>()])
+                                cb(std::dynamic_pointer_cast<_Ty>(val.second));
+                }
+
+        template <typename _Ty>
+                FORCE_INLINE int64_t GetSize() { return _serverInfoListByType[CalServerType<_Ty>()].size(); }
+
+        template <typename _Ty>
+                FORCE_INLINE std::shared_ptr<_Ty> GetFirst()
+                {
+                        auto& l = _serverInfoListByType[CalServerType<_Ty>()];
+                        return !l.empty() ? std::dynamic_pointer_cast<_Ty>(l.begin()->second) : std::shared_ptr<_Ty>();
+                }
+
+        template <typename _Ty>
+                int64_t CalSidIdx(int64_t sid)
+                {
+                        int64_t i = -1;
+                        for (auto& val : _serverInfoListByType[CalServerType<_Ty>()])
+                        {
+                                ++i;
+                                if (sid == val.second->_sid)
+                                        return i;
+                        }
+                        return INVALID_SERVER_IDX;
+                }
 
 public :
-	int64_t _rid = -1;
-	std::map<EServerType, std::map<int64_t, stServerInfoBasePtr>> _serverInfoListByType;
+        int64_t _rid = -1;
+        int64_t _startPort = -1;
+        int64_t _endPort = -1;
+        std::map<EServerType, std::map<int64_t, stServerInfoBasePtr>> _serverInfoListByType;
 };
 
 struct stRedisCfg
@@ -483,8 +478,8 @@ struct stMySqlConfig
 
 struct stGateServerCfg
 {
-	std::string _crt;
-	std::string _key;
+        std::string _crt;
+        std::string _key;
 };
 typedef std::shared_ptr<stGateServerCfg> stGateServerCfgPtr;
 
@@ -505,35 +500,35 @@ typedef std::shared_ptr<stDBServerCfg> stDBServerCfgPtr;
 class ServerCfgMgr : public Singleton<ServerCfgMgr>
 {
 public :
-	bool Init(std::string cfgFile)
-	{
-		LOG_FATAL_IF(-1 == ServerListCfgMgr::GetInstance()->_rid, "");
+        bool Init(std::string cfgFile)
+        {
+                LOG_FATAL_IF(-1 == ServerListCfgMgr::GetInstance()->_rid, "");
 
-		std::ifstream ifs;
-		ifs.open(cfgFile);
-		if (!ifs.is_open())
-			return false;
+                std::ifstream ifs;
+                ifs.open(cfgFile);
+                if (!ifs.is_open())
+                        return false;
 
-		ifs.seekg(0, std::ios::end);
-		int64_t length = ifs.tellg();
-		ifs.seekg(0, std::ios::beg);
-		char* buffer = new char[length];
-		bzero(buffer, length);
-		ifs.read(buffer, length);
-		ifs.close();
+                ifs.seekg(0, std::ios::end);
+                int64_t length = ifs.tellg();
+                ifs.seekg(0, std::ios::beg);
+                char* buffer = new char[length];
+                bzero(buffer, length);
+                ifs.read(buffer, length);
+                ifs.close();
 
-		rapidjson::Document root;
-		if (root.Parse(buffer, length).HasParseError())
-			return false;
-		delete[] buffer;
+                rapidjson::Document root;
+                if (root.Parse(buffer, length).HasParseError())
+                        return false;
+                delete[] buffer;
 
-		if (root.HasMember("gate_server"))
-		{
-			auto& gateCfg = root["gate_server"];
-			_gateCfg = std::make_shared<stGateServerCfg>();
-			_gateCfg->_crt = gateCfg["crt"].GetString();
-			_gateCfg->_key = gateCfg["key"].GetString();
-		}
+                if (root.HasMember("gate_server"))
+                {
+                        auto& gateCfg = root["gate_server"];
+                        _gateCfg = std::make_shared<stGateServerCfg>();
+                        _gateCfg->_crt = gateCfg["crt"].GetString();
+                        _gateCfg->_key = gateCfg["key"].GetString();
+                }
 
                 if (root.HasMember("db_server"))
                 {
@@ -549,29 +544,29 @@ public :
                                         info->_idx = item["idx"].GetInt64();
                                         info->_minGuid = item["min_guid"].GetUint64();
                                         info->_maxGuid = item["max_guid"].GetUint64();
-                                        _dbCfg->_genGuidItemList.emplace(info->_idx, info);
+                                        LOG_FATAL_IF(!_dbCfg->_genGuidItemList.emplace(info->_idx, info).second, "gen_guid idx[{}] 重复!!!", info->_idx);
                                 }
                         }
                 }
 
-		if (root.HasMember("redis"))
-		{
-			auto& redisCfg = root["redis"];
-			if (redisCfg.HasMember("game_db"))
-			{
-				auto& gameDB = redisCfg["game_db"];
-				_redisCfg._ip = gameDB["ip"].GetString();
-				_redisCfg._port = gameDB["port"].GetInt64();
-				_redisCfg._pwd = gameDB["pwd"].GetString();
-				_redisCfg._dbIdx = gameDB["db"].GetString();
+                if (root.HasMember("redis"))
+                {
+                        auto& redisCfg = root["redis"];
+                        if (redisCfg.HasMember("game_db"))
+                        {
+                                auto& gameDB = redisCfg["game_db"];
+                                _redisCfg._ip = gameDB["ip"].GetString();
+                                _redisCfg._port = gameDB["port"].GetInt64();
+                                _redisCfg._pwd = gameDB["pwd"].GetString();
+                                _redisCfg._dbIdx = gameDB["db"].GetString();
                                 _redisCfg._connCnt = gameDB["conn_cnt"].GetInt64();
                                 _redisCfg._thCnt = gameDB["thread_cnt"].GetInt64();
-				if ("-1" == _redisCfg._dbIdx)
-					_redisCfg._dbIdx = fmt::format_int(ServerListCfgMgr::GetInstance()->_rid).str();
-			}
-		}
+                                if ("-1" == _redisCfg._dbIdx)
+                                        _redisCfg._dbIdx = fmt::format_int(ServerListCfgMgr::GetInstance()->_rid).str();
+                        }
+                }
 
-		if (root.HasMember("mysql"))
+                if (root.HasMember("mysql"))
                 {
                         auto& mysqlCfg = root["mysql"];
                         auto readMysqlCfgFunc = [&mysqlCfg](stMySqlConfig& cfg, const char* dbName) mutable {
@@ -594,21 +589,21 @@ public :
                                 readMysqlCfgFunc(_mysqlLogCfg, "game_log");
                 }
 
-		return true;
-	}
+                return true;
+        }
 
-	FORCE_INLINE std::string GetConfigAbsolute(const std::string& path)
-	{ return _baseCfgDir + "/config_ch/" + path; }
+        FORCE_INLINE std::string GetConfigAbsolute(const std::string& path)
+        { return _baseCfgDir + "/config_ch/" + path; }
 
 public :
-	stRedisCfg _redisCfg;
+        stRedisCfg _redisCfg;
 
-	stMySqlConfig _mysqlCfg;
-	stMySqlConfig _mysqlLogCfg;
+        stMySqlConfig _mysqlCfg;
+        stMySqlConfig _mysqlLogCfg;
 
-	stGateServerCfgPtr _gateCfg;
+        stGateServerCfgPtr _gateCfg;
         stDBServerCfgPtr _dbCfg;
-	std::string _baseCfgDir;
+        std::string _baseCfgDir;
 };
 
 // vim: fenc=utf8:expandtab:ts=8:noma

@@ -231,7 +231,7 @@ void ActivityMgrBase::OnOffline(const PlayerPtr& p)
         });
 }
 
-void ActivityMgrBase::OnEvent(MsgPlayerChange& msg,
+bool ActivityMgrBase::OnEvent(MsgPlayerChange& msg,
                           const PlayerPtr& p,
                           int64_t eventType,
                           int64_t cnt,
@@ -239,15 +239,26 @@ void ActivityMgrBase::OnEvent(MsgPlayerChange& msg,
                           ELogServiceOrigType logType,
                           uint64_t logParam)
 {
-        _fesGroupList.Foreach([&msg, &p, eventType, cnt, param, logType, logParam](const auto& group) {
+        bool ret = false;
+        _fesGroupList.Foreach([&msg, &p, &ret, eventType, cnt, param, logType, logParam](const auto& group) {
                 auto fesSyncData = ActivityMgrBase::_festivalSyncData;
                 if (fesSyncData)
                 {
                         auto cfg = fesSyncData->_groupCfgList.Get(group->_id);
                         if (cfg && 1 == cfg->state())
-                                group->OnEvent(msg, p, eventType, cnt, param, logType, logParam);
+                        {
+                                if (group->OnEvent(msg, p, eventType, cnt, param, logType, logParam))
+                                        ret = true;
+                        }
                 }
         });
+
+        if (ret)
+        {
+                std::string str = fmt::format("{}\"cnt\":{},\"param\":{}{}", "{", cnt, param, "}");
+                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, eventType, logType, logParam);
+        }
+        return ret;
 }
 // }}}
 
@@ -408,6 +419,9 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Mark, MsgActivityMark)
 
                         auto logGuid = LogService::GetInstance()->GenGuid();
                         group->Mark(shared_from_this(), *msg->mutable_player_change(), taskID, commonItem.cnt(), item.param(), E_LSOT_FestivalMark, logGuid);
+
+                        std::string str = fmt::format("{}\"id\":{},\"cnt\":{},\"param\":{}{}", "{", taskID, commonItem.cnt(), item.param(), "}");
+                        LogService::GetInstance()->Log<E_LSLMT_Content>(GetID(), str, E_LSLST_Festival, 99999998, E_LSOT_FestivalMark, logGuid);
                 }
                 msg->set_error_type(E_CET_Success);
                 Save2DB();
@@ -469,6 +483,8 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Reward, MsgActivityReward)
                         break;
                 }
 
+                std::string str = fmt::format("{}\"id\":{},\"param\":{}{}", "{", taskID, msg->param(), "}");
+                LogService::GetInstance()->Log<E_LSLMT_Content>(GetID(), str, E_LSLST_Festival, 99999999, E_LSOT_FestivalReward, logGuid);
                 Save2DB();
         } while (0);
 
@@ -660,7 +676,7 @@ void Festival::OnDataReset(const PlayerPtr& p,
                 dealFunc(it->second);
 }
 
-void Festival::OnEvent(MsgPlayerChange& msg,
+bool Festival::OnEvent(MsgPlayerChange& msg,
                        const PlayerPtr& p,
                        int64_t eventType,
                        int64_t cnt,
@@ -671,12 +687,8 @@ void Festival::OnEvent(MsgPlayerChange& msg,
         auto& seq = _taskList.get<by_task_event_type>();
         auto range = seq.equal_range(eventType);
         for (auto it=range.first; range.second!=it; ++it)
-        {
                 (*it)->_cnt += cnt;
-
-                std::string str = fmt::format("{}\"id\":{},\"type\":{},\"eventType\":{},\"cnt\":{},\"new_cnt\":{},\"param\":{}{}", "{", _id, _type, eventType, cnt, (*it)->_cnt, param, "}");
-                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 1, logType, logParam);
-        }
+        return range.first != range.second;
 }
 
 void Festival::Mark(const PlayerPtr& p,
@@ -718,9 +730,6 @@ void FestivalTask::Mark(const PlayerPtr& p,
 {
         _cnt += cnt;
         p->Save2DB();
-
-        std::string str = fmt::format("{}\"id\":{},\"cnt\":{},\"param\":{}{}", "{", _id, cnt, param, "}");
-        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 0, logType, logParam);
 }
 
 bool FestivalTask::Reward(const PlayerPtr& p,
@@ -735,11 +744,7 @@ bool FestivalTask::Reward(const PlayerPtr& p,
         if (!cfg || FLAG_HAS(_flag, 1))
                 return false;
 
-        auto logGuid = LogService::GetInstance()->GenGuid();
-        BagMgr::GetInstance()->DoDrop(p, msg, cfg->_rewardList, E_LSOT_Festival, logGuid);
-
-        std::string str = fmt::format("{}\"id\":{},\"param\":{}{}", "{", _id, param, "}");
-        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 2, logType, logParam);
+        BagMgr::GetInstance()->DoDrop(p, msg, cfg->_rewardList, logType, logParam);
 
         FLAG_ADD(_flag, 1);
         p->Save2DB();
@@ -776,9 +781,6 @@ bool FestivalTaskImpl::Reward(const PlayerPtr& p,
                 return false;
         }
 
-        std::string str = fmt::format("{}\"id\":{},\"param\":{}{}", "{", _id, param, "}");
-        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 2, logType, logParam);
-
         for (auto& reward : rewardItem->goods_list())
         {
                 auto& item = reward.goods_item();
@@ -807,8 +809,6 @@ bool FestivalTaskCommon::Reward(const PlayerPtr& p,
         if (_cnt < cfg->_value)
                 return false;
 
-        std::string str = fmt::format("{}\"id\":{},\"param\":{}{}", "{", _id, param, "}");
-        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 2, logType, logParam);
         auto errorType = BagMgr::GetInstance()->DoDrop(p, msg, {{ cfg->_reward, 1}}, logType, logParam);
         if (E_CET_Success != errorType)
                 return false;
@@ -851,7 +851,7 @@ void FestivalCommon::OnDataReset(const PlayerPtr& p,
         }
 }
 
-void FestivalCommon::OnEvent(MsgPlayerChange& msg
+bool FestivalCommon::OnEvent(MsgPlayerChange& msg
                              , const PlayerPtr& p
                              , int64_t eventType
                              , int64_t cnt
@@ -891,10 +891,9 @@ void FestivalCommon::OnEvent(MsgPlayerChange& msg
                 }
 
                 task->_cnt += cnt;
-                std::string str = fmt::format("{}\"id\":{},\"type\":{},\"eventType\":{},\"cnt\":{},\"new_cnt\":{},\"param\":{}{}"
-                                              , "{", _id, _type, eventType, cnt, task->_cnt, param, "}");
-                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 1, logType, logParam);
         }
+
+        return range.first != range.second;
 }
 
 

@@ -16,7 +16,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
         auto pb = msg->_msg;
         auto thisPtr = shared_from_this();
         LoginActorWeakPtr weakThis = thisPtr;
-        const auto accountGuid = 1000 * 1000 * 1000 * 1000LL + pb->user_id();
+        const auto accountGuid = MySqlMgr::GenDataKey(1, pb->user_id());
 
         auto dbSes = GetApp()->DistSession(pb->user_id());
         if (!dbSes)
@@ -63,9 +63,12 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
 
         auto save2RedisFunc = [this, accountGuid](std::string_view data = {}) {
                 std::string key = fmt::format("a:{}", accountGuid);
+                bredis::command_container_t cmdList;
+                cmdList.reserve(2);
                 if (!data.empty())
-                        RedisCmd("SET", key, data);
-                RedisCmd("EXPIRE", key, fmt::format_int(7 * 24 * 3600).c_str());
+                        cmdList.emplace_back(bredis::single_command_t("SET", key, data));
+                cmdList.emplace_back(bredis::single_command_t("EXPIRE", key, EXPIRE_TIME_STR));
+                RedisCmd(std::move(cmdList));
         };
 
         auto loadFromMySqlFunc = [weakThis, agent, msg, accountGuid, save2RedisFunc, save2MysqlFunc, return2ClientFunc]() {

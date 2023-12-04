@@ -750,16 +750,20 @@ inline bool EServerType_IsValid(EServerType t)
 
 struct stServerInfoBase
 {
+        explicit stServerInfoBase(EServerType st) : _st(st) { }
         virtual ~stServerInfoBase() { }
 
-	int64_t _sid = -1;
-	std::string _faName;
-	std::string _ip;
-	int64_t _workersCnt = 1;
+        virtual void DistPort(int64_t start, int64_t& idx) { assert(false); LOG_FATAL(""); }
+
+        EServerType _st = E_ST_None;
+        int64_t _sid = -1;
+        std::string _faName;
+        std::string _ip;
+        int64_t _workersCnt = 1;
         int64_t _actorCntPerWorkers = 1;
-	int64_t _netProcCnt = 1;
+        int64_t _netProcCnt = 1;
         int64_t _idx = -1;
-	std::vector<uint16_t> _portList;
+        std::vector<uint16_t> _portList;
 };
 typedef std::shared_ptr<stServerInfoBase> stServerInfoBasePtr;
 

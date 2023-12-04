@@ -23,8 +23,8 @@ public :
 
 DECLARE_SERVICE_BASE_BEGIN(MySqlBenchmark, SessionDistributeMod, ServiceSession);
 
-        constexpr static int64_t scSessionCnt = 4;
-        constexpr static int64_t scActorCnt = 1000 * 10;
+        constexpr static int64_t scSessionCnt = 1;
+        constexpr static int64_t scActorCnt = 1;
 
 private :
         MySqlBenchmarkServiceBase() : SuperType("MySqlBenchmarkService") { }
@@ -43,7 +43,8 @@ public :
                 for (int64_t i=0; i<scActorCnt; ++i)
                 {
                         auto act = std::make_shared<MySqlBenchmarkActor>();
-                        act->SendPush(nullptr, 0xfff, 0x0, nullptr);
+                        // act->SendPush(nullptr, 0xfff, 0x0, nullptr);
+                        act->SendPush(nullptr, 0xfff, 0x1, nullptr);
                         act->Start();
                 }
 #endif

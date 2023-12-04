@@ -7,7 +7,7 @@ bool GenGuidActor::Init()
         if (!SuperType::Init())
                 return false;
 
-        const auto dbGuid = MySqlMgr::GetInstance()->GenDataKey(E_MIMT_GenGuid) + _idx;
+        const auto dbGuid = MySqlMgr::GetInstance()->GenDataKey(E_MIMT_GenGuid, _idx);
         std::string sql = fmt::format("SELECT data FROM data_0 WHERE id={};", dbGuid);
         auto result = MySqlMgr::GetInstance()->Exec(sql);
         if (result->rows().empty())
@@ -60,7 +60,7 @@ void GenGuidActor::Flush2DB()
         for (auto& item : _itemList)
                 item->Pack(*dbInfo.add_item_list());
 
-        const auto dbGuid = MySqlMgr::GetInstance()->GenDataKey(E_MIMT_GenGuid) + _idx;
+        const auto dbGuid = MySqlMgr::GetInstance()->GenDataKey(E_MIMT_GenGuid, _idx);
         auto [bufRef, bufSize] = Compress::SerializeAndCompress<Compress::E_CT_Zstd>(dbInfo);
         std::string sql = fmt::format("UPDATE data_0 SET data=\"{}\" WHERE id={};", Base64Encode(bufRef.get(), bufSize), dbGuid);
         MySqlMgr::GetInstance()->Exec(sql);

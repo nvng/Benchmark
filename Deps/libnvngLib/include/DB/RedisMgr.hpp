@@ -35,37 +35,71 @@ struct stReplayMailInfo : public stActorMailBase, public boost::static_visitor<b
         template <typename ... Args>
         stReplayMailInfo(const IActorPtr& act, const Args& ... args)
                 : _act(act)
-                  , _cmd(std::forward<const Args&>(args)...)
+                  , _cmdList{bredis::single_command_t(std::forward<const Args&>(args)...)}
+        {
+        }
+
+        stReplayMailInfo(const IActorPtr& act, bredis::command_container_t&& cmdList)
+                : _act(act)
+                  , _cmdList{std::move(cmdList)}
         {
         }
 
         FORCE_INLINE bool IsNil()
         {
-                try { boost::get<nil_t>(_result); return true; }
+                try
+                {
+                        if (_idx<0 || _cmdList.size()<=_idx)
+                                return true;
+                        boost::get<nil_t>(_resultList[_idx]);
+                        ++_idx;
+                        return true;
+                }
                 catch (...) { return false; }
         }
 
         FORCE_INLINE std::pair<std::string_view, bool> GetErr()
         {
-                try { return { boost::get<error_t>(_result)._str, false }; }
-                catch (...) { static std::string staticStr{ "nil" }; return { staticStr, true }; }
+                try
+                {
+                        if (_idx<0 || _cmdList.size()<=_idx)
+                                return { "", true };
+                        std::pair<std::string_view, bool> ret = { boost::get<error_t>(_resultList[_idx])._str, false };
+                        ++_idx;
+                        return ret;
+                }
+                catch (...) { return { "nil", true }; }
         }
 
         FORCE_INLINE std::pair<int64_t, bool> GetInt()
         {
-                try { return { boost::get<bredis::extracts::int_t>(_result), false }; }
+                try
+                {
+                        if (_idx<0 || _cmdList.size()<=_idx)
+                                return { 0, true };
+                        std::pair<int64_t, bool> ret = { boost::get<bredis::extracts::int_t>(_resultList[_idx]), false };
+                        ++_idx;
+                        return ret;
+                }
                 catch (...) { return { 0, true }; }
         }
         
         FORCE_INLINE std::pair<std::string_view, bool> GetStr()
         {
-                try { return { boost::get<std::string_view>(_result), false }; }
+                try
+                {
+                        if (_idx<0 || _cmdList.size()<=_idx)
+                                return { "", true };
+                        std::pair<std::string_view, bool> ret = { boost::get<std::string_view>(_resultList[_idx]), false };
+                        ++_idx;
+                        return ret;
+                }
                 catch (...) { return { GetErr().first, true }; }
         }
 
         FORCE_INLINE bool IsArr()
         {
-                try { boost::get<array_holder_t>(_result); return true; }
+                try { if (_idx<0 || _cmdList.size()<=_idx) return false; boost::get<array_holder_t>(_resultList[_idx]); return true; }
                 catch (...) { return false; }
         }
 
@@ -74,7 +108,11 @@ struct stReplayMailInfo : public stActorMailBase, public boost::static_visitor<b
         {
                 try
                 {
-                        auto& arr = boost::get<array_holder_t>(_result);
+                        if (_idx<0 || _cmdList.size()<=_idx)
+                                return;
+
+                        auto& arr = boost::get<array_holder_t>(_resultList[_idx]);
+                        ++_idx;
                         for (int64_t i=0; i<arr.elements.size(); i += 2)
                         {
                                 auto& markKey = boost::get<bredis::markers::string_t<Iterator>>(arr.elements[i]);
@@ -95,8 +133,9 @@ struct stReplayMailInfo : public stActorMailBase, public boost::static_visitor<b
         }
 
         IActorWeakPtr _act;
-        bredis::single_command_t _cmd = { "" };
-        markers_result_t _result;
+        int64_t _idx = 0; // 操作失败，停留在原 idx 上，操作成功，后移。
+        bredis::command_container_t _cmdList;
+        std::vector<markers_result_t> _resultList;
         std::shared_ptr<std::string> _bufRef;
 };
 typedef std::shared_ptr<stReplayMailInfo> stReplayMailInfoPtr;
@@ -178,9 +217,9 @@ public :
 
                 GetAppBase()->_mainChannel.push([idx{i}]() {
                 boost::fibers::fiber(
-                     std::allocator_arg,
+                     // std::allocator_arg,
                      // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                     boost::fibers::segmented_stack{},
+                     // boost::fibers::segmented_stack{},
                      [idx]() {
                         std::vector<stReplayMailInfoPtr> mailList;
                         mailList.reserve(1024);
@@ -194,41 +233,41 @@ public :
                                         rxBackend->reserve(1024 * 1024 * 8);
                                         Buffer txBuf(*rxBackend);
 
+                                        const int64_t cmdListSize = cmdList.size();
                                         boost::system::error_code ec;
                                         conn->_conn->async_write(txBuf, std::move(cmdList), boost::fibers::asio::yield_t(ec));
                                         if (ec)
                                         {
-                                                LOG_INFO("redis async_write error!!! ec[{}] mailCnt[{}]", ec.what(), mailList.size());
+                                                LOG_INFO("redis async_write error!!! ec[{}] mailCnt[{}]", ec.what(), cmdListSize);
                                                 conn->Reconnect();
                                                 continue;
                                         }
 
+                                        cmdList.reserve(1024);
                                         rxBackend->clear();
                                         Buffer rxBuf(*rxBackend);
-                                        auto [r, readSize] = conn->_conn->async_read(rxBuf, boost::fibers::asio::yield_t(ec), mailList.size());
+                                        auto [r, readSize] = conn->_conn->async_read(rxBuf, boost::fibers::asio::yield_t(ec), cmdListSize);
                                         if (ec)
                                         {
-                                                LOG_INFO("redis async_read error!!! ec[{}] mailCnt[{}]", ec.what(), mailList.size());
+                                                LOG_INFO("redis async_read error!!! ec[{}] mailCnt[{}]", ec.what(), cmdListSize);
                                                 conn->Reconnect();
                                                 continue;
                                         }
-                                        LOG_FATAL_IF(rxBackend->size() != readSize, "");
-                                        // LOG_INFO("1111111 [{}]", fmt::ptr(rxBackend->c_str()));
-                                        // PrintBit(rxBackend->c_str(), 10);
+                                        LOG_ERROR_IF(rxBackend->size() != readSize, "rxBackend size[{}] readSize[{}]", rxBackend->size(), readSize);
 
-                                        if (1 != mailList.size())
+                                        if (1 != cmdListSize)
                                         {
                                                 auto& arr = boost::get<bredis::markers::array_holder_t<Iterator>>(r);
-                                                for (int64_t i=0; i<arr.elements.size(); ++i)
+                                                int64_t idx = 0;
+                                                for (auto& mail : mailList)
                                                 {
-                                                        auto& mail = mailList[i];
+                                                        mail->_bufRef = rxBackend;
+                                                        for (int64_t i=0; i<mail->_cmdList.size() && idx<arr.elements.size(); ++i, ++idx)
+                                                                mail->_resultList.emplace_back(boost::apply_visitor(OuterExtractor<Iterator>(), arr.elements[i]));
+
                                                         auto act = mail->_act.lock();
                                                         if (act)
-                                                        {
-                                                                mail->_result = boost::apply_visitor(OuterExtractor<Iterator>(), arr.elements[i]);
-                                                                mail->_bufRef = rxBackend;
                                                                 act->CallRet(mail, 0, 0, 0);
-                                                        }
                                                 }
                                         }
                                         else
@@ -237,7 +276,7 @@ public :
                                                 auto act = mail->_act.lock();
                                                 if (act)
                                                 {
-                                                        mail->_result = boost::apply_visitor(OuterExtractor<Iterator>(), r);
+                                                        mail->_resultList.emplace_back(boost::apply_visitor(OuterExtractor<Iterator>(), r));
                                                         mail->_bufRef = rxBackend;
                                                         act->CallRet(mail, 0, 0, 0);
                                                 }
@@ -254,10 +293,11 @@ public :
                                 if (boost::fibers::channel_op_status::success == RedisMgrBase::GetInstance()->_cmdQueueArr[idx]->try_pop(cmdInfo))
                                 {
 __direct_deal__ :
-                                        if (cmdInfo && !cmdInfo->_cmd.arguments.empty())
+                                        if (cmdInfo)
                                         {
                                                 mailList.emplace_back(cmdInfo);
-                                                cmdList.emplace_back(std::move(cmdInfo->_cmd));
+                                                for (auto& cmd : cmdInfo->_cmdList)
+                                                        cmdList.emplace_back(std::move(cmd));
                                         }
                                 }
                                 else
@@ -265,7 +305,7 @@ __direct_deal__ :
                                         if (!cmdList.empty())
                                         {
                                                 runFunc();
-                                                boost::this_fiber::sleep_for(std::chrono::microseconds(100));
+                                                boost::this_fiber::sleep_for(std::chrono::microseconds(1));
                                         }
                                         else
                                         {
@@ -314,6 +354,12 @@ __direct_deal__ :
         {
                 const auto idx = act ? (act->GetID() & (_cfg._connCnt-1)) : 0;
                 _cmdQueueArr[idx]->push(std::make_shared<stReplayMailInfo>(act, std::forward<const Args&>(args)...));
+        }
+
+        FORCE_INLINE void Exec(const IActorPtr& act, bredis::command_container_t&& cmdList)
+        {
+                const auto idx = act ? (act->GetID() & (_cfg._connCnt-1)) : 0;
+                _cmdQueueArr[idx]->push(std::make_shared<stReplayMailInfo>(act, std::move(cmdList)));
         }
 
         DEFINE_CONN_WAPPER(RedisMgrBase);

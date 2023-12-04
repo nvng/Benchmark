@@ -108,6 +108,7 @@ bool PayService::Init()
                 {
                         LOG_WARN("支付回调 remote[{}:{}] IP 未在允许列表中!!!"
                                  , remoteEndPoint.address().to_string(), remoteEndPoint.port());
+                        req->Reply("{ \"code\":210, \"msg\":\"IP限制\", \"data\":[] }");
                 }
         });
 
@@ -134,7 +135,7 @@ bool PayService::Init()
                                 if (p.key == "game_id")
                                         reqShipMsg->set_game_id(atoll(p.value.c_str()));
                                 if (p.key == "order_amt")
-                                        reqShipMsg->set_order_amt(atoll(p.value.c_str()));
+                                        reqShipMsg->set_order_amt(p.value);
                                 if (p.key == "pay_amt")
                                         reqShipMsg->set_pay_amt(atoll(p.value.c_str()));
                                 if (p.key == "pay_time")
@@ -145,6 +146,7 @@ bool PayService::Init()
                                         if (2 != extraArr.size())
                                         {
                                                 code = 202;
+                                                httpMsg = "参数错误";
                                                 break;
                                         }
 
@@ -165,13 +167,17 @@ bool PayService::Init()
                            */
 
                         if (200 != code)
+                        {
+                                httpMsg = "参数错误";
                                 break;
+                        }
 
                         LOG_INFO("5555555");
                         auto agent = PayService::GetInstance()->GetActor(act, reqShipMsg->player_guid());
                         if (!agent)
                         {
                                 code = 202;
+                                httpMsg = "玩家不在线";
                                 break;
                         }
 
@@ -180,6 +186,7 @@ bool PayService::Init()
                         if (!reqShipRet)
                         {
                                 code = 202;
+                                httpMsg = "玩家不在线";
                                 break;
                         }
 
@@ -214,6 +221,7 @@ bool PayService::Init()
                         if (u.params().end() == it)
                         {
                                 code = 201;
+                                httpMsg = "参数错误";
                                 break;
                         }
                         reqMsg->set_userid(std::stoll((*it).value));
@@ -222,6 +230,7 @@ bool PayService::Init()
                         if (u.params().end() == it)
                         {
                                 code = 201;
+                                httpMsg = "参数错误";
                                 break;
                         }
                         reqMsg->set_game_id(std::stoll((*it).value));
@@ -230,6 +239,7 @@ bool PayService::Init()
                         if (u.params().end() == it)
                         {
                                 code = 201;
+                                httpMsg = "参数错误";
                                 break;
                         }
                         reqMsg->set_server_id((*it).value);
@@ -238,6 +248,7 @@ bool PayService::Init()
                         if (u.params().end() == it)
                         {
                                 code = 201;
+                                httpMsg = "参数错误";
                                 break;
                         }
                         reqMsg->set_player_guid(std::stoll((*it).value));
@@ -246,6 +257,7 @@ bool PayService::Init()
                         if (u.params().end() == it)
                         {
                                 code = 201;
+                                httpMsg = "参数错误";
                                 break;
                         }
                         reqMsg->set_product_id((*it).value);
@@ -254,6 +266,7 @@ bool PayService::Init()
                         if (u.params().end() == it)
                         {
                                 code = 201;
+                                httpMsg = "参数错误";
                                 break;
                         }
                         reqMsg->set_timestamp(std::stoll((*it).value));
@@ -262,6 +275,7 @@ bool PayService::Init()
                         if (u.params().end() == it)
                         {
                                 code = 201;
+                                httpMsg = "参数错误";
                                 break;
                         }
                         reqMsg->set_sign((*it).value);
@@ -271,6 +285,7 @@ bool PayService::Init()
                         if (!agent)
                         {
                                 code = 202;
+                                httpMsg = "玩家不在线";
                                 break;
                         }
 
@@ -279,6 +294,7 @@ bool PayService::Init()
                         if (!reqRet)
                         {
                                 code = 202;
+                                httpMsg = "玩家不在线";
                                 break;
                         }
 
@@ -361,41 +377,59 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqShip, PayService::SessionType::
                 if (!payCfg)
                 {
                         pb->set_error_type(E_CET_Fail);
+                        pb->set_code(211);
+                        pb->set_msg("支付配置未找到!!!");
                         break;
                 }
 
-                auto logGuid = LogService::GetInstance()->GenGuid();
-                std::vector<std::pair<int64_t, int64_t>> rewardList;
-                rewardList.reserve(4);
-                rewardList.emplace_back(payCfg->_goodsID, 1);
-                uint64_t extraDropID = 0;
-                auto firstBuyTime = 0;
-                auto it = _shopMgr._payTimeList.find(payCfg->_id);
-                if (_shopMgr._payTimeList.end() != it)
-                        firstBuyTime = it->second;
-                if (0 == firstBuyTime && 0 != payCfg->_firstBuy)
-                        extraDropID = payCfg->_firstBuy;
-                else
-                        extraDropID = payCfg->_extraReward;
+                std::string price = fmt::format("{:.2f}", payCfg->_price / 10000.0);
+                LOG_INFO("22222222222 order_amt[{}] orderAmt[{}] payCfg->_price[{}]"
+                         , pb->order_amt(), price, payCfg->_price);
+                if (pb->order_amt() != price)
+                {
+                        pb->set_error_type(E_CET_Fail);
+                        pb->set_code(212);
+                        pb->set_msg("支付金额错误!!!");
+                        break;
+                }
 
                 auto sendMsg = std::make_shared<MsgPayClientShip>();
                 sendMsg->set_cfg_id(pb->cfg_id());
                 auto playerChange = sendMsg->mutable_player_change();
-                _activityMgr.OnEvent(*playerChange, shared_from_this(), 0 == firstBuyTime ? E_AET_FirstRecharge : E_AET_Recharge, pb->order_amt() * 10000, 0, E_LSOT_PayReqShip, logGuid);
 
-                if (0 != extraDropID)
-                        rewardList.emplace_back(extraDropID, 1);
-
-                auto dropRet = BagMgr::GetInstance()->DoDrop(shared_from_this(), *playerChange, rewardList, E_LSOT_PayReqShip, logGuid);
-                if (E_CET_Success != dropRet)
+                auto logGuid = LogService::GetInstance()->GenGuid();
+                if (0 != payCfg->_goodsID)
                 {
-                        pb->set_error_type(E_CET_Fail);
-                        break;
+                        std::vector<std::pair<int64_t, int64_t>> rewardList;
+                        rewardList.reserve(4);
+                        rewardList.emplace_back(payCfg->_goodsID, 1);
+                        uint64_t extraDropID = 0;
+                        auto firstBuyTime = 0;
+                        auto it = _shopMgr._payTimeList.find(payCfg->_id);
+                        if (_shopMgr._payTimeList.end() != it)
+                                firstBuyTime = it->second;
+                        if (0 == firstBuyTime && 0 != payCfg->_firstBuy)
+                                extraDropID = payCfg->_firstBuy;
+                        else
+                                extraDropID = payCfg->_extraReward;
+
+                        if (0 != extraDropID)
+                                rewardList.emplace_back(extraDropID, 1);
+
+                        auto dropRet = BagMgr::GetInstance()->DoDrop(shared_from_this(), *playerChange, rewardList, E_LSOT_PayReqShip, logGuid);
+                        if (E_CET_Success != dropRet)
+                        {
+                                pb->set_error_type(E_CET_Fail);
+                                break;
+                        }
+
+                        if (0 == firstBuyTime)
+                                _shopMgr._payTimeList.emplace(payCfg->_id, GetClock().GetTimeStamp());
                 }
 
+                _activityMgr.OnEvent(*playerChange, shared_from_this(), E_AET_Recharge, 1, payCfg->_id, E_LSOT_PayReqShip, logGuid);
+
                 pb->set_error_type(E_CET_Success);
-                if (0 == firstBuyTime)
-                        _shopMgr._payTimeList.emplace(payCfg->_id, GetClock().GetTimeStamp());
                 SetAttr<E_PAT_OrderGuid>(0);
                 
                 _shopMgr.PackPayTimeList(*playerChange);
