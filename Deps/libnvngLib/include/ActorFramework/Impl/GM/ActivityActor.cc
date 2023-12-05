@@ -196,6 +196,10 @@ void ActivityActor::PackActivity(MsgActivityFestivalCfg& msg)
                         auto& jt = arr[i];
                         auto ft = msg.Add();
                         ft->set_guid(jt["guid"].GetUint64());
+                        if (jt.HasMember("param"))
+                                ft->set_param(jt["param"].GetUint64());
+                        if (jt.HasMember("param_1"))
+                                ft->set_param_1(jt["param_1"].GetUint64());
                         auto t = ft->mutable_goods_item();
                         t->set_id(jt["id"].GetUint64());
                         t->set_type(jt["type"].GetUint64());
@@ -243,6 +247,8 @@ void ActivityActor::PackActivity(MsgActivityFestivalCfg& msg)
                                 auto& tmp = cumRewardArr[i];
                                 auto msgReward = act.add_cum_rewards();
                                 msgReward->set_icon(tmp["icon"].GetString());
+                                if (tmp.HasMember("param"))
+                                        msgReward->set_param(tmp["param"].GetInt64());
                                 parseGoodsListFromJson(*msgReward->mutable_goods_list(), tmp["goods_list"]);
                         }
                 }

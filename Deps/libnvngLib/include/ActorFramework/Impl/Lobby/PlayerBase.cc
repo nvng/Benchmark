@@ -39,18 +39,6 @@ bool PlayerBase::Flush2DB(bool isDelete)
         DBPlayerInfo dbInfo;
         Pack2DB(dbInfo);
         return MySqlService::GetInstance()->Save(shared_from_this(), GetID(), dbInfo, "p", isDelete);
-
-        /*
-        PauseCostTime();
-        DBPlayerInfo dbInfo;
-        Pack2DB(dbInfo);
-        auto val = Compress::SerializeAndCompress<Compress::E_CT_Zstd>(dbInfo);
-        ResumeCostTime();
-
-        std::string key = fmt::format("p:{}", GetID());
-        RedisCmd(key, val);
-        return true;
-        */
 }
 
 void PlayerBase::Offline()
@@ -145,26 +133,6 @@ bool PlayerBase::LoadFromDB(const std::shared_ptr<MsgClientLogin>& loginMsg)
 
         AfterInitFromDB();
         return true;
-
-        /*
-        std::string cmd = fmt::format("GET p:{}", GetID());
-        auto loadRet = RedisCmd(cmd, true);
-        if (loadRet->IsNil())
-        {
-                OnCreateAccount();
-                Flush2DB(false);
-        }
-        else
-        {
-                PauseCostTime();
-                DBPlayerInfo dbInfo;
-                Compress::UnCompressAndParse<Compress::E_CT_Zstd>(dbInfo, loadRet->GetData()._strView);
-                InitFromDB(dbInfo);
-                ResumeCostTime();
-        }
-        AfterInitFromDB();
-        return true;
-        */
 }
 
 void PlayerBase::AfterInitFromDB()
@@ -667,7 +635,7 @@ ACTOR_MAIL_HANDLE(PlayerBase, E_MCMT_ClientCommon, E_MCCCST_Login, stLoginInfo)
 {
         // 宕机后，玩家首次登录，如何确定是否在游戏中。
 
-        PLAYER_DLOG_INFO(GetID(), "玩家[{}] 登录上来了!!!", GetID());
+        PLAYER_LOG_INFO(GetID(), "玩家[{}] 登录上来了!!!", GetID());
 
         SetClient(msg->_clientAgent);
 
@@ -763,10 +731,10 @@ void PlayerBase::InitDeletePlayerTimer(uint64_t deleteUniqueID, double internal/
                 }
                 else
                 {
-                        PLAYER_DLOG_WARN(p->GetID(), "玩家[{}] 删除时，r is nullptr!!!", p->GetID());
+                        PLAYER_LOG_WARN(p->GetID(), "玩家[{}] 删除时，r is nullptr!!!", p->GetID());
                 }
 
-                PLAYER_DLOG_INFO(p->GetID(),
+                PLAYER_LOG_INFO(p->GetID(),
                                  "11111111111111111111 删除玩家!!! id:{} flag[{}]",
                                  p->GetID(), p->_internalFlag);
                 auto deleteMsg = std::make_shared<MailUInt>();
@@ -778,7 +746,7 @@ void PlayerBase::InitDeletePlayerTimer(uint64_t deleteUniqueID, double internal/
 
 ACTOR_MAIL_HANDLE(PlayerBase, E_MCMT_ClientCommon, E_MCCCST_Disconnect, stDisconnectInfo)
 {
-        PLAYER_DLOG_INFO(GetID(), "玩家[{}] 断开连接!!!", GetID());
+        PLAYER_LOG_INFO(GetID(), "玩家[{}] 断开连接!!!", GetID());
         Offline();
         InitDeletePlayerTimer(msg->_uniqueID);
         return nullptr;
@@ -881,7 +849,7 @@ std::shared_ptr<MsgExitQueue> PlayerBase::ExitQueueInternal()
         {
                 if (!_queue)
                 {
-                        PLAYER_DLOG_WARN(GetID(), "玩家[{}] 请求退出排队时，queue为空!!!", GetID());
+                        PLAYER_LOG_WARN(GetID(), "玩家[{}] 请求退出排队时，queue为空!!!", GetID());
                         // sendMsg->set_error_type(E_CET_Success);
                         break;
                 }

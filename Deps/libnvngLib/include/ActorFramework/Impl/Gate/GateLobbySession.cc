@@ -88,7 +88,7 @@ void GateLobbySession::OnRecv(typename SuperType::BuffTypePtr::element_type* buf
                 break;
         default :
                 player = GetLobbyPlayer(msgHead._to, msgHead._from);
-                DLOG_WARN_IF(!player, "网关收到大厅消息，但玩家[{}] 没找到!!! mt[{:#x}] st[{:#x}]", msgHead._to, mainType, subType);
+                LOG_WARN_IF(!player, "网关收到大厅消息，但玩家[{}] 没找到!!! mt[{:#x}] st[{:#x}]", msgHead._to, mainType, subType);
                 break;
         }
 

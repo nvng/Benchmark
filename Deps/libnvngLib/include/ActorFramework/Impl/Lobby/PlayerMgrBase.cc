@@ -176,15 +176,20 @@ SPECIAL_ACTOR_MAIL_HANDLE(PlayerMgrActor, 2, stDisconnectInfo)
 PlayerMgrBase::PlayerMgrBase()
         : SuperType("PlayerMgrBase")
           , _playerMgrActorArrSize(Next2N(std::thread::hardware_concurrency()) - 1)
+          , _playerOfflineDataActorArrSize(Next2N(std::thread::hardware_concurrency()) - 1)
           , _loginInfoList("PlayerMgrBase_loginInfoList")
 {
         _playerMgrActorArr = new PlayerMgrActorPtr[_playerMgrActorArrSize+1];
+        _playerOfflineDataActorArr = new PlayerOfflineDataActorPtr[_playerOfflineDataActorArrSize+1];
 }
 
 PlayerMgrBase::~PlayerMgrBase()
 {
         delete[] _playerMgrActorArr;
         _playerMgrActorArr = nullptr;
+
+        delete[] _playerOfflineDataActorArr;
+        _playerOfflineDataActorArr = nullptr;
 }
 
 bool PlayerMgrBase::Init()
@@ -196,6 +201,12 @@ bool PlayerMgrBase::Init()
         {
                 _playerMgrActorArr[i] = std::make_shared<PlayerMgrActor>();
                 _playerMgrActorArr[i]->Start();
+        }
+
+        for (int64_t i=0; i<_playerOfflineDataActorArrSize+1; ++i)
+        {
+                _playerOfflineDataActorArr[i] = std::make_shared<PlayerOfflineDataActor>();
+                _playerOfflineDataActorArr[i]->Start();
         }
 
 	return true;
@@ -250,6 +261,11 @@ void PlayerMgrBase::Terminate()
                 _playerMgrActorArr[i]->WaitForTerminate();
 
         BroadCast(nullptr, E_MIMT_Local, E_MILST_Terminate, nullptr);
+
+        for (int64_t i=0; i<_playerOfflineDataActorArrSize+1; ++i)
+                _playerOfflineDataActorArr[i]->Terminate();
+        for (int64_t i=0; i<_playerOfflineDataActorArrSize+1; ++i)
+                _playerOfflineDataActorArr[i]->WaitForTerminate();
 }
 
 void PlayerMgrBase::WaitForTerminate()
@@ -315,6 +331,255 @@ NET_MSG_HANDLE(LobbyGateSession, E_MCMT_ClientCommon, E_MCCCST_Disconnect)
         msg->_to = msgHead._to;
         GetPlayerMgrBase()->GetPlayerMgrActor(msgHead._to)->SendPush(2, msg);
 }
+
+// {{{
+
+bool PlayerOfflineDataActor::Init()
+{
+        if (!SuperType::Init())
+                return false;
+
+        InitFlush2DBTimer();
+        InitGetTimer();
+        return true;
+}
+
+void PlayerOfflineDataActor::InitFlush2DBTimer()
+{
+        auto weakPtr = weak_from_this();
+        _flush2DBTimer.Start(weakPtr, 1.0, [weakPtr]() {
+                auto thisPtr = weakPtr.lock();
+                if (thisPtr)
+                {
+                        thisPtr->Flush2DB();
+                        thisPtr->InitFlush2DBTimer();
+                }
+        });
+}
+
+void PlayerOfflineDataActor::Flush2DB(bool isDelete/* = false*/)
+{
+        if (_dataList.empty())
+                return;
+
+        auto thisPtr = shared_from_this();
+
+        std::unordered_map<uint64_t, std::pair<std::shared_ptr<MsgOfflineOpt>, MySqlService::EMySqlServiceStatus>> dataList;
+        dataList.reserve(1024 * 10);
+
+        std::vector<std::tuple<uint64_t, std::shared_ptr<MsgOfflineOpt>, bool>> saveList;
+        saveList.reserve(1024 * 10);
+
+        auto& seqGuid = _dataList.get<PlayerOfflineData::by_id>();
+        auto& seq = _dataList.get<PlayerOfflineData::by_over_time>();
+        auto it = seq.begin();
+        const auto ie = seq.upper_bound(GetClock().GetSteadyTime());
+        while (ie != it)
+        {
+                dataList.clear();
+                saveList.clear();
+
+                for (; ie!=it; ++it)
+                {
+                        auto v = std::make_pair(std::make_shared<MsgOfflineOpt>(), MySqlService::E_MySqlS_None);
+                        dataList.emplace(MySqlMgr::GenDataKey(E_MIMT_Offline, (*it)->guid()), v);
+                        if (dataList.size() >= 1024 * 10)
+                        {
+                                ++it;
+                                break;
+                        }
+                }
+
+                MySqlService::GetInstance()->LoadBatch(thisPtr, dataList, "po");
+                for (auto& val : dataList)
+                {
+                        auto id = val.first;
+                        auto dbInfo = val.second.first;
+                        auto status = val.second.second;
+                        switch (status)
+                        {
+                        case MySqlService::E_MySqlS_Fail :
+                        case MySqlService::E_MySqlS_None :
+                                break;
+                        default :
+                                {
+                                        auto it_ = seqGuid.find(val.first);
+                                        if (seqGuid.end() != it_)
+                                        {
+                                                LOG_WARN("");
+                                                continue;
+                                        }
+
+                                        auto info = *it_;
+                                        if (MySqlService::E_MySqlS_New == status)
+                                        {
+                                                dbInfo = info;
+                                        }
+                                        else
+                                        {
+                                                dbInfo->set_version(dbInfo->version() + 1);
+                                                for (auto& item : info->item_list())
+                                                        dbInfo->add_item_list()->CopyFrom(item);
+                                        }
+                                        saveList.emplace_back(std::make_tuple(id, dbInfo, true));
+                                }
+                                break;
+                        }
+                }
+
+                while (!MySqlService::GetInstance()->SaveBatch(thisPtr, saveList, "po") || isDelete)
+                {
+                        LOG_WARN("11111111111111 离线数据存储错误!!!");
+                        boost::this_fiber::sleep_for(std::chrono::seconds(1));
+                }
+        }
+
+        seq.erase(seq.begin(), ie);
+}
+
+SPECIAL_ACTOR_MAIL_HANDLE(PlayerOfflineDataActor, E_MIOST_Append, stMailPlayerOfflineData)
+{
+        std::shared_ptr<MsgOfflineOpt> info;
+        auto& seq = _dataList.get<PlayerOfflineData::by_id>();
+        auto it = seq.find(msg->_guid);
+        if (seq.end() != it)
+        {
+                info = *it;
+                seq.erase(it);
+        }
+        else
+        {
+                info = std::make_shared<MsgOfflineOpt>();
+                info->set_guid(msg->_guid);
+        }
+
+        auto item = info->add_item_list();
+        item->set_mt(msg->_mt);
+        item->set_st(msg->_st);
+        item->set_data(msg->_data);
+
+        info->set_over_time(GetClock().GetTimeStamp() + 60 * 60);
+        _dataList.emplace(info);
+
+        return nullptr;
+}
+
+void PlayerOfflineDataActor::InitGetTimer()
+{
+        auto weakPtr = weak_from_this();
+        _getTimer.Start(weakPtr, 0.01, [weakPtr]() {
+                auto thisPtr = weakPtr.lock();
+                if (thisPtr)
+                {
+                        thisPtr->DealGet();
+                        thisPtr->InitFlush2DBTimer();
+                }
+        });
+}
+
+void PlayerOfflineDataActor::DealGet()
+{
+        if (_getList.empty())
+                return;
+
+        auto thisPtr = shared_from_this();
+
+        std::unordered_map<uint64_t, std::pair<std::shared_ptr<MsgOfflineOpt>, MySqlService::EMySqlServiceStatus>> dataList;
+        dataList.reserve(1024 * 10);
+
+        std::vector<std::tuple<uint64_t, std::shared_ptr<MsgOfflineOpt>, bool>> saveList;
+        saveList.reserve(1024 * 10);
+
+        auto& seqData = _dataList.get<PlayerOfflineData::by_id>();
+        auto it = _getList.begin();
+        while (_getList.end() != it)
+        {
+                dataList.clear();
+                saveList.clear();
+
+                for (; _getList.end()!=it; ++it)
+                {
+                        auto v = std::make_pair(std::make_shared<MsgOfflineOpt>(), MySqlService::E_MySqlS_None);
+                        dataList.emplace(MySqlMgr::GenDataKey(E_MIMT_Offline, it->first), v);
+                        if (dataList.size() >= 1024 * 10)
+                        {
+                                ++it;
+                                break;
+                        }
+                }
+
+                MySqlService::GetInstance()->LoadBatch(thisPtr, dataList, "po");
+                for (auto& val : dataList)
+                {
+                        auto id = val.first;
+                        auto dbInfo = val.second.first;
+                        auto status = val.second.second;
+                        switch (status)
+                        {
+                        case MySqlService::E_MySqlS_Fail :
+                        case MySqlService::E_MySqlS_None :
+                                break;
+                        default :
+                                {
+                                        auto it_ = _getList.find(id);
+                                        if (_getList.end() != it_)
+                                        {
+                                                LOG_WARN("");
+                                                continue;
+                                        }
+
+                                        auto from = it_->second.lock();
+                                        if (!from)
+                                                continue;
+
+                                        _getList.erase(it_);
+
+                                        auto itData = seqData.find(id);
+                                        if (seqData.end() != itData)
+                                        {
+                                                for (auto& item : (*itData)->item_list())
+                                                        dbInfo->add_item_list()->CopyFrom(item);
+                                                seqData.erase(itData);
+                                        }
+
+                                        from->CallRet(dbInfo, scPlayerOfflineDataActorMailMainType, E_MIOST_Get, 0);
+                                        saveList.emplace_back(std::make_tuple(id, nullptr, true));
+                                }
+                                break;
+                        }
+                }
+
+                MySqlService::GetInstance()->SaveBatch(thisPtr, saveList, "po");
+        }
+
+        for (auto& val : _getList)
+        {
+                auto from = val.second.lock();
+                if (from)
+                        from->CallRet(nullptr, scPlayerOfflineDataActorMailMainType, E_MIOST_Get, 0);
+        }
+}
+
+SPECIAL_ACTOR_MAIL_HANDLE(PlayerOfflineDataActor, E_MIOST_Get, stMailPlayerOfflineData)
+{
+        _getList.emplace(msg->_guid, from);
+        return nullptr;
+}
+
+void PlayerOfflineDataActor::Terminate()
+{
+        auto weakPtr = weak_from_this();
+        SendPush([weakPtr]() {
+                auto thisPtr = weakPtr.lock();
+                if (thisPtr)
+                {
+                        thisPtr->Flush2DB(true);
+                        thisPtr->SuperType::Terminate();
+                }
+        });
+}
+
+// }}}
 
 }; // end of namespace nl::af::impl
 

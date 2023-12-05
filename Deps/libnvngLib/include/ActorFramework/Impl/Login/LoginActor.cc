@@ -16,7 +16,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
         auto pb = msg->_msg;
         auto thisPtr = shared_from_this();
         LoginActorWeakPtr weakThis = thisPtr;
-        const auto accountGuid = MySqlMgr::GenDataKey(1, pb->user_id());
+        const auto accountGuid = MySqlMgr::GenDataKey(E_MCMT_Login, pb->user_id());
 
         auto dbSes = GetApp()->DistSession(pb->user_id());
         if (!dbSes)
@@ -43,17 +43,20 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
                             msg->_msgHead._from);
         };
 
-        auto save2MysqlFunc = [weakThis, agent, msg, accountGuid](const auto& bufRef, std::size_t bufSize) {
+        auto save2MysqlFunc = [weakThis, agent, msg, accountGuid](int64_t version, const auto& bufRef, std::size_t bufSize) {
                 auto thisPtr = weakThis.lock();
                 if (!thisPtr)
                         return;
 
                 auto pb = msg->_msg;
-                auto saveDBData = std::make_shared<MsgDBData>();
-                saveDBData->set_guid(accountGuid);
-                saveDBData->set_version(0);
+                auto saveDBData = std::make_shared<MailReqDBDataList>();
+                auto item = saveDBData->add_list();
+                item->set_task_type(E_MySql_TT_Save);
+                item->set_guid(accountGuid);
+                item->set_version(version);
                 auto [base64DataRef, base64DataSize] = Base64EncodeExtra(bufRef.get(), bufSize);
-                auto saveRet = ParseMailData<MsgDBData>(thisPtr->CallInternal(agent, E_MIMT_DB, E_MIDBST_SaveDBData, saveDBData, base64DataRef, base64DataRef.get(), base64DataSize).get(), E_MIMT_DB, E_MIDBST_SaveDBData);
+                item->set_data(base64DataRef.get(), base64DataSize);
+                auto saveRet = Call(MailReqDBDataList, thisPtr, agent, E_MIMT_DB, E_MIDBST_ReqDBData, saveDBData);
                 if (!saveRet)
                 {
                         LOG_WARN("玩家[{}] 登录数据存储到 DBServer 超时!!!", accountGuid);
@@ -76,31 +79,28 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
                 if (!thisPtr)
                         return;
 
-                auto loadDBVersion = std::make_shared<MsgDBDataVersion>();
-                loadDBVersion->set_guid(accountGuid);
-                auto versionRet = Call(MsgDBDataVersion, thisPtr, agent, E_MIMT_DB, E_MIDBST_DBDataVersion, loadDBVersion);
-                if (!versionRet)
+                auto loadDBVersion = std::make_shared<MailReqDBDataList>();
+                auto item = loadDBVersion->add_list();
+                item->set_task_type(E_MySql_TT_Version);
+                item->set_guid(accountGuid);
+                auto versionRet = Call(MailReqDBDataList, thisPtr, agent, E_MIMT_DB, E_MIDBST_ReqDBData, loadDBVersion);
+                if (!versionRet || 1 != versionRet->list_size())
                 {
                         LOG_INFO("玩家[{}] 请求数据版本超时!!!", accountGuid);
                         return;
                 }
 
-                auto loadDBData = std::make_shared<MsgDBData>();
-                loadDBData->set_guid(accountGuid);
-                auto loadMailRet = thisPtr->CallInternal(agent, E_MIMT_DB, E_MIDBST_LoadDBData, loadDBData);
-                if (!loadMailRet)
+                auto loadDBData = std::make_shared<MailReqDBDataList>();
+                auto loadItem = loadDBData->add_list();
+                loadItem->set_task_type(E_MySql_TT_Load);
+                loadItem->set_guid(accountGuid);
+                auto loadRet = Call(MailReqDBDataList, thisPtr, agent, E_MIMT_DB, E_MIDBST_ReqDBData, loadDBData);
+                if (!loadRet || 1 != loadRet->list_size())
                 {
                         LOG_WARN("玩家[{}] load from mysql 时，超时!!!", thisPtr->GetID());
                         return;
                 }
-
-                MsgDBData loadRet;
-                auto [bufRef, buf, parseRet] = loadMailRet->ParseExtra(loadRet);
-                if (!parseRet)
-                {
-                        LOG_WARN("玩家[{}] load from mysql 时，解析出错!!!", thisPtr->GetID());
-                        return;
-                }
+                auto buf = loadRet->list(0).data();
 
                 auto pb = msg->_msg;
                 DBLoginInfo dbInfo;
@@ -126,8 +126,9 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
                 dbInfo.set_player_guid(playerGuid);
 
                 {
+                        dbInfo.set_version(dbInfo.version() + 1);
                         auto [bufRef, bufSize] = Compress::SerializeAndCompress<Compress::E_CT_Zstd>(dbInfo);
-                        save2MysqlFunc(bufRef, bufSize);
+                        save2MysqlFunc(dbInfo.version(), bufRef, bufSize);
                         save2RedisFunc(std::string_view(bufRef.get(), bufSize));
                 }
 

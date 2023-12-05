@@ -32,6 +32,79 @@ struct stRefresh : public stActorMailBase
 	int64_t _param = 0;
 };
 
+// {{{ PlayerOfflineDataActor
+
+namespace PlayerOfflineData {
+struct by_id;
+struct by_over_time;
+};
+
+typedef boost::multi_index::multi_index_container<
+	std::shared_ptr<MsgOfflineOpt>,
+	boost::multi_index::indexed_by <
+
+        boost::multi_index::hashed_unique<
+        boost::multi_index::tag<PlayerOfflineData::by_id>,
+        BOOST_MULTI_INDEX_CONST_MEM_FUN(MsgOfflineOpt, int64_t, guid)
+        >,
+
+        boost::multi_index::ordered_non_unique<
+        boost::multi_index::tag<PlayerOfflineData::by_over_time>,
+        BOOST_MULTI_INDEX_CONST_MEM_FUN(MsgOfflineOpt, int64_t, over_time)
+        >
+
+	>
+> PlayerOfflineDataListType;
+
+struct stMailPlayerOfflineData : public stActorMailBase
+{
+        int64_t _guid = 0;
+        int64_t _mt = 0;
+        int64_t _st = 0;
+        std::string _data;
+};
+
+SPECIAL_ACTOR_DEFINE_BEGIN(PlayerOfflineDataActor, E_MIMT_Offline);
+
+public :
+        bool Init() override;
+        void Flush2DB(bool isDelete = false);
+        void InitFlush2DBTimer();
+        void DealGet();
+        void InitGetTimer();
+
+        FORCE_INLINE void AddOfflineData(int64_t guid, int64_t mt, int64_t st, const std::string& data)
+        {
+                auto mail = std::make_shared<stMailPlayerOfflineData>();
+                mail->_guid = guid;
+                mail->_mt = mt;
+                mail->_st = st;
+                mail->_data = std::move(data);
+                SendPush(nullptr, E_MIOST_Append, mail);
+        }
+
+        FORCE_INLINE void AddOfflineData(int64_t guid, int64_t mt, int64_t st, google::protobuf::MessageLite& msg)
+        { AddOfflineData(guid, mt, st, msg.SerializeAsString()); }
+
+        template <typename _Ty>
+        std::shared_ptr<MsgOfflineOpt> GetOfflineData(const std::shared_ptr<_Ty>& p)
+        {
+                auto mail = std::make_shared<stMailPlayerOfflineData>();
+                mail->_guid = p->GetID();
+                return Call(MsgOfflineOpt, p, shared_from_this(), E_MIMT_Offline, E_MIOST_Get, mail);
+        }
+
+        void Terminate() override;
+
+        ::nl::util::SteadyTimer _flush2DBTimer;
+        ::nl::util::SteadyTimer _getTimer;
+        PlayerOfflineDataListType _dataList;
+        std::unordered_map<uint64_t, IActorWeakPtr> _getList;
+
+SPECIAL_ACTOR_DEFINE_END(PlayerOfflineDataActor);
+
+// }}}
+
 class PlayerMgrBase;
 extern PlayerMgrBase* GetPlayerMgrBase();
 
@@ -72,6 +145,28 @@ private :
 	friend class LobbyGateSession;
         PlayerMgrActorPtr* _playerMgrActorArr = nullptr;
         const int64_t _playerMgrActorArrSize = (1 << 3) - 1;
+
+public :
+        FORCE_INLINE void AddPlayerOfflineData(uint64_t guid, int64_t mt, int64_t st, google::protobuf::MessageLite& msg)
+        { auto act = GetPlayerOfflineDataActor(guid); if (act) act->AddOfflineData(guid, mt, st, msg); }
+        template <typename _Ay>
+        FORCE_INLINE std::shared_ptr<MsgOfflineOpt> GetPlayerOfflineData(const std::shared_ptr<_Ay>& p)
+        {
+                if (p)
+                {
+                        auto act = GetPlayerOfflineDataActor(p->GetID());
+                        if (act)
+                                return act->GetOfflineData(p);
+                }
+                return std::make_shared<MsgOfflineOpt>();
+        }
+
+        FORCE_INLINE PlayerOfflineDataActorPtr GetPlayerOfflineDataActor(uint64_t guid)
+        { return _playerOfflineDataActorArr[guid & _playerOfflineDataActorArrSize]; }
+private :
+        PlayerOfflineDataActorPtr* _playerOfflineDataActorArr = nullptr;
+        const int64_t _playerOfflineDataActorArrSize = (1 << 3) - 1;
+
 private :
 	ThreadSafeUnorderedMap<uint64_t, std::shared_ptr<stLoginInfo>> _loginInfoList;
 

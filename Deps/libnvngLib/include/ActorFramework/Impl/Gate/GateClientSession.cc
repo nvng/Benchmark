@@ -33,7 +33,7 @@ void GateClientSession::OnClose(int32_t reasonType)
         auto p = _player_.lock();
         if (p)
         {
-                DLOG_INFO("客户端断开连接!!! 玩家[{}] ptr[{}] reasonType[{}]", p->GetID(), (void*)p.get(), reasonType);
+                LOG_INFO("客户端断开连接!!! 玩家[{}] ptr[{}] reasonType[{}]", p->GetID(), (void*)p.get(), reasonType);
                 p->OnClientClose();
         }
 	SuperType::OnClose(reasonType);
@@ -139,7 +139,7 @@ void GateClientSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
                         }
                         else
                         {
-                                DLOG_WARN("客户端发送消息给 game server 时，该连接对应玩家已经不存在!!!");
+                                LOG_WARN("客户端发送消息给 game server 时，该连接对应玩家已经不存在!!!");
                         }
                 }
                 break;
@@ -208,7 +208,7 @@ void GateClientSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
                                                         }
                                                         else
                                                         {
-                                                                DLOG_WARN("玩家[{}] 添加失败!!!", playerGuid);
+                                                                LOG_WARN("玩家[{}] 添加失败!!!", playerGuid);
                                                                 auto msg = std::make_shared<MsgResult>();
                                                                 msg->set_error_type(E_CET_InLogin);
                                                                 SendPB(msg, E_MCMT_ClientCommon, E_MCCCST_Result);

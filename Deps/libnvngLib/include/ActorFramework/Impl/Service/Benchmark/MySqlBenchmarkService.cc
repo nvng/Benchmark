@@ -100,6 +100,8 @@ ACTOR_MAIL_HANDLE(MySqlBenchmarkActor, 0xfff, 0x1)
                 MySqlService::GetInstance()->SaveBatch(shared_from_this(), saveList, "test");
         }
 
+        boost::this_fiber::sleep_for(std::chrono::seconds(2));
+
         dataList.clear();
         for (int64_t i=0; i<cnt; ++i)
         {
@@ -118,6 +120,8 @@ ACTOR_MAIL_HANDLE(MySqlBenchmarkActor, 0xfff, 0x1)
                         auto data = fmt::format("{}_{}", id, "abc");
                         if (dbInfo->data() != data)
                                 LOG_INFO("77777777777777777777");
+                        else
+                                ; // LOG_INFO("88888888888888888888");
                 }
 
         }

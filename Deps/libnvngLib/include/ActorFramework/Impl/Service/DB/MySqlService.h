@@ -155,8 +155,7 @@ public :
         constexpr static int64_t scSqlStrInitSize = 1024 * 1024;
 private :
         friend class MySqlActor;
-        // constexpr static int64_t scMgrActorCnt = (1 << 6) - 1;
-        constexpr static int64_t scMgrActorCnt = 0;
+        constexpr static int64_t scMgrActorCnt = (1 << 6) - 1;
 
 public :
         void Terminate() override;
@@ -182,16 +181,11 @@ public :
                 auto ses = SuperType::DistSession(id);
                 if (!ses)
                 {
-                        /*
                         int64_t cnt = 0;
-                        (void)cnt;
-                        for (auto& ws : _dbSesArr)
-                        {
-                                if (ws.lock())
-                                        ++cnt;
-                        }
-                        PLAYER_LOG_WARN("act[{}] Load时，db ses 分配失败!!! sesCnt[{}]", act->GetID(), cnt);
-                        */
+                        SuperType::ForeachSession([&cnt](const auto&) {
+                                ++cnt;
+                        });
+                        LOG_WARN("玩家[{}] 存储时，db ses 分配失败!!! sesCnt[{}]", id, cnt);
                         return E_MySqlS_Fail;
                 }
 
@@ -314,16 +308,11 @@ public :
                 auto ses = SuperType::DistSession(id);
                 if (!ses)
                 {
-                        /*
                         int64_t cnt = 0;
-                        (void)cnt;
-                        for (auto& ws : _dbSesArr)
-                        {
-                                if (ws.lock())
-                                        ++cnt;
-                        }
-                        LOG_WARN("玩家[{}] 存储时，db ses 分配失败!!! sesCnt[{}]", act->GetID(), cnt);
-                        */
+                        SuperType::ForeachSession([&cnt](const auto&) {
+                                ++cnt;
+                        });
+                        LOG_WARN("玩家[{}] 存储时，db ses 分配失败!!! sesCnt[{}]", id, cnt);
                         return false;
                 }
 
@@ -368,16 +357,11 @@ public :
                 auto ses = SuperType::DistSession(id);
                 if (!ses)
                 {
-                        /*
                         int64_t cnt = 0;
-                        (void)cnt;
-                        for (auto& ws : _dbSesArr)
-                        {
-                                if (ws.lock())
-                                        ++cnt;
-                        }
-                        PLAYER_LOG_WARN("act[{}] Load时，db ses 分配失败!!! sesCnt[{}]", act->GetID(), cnt);
-                        */
+                        SuperType::ForeachSession([&cnt](const auto&) {
+                                ++cnt;
+                        });
+                        LOG_WARN("玩家[{}] 存储时，db ses 分配失败!!! sesCnt[{}]", id, cnt);
                         return E_MySqlS_Fail;
                 }
 
@@ -389,7 +373,7 @@ public :
                 auto item = mail->add_list();
                 item->set_task_type(E_MySql_TT_Version);
                 item->set_guid(id);
-                auto versionRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBData, mail);
+                auto versionRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, mail);
                 if (!versionRet || 1 != versionRet->list_size())
                 {
                         LOG_INFO("玩家[{}] 请求数据版本超时!!!", id);
@@ -410,7 +394,7 @@ public :
                         auto item = loadDBData->add_list();
                         item->set_task_type(E_MySql_TT_Load);
                         item->set_guid(id);
-                        auto loadRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBData, loadDBData);
+                        auto loadRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, loadDBData);
                         if (!loadRet && 1 != loadRet->list_size())
                         {
                                 LOG_WARN("玩家[{}] load from mysql 时，超时!!!", id);
@@ -495,16 +479,11 @@ public :
                 auto ses = SuperType::DistSession(id);
                 if (!ses)
                 {
-                        /*
                         int64_t cnt = 0;
-                        (void)cnt;
-                        for (auto& ws : _dbSesArr)
-                        {
-                                if (ws.lock())
-                                        ++cnt;
-                        }
-                        LOG_WARN("玩家[{}] 存储时，db ses 分配失败!!! sesCnt[{}]", act->GetID(), cnt);
-                        */
+                        SuperType::ForeachSession([&cnt](const auto&) {
+                                ++cnt;
+                        });
+                        LOG_WARN("玩家[{}] 存储时，db ses 分配失败!!! sesCnt[{}]", id, cnt);
                         return false;
                 }
 
@@ -527,7 +506,7 @@ public :
                    saveDBData->set_allocated_data(&base64Data);
                    */
 
-                auto saveRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBData, saveDBData);
+                auto saveRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, saveDBData);
                 if (!saveRet)
                 {
                         LOG_WARN("玩家[{}] 存储到 DBServer 超时!!!", id);
@@ -563,7 +542,14 @@ public :
                         {
                                 auto ses = SuperType::DistSession(id);
                                 if (!ses)
+                                {
+                                        int64_t cnt = 0;
+                                        SuperType::ForeachSession([&cnt](const auto&) {
+                                                ++cnt;
+                                        });
+                                        LOG_WARN("玩家[{}] 存储时，db ses 分配失败!!! sesCnt[{}]", id, cnt);
                                         return E_MySqlS_Fail;
+                                }
 
                                 auto agent = std::make_shared<typename SessionType::ActorAgentType>(GenReqID(), ses);
                                 agent->BindActor(act);
@@ -584,7 +570,7 @@ public :
                 {
                         auto agent = val.first;
                         auto mail = val.second;
-                        auto versionRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBData, mail);
+                        auto versionRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, mail);
                         if (!versionRet || mail->list_size() != versionRet->list_size())
                         {
                                 LOG_INFO("玩家 请求数据版本超时!!!");
@@ -693,7 +679,7 @@ public :
                 {
                         auto agent = val.first;
                         auto mail = val.second;
-                        auto loadRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBData, mail);
+                        auto loadRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, mail);
                         if (!loadRet && mail->list_size() != loadRet->list_size())
                         {
                                 LOG_WARN("玩家 load from mysql 时，超时!!!");
@@ -758,7 +744,14 @@ public :
                         {
                                 auto ses = SuperType::DistSession(id);
                                 if (!ses)
+                                {
+                                        int64_t cnt = 0;
+                                        SuperType::ForeachSession([&cnt](const auto&) {
+                                                ++cnt;
+                                        });
+                                        LOG_WARN("玩家[{}] 存储时，db ses 分配失败!!! sesCnt[{}]", id, cnt);
                                         return false;
+                                }
 
                                 auto agent = std::make_shared<typename SessionType::ActorAgentType>(GenReqID(), ses);
                                 agent->BindActor(act);
@@ -786,7 +779,7 @@ public :
                         auto agent = val.first;
                         if (agent)
                         {
-                                auto saveRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBData, val.second);
+                                auto saveRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, val.second);
                                 if (!saveRet)
                                 {
                                         LOG_WARN("批量存储到 DBServer sid[{}] 超时!!!", agent->GetSID());
@@ -839,7 +832,7 @@ public :
                 auto ses = _ses.lock();
                 if (ses)
                 {
-                        ses->SendPB(_msg, E_MIMT_DB, E_MIDBST_ReqDBData,
+                        ses->SendPB(_msg, E_MIMT_DB, E_MIDBST_ReqDBDataList,
                                     MySqlService::SessionType::MsgHeaderType::E_RMT_CallRet,
                                     _msgHead._guid, _msgHead._to, _msgHead._from);
                 }

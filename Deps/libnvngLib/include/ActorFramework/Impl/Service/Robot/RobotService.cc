@@ -146,19 +146,17 @@ void RobotService::BackRobot(const RobotPtr& r)
 
 void RobotActor::InitSaveTimer()
 {
+        DBRobotList dbInfo;
+        RobotService::GetInstance()->_robotList.Foreach([&dbInfo](const auto& r) {
+                r->Pack(*dbInfo.add_robot_list());
+        });
+        MySqlService::GetInstance()->Save(shared_from_this(), MySqlMgr::GenDataKey(E_MIMT_Robot), dbInfo, "robot", false);
+
         RobotActorWeakPtr weakAct = shared_from_this();
         SteadyTimer::StaticStart(5 * 60, [weakAct]() {
                 auto act = weakAct.lock();
-                if (!act)
-                        return;
-
-                DBRobotList dbInfo;
-                RobotService::GetInstance()->_robotList.Foreach([&dbInfo](const auto& r) {
-                        r->Pack(*dbInfo.add_robot_list());
-                });
-                auto [bufRef, bufSize] = Compress::SerializeAndCompress<Compress::E_CT_Zstd>(dbInfo);
-                act->RedisCmd("SET", "robot", std::string_view{ bufRef.get(), bufSize });
-                act->InitSaveTimer();
+                if (act)
+                        act->InitSaveTimer();
         });
 }
 
@@ -170,14 +168,23 @@ bool RobotActor::Init()
         std::lock_guard l(RobotService::GetInstance()->_robotDistListMutex);
         RobotService::GetInstance()->_robotList.Clear();
         RobotService::GetInstance()->_robotDistList.clear();
-        auto loadRet = RedisCmd("GET", "robot");
-        if (loadRet && !loadRet->IsNil())
+
+        const auto id = MySqlMgr::GenDataKey(E_MIMT_Robot);
+        DBRobotList dbInfo;
+        do
         {
-                auto [data, err] = loadRet->GetStr();
-                if (!err)
+                auto status = MySqlService::GetInstance()->Load(shared_from_this(), id, dbInfo, "robot");
+                switch (status)
                 {
-                        DBRobotList dbInfo;
-                        Compress::UnCompressAndParseAlloc<Compress::E_CT_Zstd>(dbInfo, data);
+                case MySqlService::E_MySqlS_New :
+                        for (int64_t i=0;  i<1000; ++i)
+                        {
+                                auto robot = RobotService::GetInstance()->CreateRobot();
+                                RobotService::GetInstance()->_robotList.Add(robot->_id, robot);
+                                RobotService::GetInstance()->_robotDistList.emplace_back(robot);
+                        }
+                        break;
+                case MySqlService::E_MySqlS_Success :
                         for (auto& info : dbInfo.robot_list())
                         {
                                 auto robot = std::make_shared<Robot>();
@@ -185,21 +192,13 @@ bool RobotActor::Init()
                                 RobotService::GetInstance()->_robotList.Add(robot->_id, robot);
                                 RobotService::GetInstance()->_robotDistList.emplace_back(robot);
                         }
+                        break;
+                default :
+                        break;
                 }
-
-        }
-        else
-        {
-                for (int64_t i=0;  i<1000; ++i)
-                {
-                        auto robot = RobotService::GetInstance()->CreateRobot();
-                        RobotService::GetInstance()->_robotList.Add(robot->_id, robot);
-                        RobotService::GetInstance()->_robotDistList.emplace_back(robot);
-                }
-        }
+        } while (false);
 
         InitSaveTimer();
-
         return true;
 }
 

@@ -48,7 +48,7 @@ void MySqlService::WaitForTerminate()
 
 // }}}
 
-SERVICE_NET_HANDLE(MySqlService::SessionType, E_MIMT_DB, E_MIDBST_ReqDBData, MailReqDBDataList)
+SERVICE_NET_HANDLE(MySqlService::SessionType, E_MIMT_DB, E_MIDBST_ReqDBDataList, MailReqDBDataList)
 {
         auto req = std::make_shared<DBReqWapper>(shared_from_this(), msgHead, msg);
         for (int64_t i=0; i<msg->list_size(); ++i)
