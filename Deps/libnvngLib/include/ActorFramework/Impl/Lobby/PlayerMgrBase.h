@@ -76,7 +76,7 @@ public :
         FORCE_INLINE void AddOfflineData(int64_t guid, int64_t mt, int64_t st, const std::string& data)
         {
                 auto mail = std::make_shared<stMailPlayerOfflineData>();
-                mail->_guid = guid;
+                mail->_guid = MySqlMgr::GenDataKey(E_MIMT_Offline, guid);
                 mail->_mt = mt;
                 mail->_st = st;
                 mail->_data = std::move(data);
@@ -91,7 +91,9 @@ public :
         {
                 auto mail = std::make_shared<stMailPlayerOfflineData>();
                 mail->_guid = p->GetID();
-                return Call(MsgOfflineOpt, p, shared_from_this(), E_MIMT_Offline, E_MIOST_Get, mail);
+                // return Call(MsgOfflineOpt, p, shared_from_this(), E_MIMT_Offline, E_MIOST_Get, mail);
+                auto ret = Call(MsgOfflineOpt, p, shared_from_this(), E_MIMT_Offline, E_MIOST_Get, mail);
+                return ret;
         }
 
         void Terminate() override;

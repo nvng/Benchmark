@@ -56,7 +56,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
                 item->set_version(version);
                 auto [base64DataRef, base64DataSize] = Base64EncodeExtra(bufRef.get(), bufSize);
                 item->set_data(base64DataRef.get(), base64DataSize);
-                auto saveRet = Call(MailReqDBDataList, thisPtr, agent, E_MIMT_DB, E_MIDBST_ReqDBData, saveDBData);
+                auto saveRet = Call(MailReqDBDataList, thisPtr, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, saveDBData);
                 if (!saveRet)
                 {
                         LOG_WARN("玩家[{}] 登录数据存储到 DBServer 超时!!!", accountGuid);
@@ -83,7 +83,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
                 auto item = loadDBVersion->add_list();
                 item->set_task_type(E_MySql_TT_Version);
                 item->set_guid(accountGuid);
-                auto versionRet = Call(MailReqDBDataList, thisPtr, agent, E_MIMT_DB, E_MIDBST_ReqDBData, loadDBVersion);
+                auto versionRet = Call(MailReqDBDataList, thisPtr, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, loadDBVersion);
                 if (!versionRet || 1 != versionRet->list_size())
                 {
                         LOG_INFO("玩家[{}] 请求数据版本超时!!!", accountGuid);
@@ -94,7 +94,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
                 auto loadItem = loadDBData->add_list();
                 loadItem->set_task_type(E_MySql_TT_Load);
                 loadItem->set_guid(accountGuid);
-                auto loadRet = Call(MailReqDBDataList, thisPtr, agent, E_MIMT_DB, E_MIDBST_ReqDBData, loadDBData);
+                auto loadRet = Call(MailReqDBDataList, thisPtr, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, loadDBData);
                 if (!loadRet || 1 != loadRet->list_size())
                 {
                         LOG_WARN("玩家[{}] load from mysql 时，超时!!!", thisPtr->GetID());

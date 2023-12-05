@@ -421,6 +421,7 @@ void PlayerOfflineDataActor::Flush2DB(bool isDelete/* = false*/)
                                                 for (auto& item : info->item_list())
                                                         dbInfo->add_item_list()->CopyFrom(item);
                                         }
+                                        LOG_INFO("11111111111 id[{}] size[{}]", id, dbInfo->item_list_size());
                                         saveList.emplace_back(std::make_tuple(id, dbInfo, true));
                                 }
                                 break;
@@ -472,7 +473,7 @@ void PlayerOfflineDataActor::InitGetTimer()
                 if (thisPtr)
                 {
                         thisPtr->DealGet();
-                        thisPtr->InitFlush2DBTimer();
+                        thisPtr->InitGetTimer();
                 }
         });
 }
@@ -490,6 +491,7 @@ void PlayerOfflineDataActor::DealGet()
         std::vector<std::tuple<uint64_t, std::shared_ptr<MsgOfflineOpt>, bool>> saveList;
         saveList.reserve(1024 * 10);
 
+        auto saveEmptyInfo = std::make_shared<MsgOfflineOpt>();
         auto& seqData = _dataList.get<PlayerOfflineData::by_id>();
         auto it = _getList.begin();
         while (_getList.end() != it)
@@ -500,7 +502,7 @@ void PlayerOfflineDataActor::DealGet()
                 for (; _getList.end()!=it; ++it)
                 {
                         auto v = std::make_pair(std::make_shared<MsgOfflineOpt>(), MySqlService::E_MySqlS_None);
-                        dataList.emplace(MySqlMgr::GenDataKey(E_MIMT_Offline, it->first), v);
+                        dataList.emplace(it->first, v);
                         if (dataList.size() >= 1024 * 10)
                         {
                                 ++it;
@@ -522,7 +524,7 @@ void PlayerOfflineDataActor::DealGet()
                         default :
                                 {
                                         auto it_ = _getList.find(id);
-                                        if (_getList.end() != it_)
+                                        if (_getList.end() == it_)
                                         {
                                                 LOG_WARN("");
                                                 continue;
@@ -532,8 +534,6 @@ void PlayerOfflineDataActor::DealGet()
                                         if (!from)
                                                 continue;
 
-                                        _getList.erase(it_);
-
                                         auto itData = seqData.find(id);
                                         if (seqData.end() != itData)
                                         {
@@ -542,8 +542,8 @@ void PlayerOfflineDataActor::DealGet()
                                                 seqData.erase(itData);
                                         }
 
-                                        from->CallRet(dbInfo, scPlayerOfflineDataActorMailMainType, E_MIOST_Get, 0);
-                                        saveList.emplace_back(std::make_tuple(id, nullptr, true));
+                                        from->CallRet(dbInfo, 0, scPlayerOfflineDataActorMailMainType, E_MIOST_Get);
+                                        saveList.emplace_back(std::make_tuple(id, saveEmptyInfo, true));
                                 }
                                 break;
                         }
@@ -552,17 +552,20 @@ void PlayerOfflineDataActor::DealGet()
                 MySqlService::GetInstance()->SaveBatch(thisPtr, saveList, "po");
         }
 
+        /*
         for (auto& val : _getList)
         {
                 auto from = val.second.lock();
                 if (from)
-                        from->CallRet(nullptr, scPlayerOfflineDataActorMailMainType, E_MIOST_Get, 0);
+                        from->CallRet(nullptr, 0, scPlayerOfflineDataActorMailMainType, E_MIOST_Get);
         }
+        */
+        _getList.clear();
 }
 
 SPECIAL_ACTOR_MAIL_HANDLE(PlayerOfflineDataActor, E_MIOST_Get, stMailPlayerOfflineData)
 {
-        _getList.emplace(msg->_guid, from);
+        _getList.emplace(MySqlMgr::GenDataKey(E_MIMT_Offline, msg->_guid), from);
         return nullptr;
 }
 
