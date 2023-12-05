@@ -15,7 +15,7 @@ ACTOR_MAIL_HANDLE(MySqlBenchmarkActor, 0xfff, 0x0)
                 item->set_guid((i+1)*(1000 * 1000 * 1000LL) + 1000 * 1000 + GetID());
         }
         auto agent = MySqlBenchmarkService::GetInstance()->GetActor(shared_from_this(), GetID());
-        auto versionRet = Call(MailReqDBDataList, agent, E_MIMT_DB, E_MIDBST_ReqDBData, mail);
+        auto versionRet = Call(MailReqDBDataList, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, mail);
         if (!versionRet)
         {
                 LOG_INFO("玩家[{}] 请求数据版本超时!!!", GetID());
@@ -38,19 +38,19 @@ ACTOR_MAIL_HANDLE(MySqlBenchmarkActor, 0xfff, 0x0)
                 saveItem->set_guid((i+1)*(1000 * 1000 * 1000LL) + 1000 * 1000 + GetID());
                 saveItem->set_data(base64DataRef.get(), base64DataSize);
         }
-        Call(MailReqDBData, agent, E_MIMT_DB, E_MIDBST_ReqDBData, saveDBData);
+        Call(MailReqDBData, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, saveDBData);
         while (true)
         {
                 // int64_t i = 0;
                 // for (; i<10; ++i)
                         // Call(MsgDBData, agent, E_MIMT_DB, E_MIDBST_SaveDBData, saveDBData);
 
-                Call(MailReqDBData, agent, E_MIMT_DB, E_MIDBST_ReqDBData, saveDBData);
+                Call(MailReqDBData, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, saveDBData);
                 // ParseMailData<MsgDBData>(CallInternal(agent, E_MIMT_DB, E_MIDBST_SaveDBData, saveDBData, base64DataRef, base64DataRef.get(), base64DataSize).get(), E_MIMT_DB, E_MIDBST_SaveDBData);
 
                 /*
                 saveDBData->set_task_type(E_MySql_TT_Load);
-                auto loadRet = Call(MailReqDBData, agent, E_MIMT_DB, E_MIDBST_ReqDBData, saveDBData);
+                auto loadRet = Call(MailReqDBData, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, saveDBData);
                 if (loadRet->data() == std::string(base64DataRef.get(), base64DataSize))
                         LOG_INFO("1111111111111111111");
                 else
