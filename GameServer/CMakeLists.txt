@@ -5,7 +5,7 @@ PROJECT(GameServer.out)
 SET(SRC_DIR
         ./src/Region
         ./src/Region/Jump
-        ../Deps/libnvngLib/include/ActorFramework/Impl/Game
+        ActorFramework/Impl/Game
         )
 
 INCLUDE($ENV{HOME}/git/config/cmake/project.cmake)

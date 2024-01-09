@@ -4,10 +4,10 @@ PROJECT(GameMgrServer.out)
 
 SET(SRC_DIR
         ./src/Region
-        ../Deps/libnvngLib/include/ActorFramework/Impl/GameMgr
-        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Benchmark
-        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Robot
-        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Log
+        ActorFramework/Impl/GameMgr
+        ActorFramework/Impl/Service/Benchmark
+        ActorFramework/Impl/Service/Robot
+        ActorFramework/Impl/Service/Log
         )
 
 INCLUDE($ENV{HOME}/git/config/cmake/project.cmake)

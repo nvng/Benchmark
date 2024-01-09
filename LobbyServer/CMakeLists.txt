@@ -5,11 +5,11 @@ PROJECT(LobbyServer.out)
 SET(SRC_DIR
         ./src/Player
         ./src/Region
-        ../Deps/libnvngLib/include/ActorFramework/Impl/Lobby
-        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Log
-        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Guid
-        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/DB
-        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Benchmark
+        ActorFramework/Impl/Lobby
+        ActorFramework/Impl/Service/Log
+        ActorFramework/Impl/Service/Guid
+        ActorFramework/Impl/Service/DB
+        ActorFramework/Impl/Service/Benchmark
         )
 
 INCLUDE($ENV{HOME}/git/config/cmake/project.cmake)
