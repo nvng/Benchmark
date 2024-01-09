@@ -58,7 +58,7 @@ bool GlobalSetup_CH::Init()
         {
                 std::vector<int64_t> tmpList = Tokenizer<int64_t>(str, "|");
                 assert(tmpList.size() >= 2);
-                for (int64_t i=1; i<tmpList.size(); ++i)
+                for (int64_t i=1; i<static_cast<int64_t>(tmpList.size()); ++i)
                         mapList.emplace_back(tmpList[i]);
                 _randomMapInfoList[tmpList[0]] = mapList;
         }
@@ -87,7 +87,7 @@ bool GlobalSetup_CH::Init()
         if (!tmpList.empty())
         {
                 _whiteListSwitch = tmpList[0];
-                for (int64_t i=1; i<tmpList.size(); ++i)
+                for (int64_t i=1; i<static_cast<int64_t>(tmpList.size()); ++i)
                         _whiteList.emplace(tmpList[i]);
         }
 
