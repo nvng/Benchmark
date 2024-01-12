@@ -1,10 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 
-PROJECT(LobbyServer.out)
+PROJECT(LobbyServer.out CXX)
 
 SET(SRC_DIR
-        ./src/Player
-        ./src/Region
         ActorFramework/Impl/Lobby
         ActorFramework/Impl/Service/Log
         ActorFramework/Impl/Service/Guid

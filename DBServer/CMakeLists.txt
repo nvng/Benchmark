@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 
-PROJECT(DBServer.out)
+PROJECT(DBServer.out CXX)
 
 SET(SRC_DIR
         ActorFramework/Impl/Service/Guid

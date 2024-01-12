@@ -1,11 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 
-PROJECT(Benchmark.out)
-
-SET(SRC_DIR
-        ./src/Player
-        ./src/Net
-        )
+PROJECT(Benchmark.out CXX)
 
 INCLUDE($ENV{HOME}/git/config/cmake/project.cmake)
 

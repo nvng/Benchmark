@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 
-PROJECT(GateServer.out)
+PROJECT(GateServer.out CXX)
 
 SET(SRC_DIR
         ActorFramework/Impl/Gate

@@ -1,10 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 
-PROJECT(GameServer.out)
+PROJECT(GameServer.out CXX)
 
 SET(SRC_DIR
-        ./src/Region
-        ./src/Region/Jump
         ActorFramework/Impl/Game
         )
 

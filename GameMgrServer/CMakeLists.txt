@@ -1,9 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 
-PROJECT(GameMgrServer.out)
+PROJECT(GameMgrServer.out CXX)
 
 SET(SRC_DIR
-        ./src/Region
         ActorFramework/Impl/GameMgr
         ActorFramework/Impl/Service/Benchmark
         ActorFramework/Impl/Service/Robot
