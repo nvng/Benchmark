@@ -176,7 +176,7 @@ void GateClientSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
                                                 if (lobbySes)
                                                 {
                                                         p = std::make_shared<Player>(playerGuid, shared_from_this());
-                                                        DLOG_INFO("客户端[{}] ptr[{}] 发送消息给大厅!!!", playerGuid, (void*)p.get());
+                                                        LOG_INFO("客户端[{}] ptr[{}] 发送消息给大厅!!!", playerGuid, (void*)p.get());
                                                         if (PlayerMgr::GetInstance()->AddLoginPlayer(p))
                                                         {
                                                                 ++p->_playerFlag;

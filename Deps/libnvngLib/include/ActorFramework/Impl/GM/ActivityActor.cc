@@ -151,11 +151,27 @@ void ActivityActor::LoadFromDB()
 
 SPECIAL_ACTOR_MAIL_HANDLE(ActivityActor, 0xf, stMailHttpReq)
 {
+        std::string sqlStr = fmt::format("CREATE TABLE IF NOT EXISTS `activity` ( \
+                                         `id` bigint unsigned NOT NULL, \
+                                         `state` int(0) NULL DEFAULT NULL COMMENT '1 正常状态  2 已停止', \
+                                         `data` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL, \
+                                         PRIMARY KEY (`id`) USING BTREE, \
+                                         INDEX `idx_state`(`state`) USING BTREE \
+                                        ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;");
+        MySqlMgr::GetInstance()->Exec(sqlStr);
+
+        sqlStr = fmt::format("CREATE TABLE IF NOT EXISTS `global_var` ( \
+                             `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL, \
+                             `v` bigint(0) NULL DEFAULT NULL, \
+                             PRIMARY KEY (`name`) USING BTREE \
+                            ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;");
+        MySqlMgr::GetInstance()->Exec(sqlStr);
+
         auto ret = MySqlMgr::GetInstance()->Exec("SELECT MAX(id) FROM activity;");
         if (ret->rows()[0][0].is_uint64())
                 _maxGroupID = ret->rows()[0][0].as_uint64();
 
-        std::string sqlStr = "SELECT v FROM global_var WHERE name='festival_version'";
+        sqlStr = "SELECT v FROM global_var WHERE name='festival_version'";
         ret = MySqlMgr::GetInstance()->Exec(sqlStr);
         if (ret->rows().empty())
         {
@@ -198,8 +214,8 @@ void ActivityActor::PackActivity(MsgActivityFestivalCfg& msg)
                         ft->set_guid(jt["guid"].GetUint64());
                         if (jt.HasMember("param"))
                                 ft->set_param(jt["param"].GetUint64());
-                        if (jt.HasMember("param_1"))
-                                ft->set_param_1(jt["param_1"].GetUint64());
+                        if (jt.HasMember("param1"))
+                                ft->set_param_1(jt["param1"].GetUint64());
                         auto t = ft->mutable_goods_item();
                         t->set_id(jt["id"].GetUint64());
                         t->set_type(jt["type"].GetUint64());
@@ -230,7 +246,7 @@ void ActivityActor::PackActivity(MsgActivityFestivalCfg& msg)
                         msgReward->set_name(tmp["name"].GetString());
                         if (tmp.HasMember("event_type"))
                                 msgReward->set_event_type(tmp["event_type"].GetUint64());
-                        if (tmp.HasMember("param_list"))
+                        if (tmp.HasMember("param_list") && tmp["param_list"].IsArray())
                         {
                                 auto& paramArr = tmp["param_list"];
                                 for (int64_t j=0; j<paramArr.Size(); ++j)

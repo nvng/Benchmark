@@ -201,7 +201,7 @@ public :
 
                 // lock 只是防止新 ses 被删除。
                 std::lock_guard l(_sesArrMutex);
-                LOG_INFO("size[{}]", _sesArr.size());
+                // LOG_INFO("size[{}]", _sesArr.size());
                 _sesArr[idx] = ses;
                 CheckFinish();
                 return true;

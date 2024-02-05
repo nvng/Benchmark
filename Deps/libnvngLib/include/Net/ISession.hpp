@@ -151,8 +151,14 @@ public :
         NetMgrBase() : _sesList("NetMgrBase_sesList") { }
         virtual ~NetMgrBase() = default;
 
-        bool Init(int64_t threadCnt = 1, const std::string& flagName = "default")
+        bool Init(int64_t threadCnt = 1
+                  , const std::string& flagName = "default"
+                  , const std::unordered_set<std::string>& ipList = {})
         {
+                _ipList = ipList;
+                if (!_ipList.empty())
+                        _ipList.emplace("127.0.0.1");
+
                 LOG_FATAL_IF(threadCnt<=0 || !CHECK_2N(threadCnt),
                              "threadCnt[{}] 必须设置为 2^N !!!",
                              threadCnt);
@@ -160,7 +166,7 @@ public :
                 _distIOCtxParam = threadCnt - 1;
                 _threadList.reserve(threadCnt);
                 _ioCtxArr.reserve(threadCnt);
-                for (int64_t i=0; i<threadCnt; ++i)
+                for (decltype(threadCnt) i=0; i<threadCnt; ++i)
                 {
                         _ioCtxArr.emplace_back(std::make_shared<boost::asio::io_context>(1));
                         std::thread t([this, i, flagName]() {
@@ -270,7 +276,7 @@ private :
                 AcceptorTypeWeakPtr weakAcceptor = acceptor;
                 // acceptor->async_accept(boost::asio::make_strand(*DistCtx(++_distIOCtxIdx)), [weakAcceptor, cb{std::move(cb)}](const auto& ec, auto&& s) {
                 acceptor->async_accept(*DistCtx(++_distIOCtxIdx), [weakAcceptor, cb{std::move(cb)}](const auto& ec, auto&& s) {
-                        if (!ec)
+                        if (!ec && NetMgrBase<_Tag>::GetInstance()->CheckSrcIP(s))
                         {
                                 auto ses = cb(std::move(s), NetMgrBase<_Tag>::GetInstance()->_sslCtx);
                                 if (ses->Init() && NetMgrBase<_Tag>::GetInstance()->_sesList.Add(ses->GetID(), ses))
@@ -412,6 +418,21 @@ private :
                 });
         }
 
+        FORCE_INLINE bool CheckSrcIP(const auto& s)
+        {
+                const auto& ipList = NetMgrBase<_Tag>::GetInstance()->_ipList;
+                if (ipList.empty())
+                        return true;
+
+                boost::system::error_code ec_;
+                boost::asio::ip::tcp::endpoint remoteEndPoint = s.remote_endpoint(ec_);
+                if (ec_)
+                        return false;
+
+                auto it = ipList.find(remoteEndPoint.address().to_string());
+                return ipList.end() != it;
+        }
+
 public :
         virtual void Terminate()
         {
@@ -454,6 +475,7 @@ private :
 
         SpinLock _acceptorListMutex;
         Map<std::pair<std::string, uint64_t>, AcceptorTypePtr> _acceptorList;
+        std::unordered_set<std::string> _ipList;
 };
 
 typedef NetMgrBase<stDefaultTag> NetMgr;

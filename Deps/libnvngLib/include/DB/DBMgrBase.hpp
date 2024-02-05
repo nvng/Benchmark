@@ -29,16 +29,19 @@ protected :
         {
                 LOG_FATAL_IF(!CHECK_2N(connCnt), "conn cnt must 2^N !!! connCnt[{}]", connCnt);
 
-                _ioCtx = std::make_shared<boost::asio::io_context>(thCnt);
+                _distIOCtxParam = thCnt - 1;
+                _threadList.reserve(thCnt);
+                _ioCtxArr.reserve(thCnt);
                 _connQueue = std::make_shared<ConnQueueType>(connCnt * 2);
 
                 for (decltype(thCnt) i=0; i<thCnt; ++i)
                 {
+                        _ioCtxArr.emplace_back(std::make_shared<boost::asio::io_context>(1));
                         std::thread t([this, i]() {
                                 SetThreadName("{}_{}", _markString, i);
-                                auto w = boost::asio::make_work_guard(*_ioCtx);
+                                auto w = boost::asio::make_work_guard(*_ioCtxArr[i]);
                                 boost::system::error_code ec;
-                                _ioCtx->run(ec);
+                                _ioCtxArr[i]->run(ec);
                                 LOG_WARN_IF(boost::system::errc::success != ec.value(),
                                             "结束 {} _ioCtx 错误!!! ec[{}]", _markString, ec.what());
                         });
@@ -70,7 +73,11 @@ public :
         FORCE_INLINE static constexpr uint64_t GenDataKey(int64_t prefix, int64_t id = 0) { return prefix * 1000 * 1000 * 1000 * 1000LL + id; }
         virtual void Terminate()
         {
-                _ioCtx->stop();
+                for (auto& ctx : _ioCtxArr)
+                {
+                        if (ctx && !ctx->stopped())
+                                ctx->stop();
+                }
                 FLAG_ADD(_internalFlag, 1 << E_DBMFT_Terminate);
         }
 
@@ -84,7 +91,15 @@ public :
         }
 
 protected :
-        std::shared_ptr<boost::asio::io_context> _ioCtx;
+        FORCE_INLINE std::shared_ptr<boost::asio::io_context> DistCtx()
+        {
+                static std::atomic_int64_t idx = -1;
+                return _ioCtxArr[++idx & _distIOCtxParam];
+        }
+
+        int64_t _distIOCtxParam = 0;
+        std::atomic_uint64_t _distIOCtxIdx = -1;
+        std::vector<std::shared_ptr<boost::asio::io_context>> _ioCtxArr;
         std::shared_ptr<ConnQueueType> _connQueue;
         std::atomic_uint64_t _internalFlag = 0;
         std::string _markString;

@@ -217,9 +217,9 @@ public :
 
                 GetAppBase()->_mainChannel.push([idx{i}]() {
                 boost::fibers::fiber(
-                     // std::allocator_arg,
+                     std::allocator_arg,
                      // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                     // boost::fibers::segmented_stack{},
+                     boost::fibers::segmented_stack{},
                      [idx]() {
                         std::vector<stReplayMailInfoPtr> mailList;
                         mailList.reserve(1024);
@@ -238,7 +238,7 @@ public :
                                         conn->_conn->async_write(txBuf, std::move(cmdList), boost::fibers::asio::yield_t(ec));
                                         if (ec)
                                         {
-                                                LOG_INFO("redis async_write error!!! ec[{}] mailCnt[{}]", ec.what(), cmdListSize);
+                                                LOG_ERROR("redis async_write error!!! ec[{}] mailCnt[{}]", ec.what(), cmdListSize);
                                                 conn->Reconnect();
                                                 continue;
                                         }
@@ -249,7 +249,7 @@ public :
                                         auto [r, readSize] = conn->_conn->async_read(rxBuf, boost::fibers::asio::yield_t(ec), cmdListSize);
                                         if (ec)
                                         {
-                                                LOG_INFO("redis async_read error!!! ec[{}] mailCnt[{}]", ec.what(), cmdListSize);
+                                                LOG_ERROR("redis async_read error!!! ec[{}] mailCnt[{}]", ec.what(), cmdListSize);
                                                 conn->Reconnect();
                                                 continue;
                                         }
@@ -332,7 +332,7 @@ __direct_deal__ :
 
                 while (true)
                 {
-                        boost::asio::ip::tcp::socket s(*SuperType::_ioCtx);
+                        boost::asio::ip::tcp::socket s(*DistCtx());
                         s.async_connect(ep, boost::fibers::asio::yield_t(ec));
                         if (!ec)
                         {

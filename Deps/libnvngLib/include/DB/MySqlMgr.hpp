@@ -343,7 +343,7 @@ public :
 
                 while (true)
                 {
-                        auto conn = std::make_shared<boost::mysql::tcp_connection>(*SuperType::_ioCtx);
+                        auto conn = std::make_shared<boost::mysql::tcp_connection>(*SuperType::DistCtx());
                         conn->async_connect(ep, params, boost::fibers::asio::yield_t(ec));
                         if (!ec)
                         {
@@ -351,7 +351,7 @@ public :
                         }
                         else
                         {
-                                LOG_WARN("mysql 连接失败!!! ec[{}]", ec.what());
+                                LOG_ERROR("mysql 连接失败!!! ec[{}]", ec.what());
                                 boost::this_fiber::sleep_for(std::chrono::milliseconds(100));
                                 ec.clear();
                                 diag.clear();
@@ -374,7 +374,7 @@ public :
                         }
                         else
                         {
-                                LOG_WARN("mysql 连接执行失败!!! ec[{}] what[{}] sqlStr[{}]"
+                                LOG_ERROR("mysql 连接执行失败!!! ec[{}] what[{}] sqlStr[{}]"
                                          , ec.value(), ec.what(), sqlStr.substr(0, 512));
                                 boost::this_fiber::sleep_for(std::chrono::milliseconds(100));
                                 conn->Reconnect();

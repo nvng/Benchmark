@@ -15,7 +15,7 @@ std::shared_ptr<stActivityFestivalSyncData> ActivityMgrBase::_festivalSyncData;
 
 struct stFestivalActive : public stActorMailBase
 {
-        std::shared_ptr<MsgActivityFestivalGroupCfg> _msgGroup;
+        std::vector<std::shared_ptr<MsgActivityFestivalGroupCfg>> _msgGroupList;
 };
 
 // {{{ ActivityMgrBase
@@ -245,7 +245,7 @@ bool ActivityMgrBase::OnEvent(MsgPlayerChange& msg,
                 if (fesSyncData)
                 {
                         auto cfg = fesSyncData->_groupCfgList.Get(group->_id);
-                        if (cfg && 1 == cfg->state())
+                        if (cfg && FestivalGroup::IsOpen(*cfg))
                         {
                                 if (group->OnEvent(msg, p, eventType, cnt, param, logType, logParam))
                                         ret = true;
@@ -296,6 +296,8 @@ SPECIAL_ACTOR_MAIL_HANDLE(ActivityMgrActor, 0x0, MsgActivityFestivalCfg)
                 }
         };
 
+        auto directOpenMail = std::make_shared<stFestivalActive>();
+        auto thisPtr = shared_from_this();
         auto now = GetClock().GetTimeStamp();
         auto fesSyncData = ActivityMgrBase::_festivalSyncData;
         for (auto& val : msg->group_list())
@@ -310,7 +312,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(ActivityMgrActor, 0x0, MsgActivityFestivalCfg)
                 if (msgGroup.has_activity())
                         testParseFestivalCfgFunc(groupGuid, msgGroup.activity());
 
-                ActivityMgrActorWeakPtr weakAct = shared_from_this();
+                ActivityMgrActorWeakPtr weakAct = thisPtr;
                 auto groupMsg = std::make_shared<MsgActivityFestivalGroupCfg>();
                 groupMsg->CopyFrom(msgGroup);
                 fesList->_groupCfgList.Add(groupMsg->group_guid(), groupMsg);
@@ -325,11 +327,12 @@ SPECIAL_ACTOR_MAIL_HANDLE(ActivityMgrActor, 0x0, MsgActivityFestivalCfg)
 
                 if (needTimer)
                 {
+                        time_t t = msgGroup.time().active_time() - GetClock().GetTimeStamp();
                         /*
-                        LOG_INFO("88888888888888888888888888888 id:{} active_time:{} now:{}",
-                                 msgGroup.group_guid(), msgGroup.time().active_time(), GetClock().GetTimeStamp());
+                        LOG_INFO("88888888888888888888888888888 id:{} active_time:{} now:{} nows:{} t:{}"
+                                 , msgGroup.group_guid(), msgGroup.time().active_time()
+                                 , GetClock().GetTimeStamp(), GetClock().GetSteadyTime(), t);
                                  */
-                        time_t t = GetClock().GetSteadyTime() + msgGroup.time().active_time() - GetClock().GetTimeStamp();
                         ::nl::util::SteadyTimer::StaticStart(weakAct, t + 1.0, [weakAct, groupMsg, v{msg->version()}]() {
                                 /*
                                 LOG_INFO("99999999999999999999999999999 id:{} active_time:{} now:{}",
@@ -345,9 +348,13 @@ SPECIAL_ACTOR_MAIL_HANDLE(ActivityMgrActor, 0x0, MsgActivityFestivalCfg)
                                          groupMsg->group_guid(), groupMsg->time().active_time(), GetClock().GetTimeStamp());
                                          */
                                 auto m = std::make_shared<stFestivalActive>();
-                                m->_msgGroup = groupMsg;
+                                m->_msgGroupList.emplace_back(groupMsg);
                                 PlayerMgr::GetInstance()->BroadCast(act, E_MCMT_Activity, E_MCATST_Active, m);
                         });
+                }
+                else // 直接开启。
+                {
+                        directOpenMail->_msgGroupList.emplace_back(groupMsg);
                 }
         }
 
@@ -363,6 +370,9 @@ SPECIAL_ACTOR_MAIL_HANDLE(ActivityMgrActor, 0x0, MsgActivityFestivalCfg)
                         if (ses)
                                 ses->BroadCast(msg, E_MCMT_Activity, E_MCATST_Sync, id);
                 });
+
+                if (!directOpenMail->_msgGroupList.empty())
+                        PlayerMgr::GetInstance()->BroadCast(thisPtr, E_MCMT_Activity, E_MCATST_Active, directOpenMail);
         }
 
         return nullptr;
@@ -379,20 +389,25 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Active, stFestivalActive)
 {
         if (!FLAG_HAS(_internalFlag, E_PIF_Online))
                 return nullptr;
-        
-        auto t = _activityMgr._fesGroupList.Get(msg->_msgGroup->group_guid());
-        if (t)
-                return nullptr;
 
-        FestivalGroupPtr group = FestivalGroup::Create(msg->_msgGroup->type());
-        LOG_INFO("88888888888888888888888888 active_time:{}", msg->_msgGroup->time().active_time());
         auto playerChange = std::make_shared<MsgPlayerChange>();
-        if (group->Init(*playerChange, shared_from_this(), *msg->_msgGroup))
+        for (auto& groupCfg : msg->_msgGroupList)
         {
-                _activityMgr._fesGroupList.Add(group->_id, group);
-                group->OnDataReset(shared_from_this(), *playerChange);
-                Send2Client(E_MCMT_ClientCommon, E_MCCCST_PlayerChange, playerChange);
+                auto t = _activityMgr._fesGroupList.Get(groupCfg->group_guid());
+                if (t)
+                        continue;
+
+                FestivalGroupPtr group = FestivalGroup::Create(groupCfg->type());
+                LOG_INFO("88888888888888888888888888 id[{}] active_time[{}]", groupCfg->group_guid(), groupCfg->time().active_time());
+                if (group && group->Init(*playerChange, shared_from_this(), *groupCfg))
+                {
+                        _activityMgr._fesGroupList.Add(group->_id, group);
+                        group->OnDataReset(shared_from_this(), *playerChange);
+                }
         }
+
+        if (playerChange->ByteSizeLong() > 0)
+                Send2Client(E_MCMT_ClientCommon, E_MCCCST_PlayerChange, playerChange);
 
         return nullptr;
 }
@@ -401,12 +416,21 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Mark, MsgActivityMark)
 {
         do
         {
+                msg->set_error_type(E_CET_Success);
                 for (auto& item : msg->item_list())
                 {
                         auto commonItem = item.common();
                         auto taskID = commonItem.task_id();
+                        /*
+                        LOG_WARN("玩家[{}] Activity Mark id[{}] 时，g[{}] f[{}] t[{}]!!!",
+                                 GetID(),
+                                 taskID,
+                                 FestivalTask::ParseGroupGuid(taskID),
+                                 FestivalTask::ParseFesID(taskID),
+                                 FestivalTask::ParseTaskID(taskID));
+                                 */
                         auto group = _activityMgr._fesGroupList.Get(FestivalTask::ParseGroupGuid(taskID));
-                        if (!group)
+                        if (!group || !group->IsOpen())
                         {
                                 LOG_WARN("玩家[{}] Activity Mark id[{}] 时，g[{}] f[{}] t[{}] 未找到 group!!!",
                                          GetID(),
@@ -414,16 +438,28 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Mark, MsgActivityMark)
                                          FestivalTask::ParseGroupGuid(taskID),
                                          FestivalTask::ParseFesID(taskID),
                                          FestivalTask::ParseTaskID(taskID));
+                                msg->set_error_type(E_CET_CfgNotFound);
                                 break;
                         }
 
                         auto logGuid = LogService::GetInstance()->GenGuid();
-                        group->Mark(shared_from_this(), *msg->mutable_player_change(), taskID, commonItem.cnt(), item.param(), E_LSOT_FestivalMark, logGuid);
+                        if (!group->Mark(shared_from_this(), *msg->mutable_player_change(), taskID, commonItem.cnt(), item.param(), E_LSOT_FestivalMark, logGuid))
+                        {
+                                LOG_INFO("玩家[{}] Activity Mark id[{}] 时，g[{}] f[{}] t[{}] 失败!!!",
+                                         GetID(),
+                                         taskID,
+                                         FestivalTask::ParseGroupGuid(taskID),
+                                         FestivalTask::ParseFesID(taskID),
+                                         FestivalTask::ParseTaskID(taskID));
+
+                                msg->set_error_type(E_CET_ParamError);
+                                break;
+                        }
 
                         std::string str = fmt::format("{}\"id\":{},\"cnt\":{},\"param\":{}{}", "{", taskID, commonItem.cnt(), item.param(), "}");
                         LogService::GetInstance()->Log<E_LSLMT_Content>(GetID(), str, E_LSLST_Festival, 99999998, E_LSOT_FestivalMark, logGuid);
                 }
-                msg->set_error_type(E_CET_Success);
+
                 Save2DB();
         } while (0);
 
@@ -455,6 +491,14 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Reward, MsgActivityReward)
         {
                 msg->set_error_type(E_CET_Success);
                 const auto taskID = msg->id();
+                /*
+                LOG_INFO("玩家[{}] Activity Reward id[{}] 时，g[{}] f[{}] t[{}] !!!",
+                         GetID(),
+                         taskID,
+                         FestivalTask::ParseGroupGuid(taskID),
+                         FestivalTask::ParseFesID(taskID),
+                         FestivalTask::ParseTaskID(taskID));
+                         */
                 auto group = _activityMgr._fesGroupList.Get(FestivalTask::ParseGroupGuid(taskID));
                 if (!group)
                 {
@@ -492,6 +536,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Reward, MsgActivityReward)
 }
 // }}}
 
+// {{{ stFestivalTime
 bool stFestivalTime::Init(const PlayerPtr& p, const MsgActivityTime& msg)
 {
         _activeTime = msg.active_time();
@@ -518,32 +563,43 @@ bool stFestivalTime::Init(const PlayerPtr& p, const MsgActivityTime& msg)
         }
         return true;
 }
+// }}}
 
 // {{{ FestivalGroup
 
-const std::pair<std::shared_ptr<MsgActivityFestivalGroupCfg>, const MsgActivityFestivalActivityCfg&> FestivalGroup::GetCfg(int64_t groupID, int64_t fesID)
+const std::shared_ptr<MsgActivityFestivalGroupCfg> FestivalGroup::GetGroupCfg(int64_t groupID)
 {
-        static MsgActivityFestivalActivityCfg emptyRet;
         auto fesSyncData = ActivityMgr::_festivalSyncData;
-        if (!fesSyncData)
-                return { nullptr, emptyRet };
+        return fesSyncData ? fesSyncData->_groupCfgList.Get(groupID) : nullptr;
+}
 
-        auto groupCfg = fesSyncData->_groupCfgList.Get(groupID);
+const MsgActivityFestivalActivityCfg& FestivalGroup::GetFesCfg(const std::shared_ptr<MsgActivityFestivalGroupCfg>& groupCfg, int64_t fesID)
+{
+        static const MsgActivityFestivalActivityCfg emptyRet;
         if (!groupCfg)
-                return { nullptr, emptyRet };
+                return emptyRet;
 
         if (groupCfg->has_activity() && groupCfg->activity().cfg_id() % (10 * 1000) == fesID)
         {
-                return { groupCfg, groupCfg->activity() };
+                return groupCfg->activity();
         }
         else
         {
 
                 auto it = groupCfg->activity_list().find(76000000 + fesID);
                 if (groupCfg->activity_list().end() != it)
-                        return { groupCfg, it->second };
+                        return it->second;
         }
-        return { groupCfg, emptyRet };
+        return emptyRet;
+}
+
+const std::pair<std::shared_ptr<MsgActivityFestivalGroupCfg>, const MsgActivityFestivalActivityCfg&> FestivalGroup::GetCfg(int64_t groupID, int64_t fesID)
+{
+        static MsgActivityFestivalActivityCfg emptyRet;
+        auto groupCfg = GetGroupCfg(groupID);
+        if (!groupCfg)
+                return { nullptr, emptyRet };
+        return { groupCfg, GetFesCfg(groupCfg, fesID) };
 }
 
 void FestivalGroup::OnDataReset(const PlayerPtr& p, MsgPlayerChange& msg)
@@ -607,22 +663,11 @@ bool Festival::Init(MsgPlayerChange& playerChange,
         return true;
 }
 
-bool Festival::IsOpen(const MsgActivityFestivalActivityCfg& msg)
+bool Festival::IsOpen(int64_t groupID)
 {
-        auto now = GetClock().GetTimeStamp();
-        switch (msg.time().type())
-        {
-        case 1 :
-                return 1 == msg.state() && msg.time().active_time() <= now;
-                break;
-        case 2 :
-                return 1 == msg.state() && msg.time().active_time() <= now && now < msg.time().end_time();
-                break;
-        default :
-                break;
-        }
-
-        return true;
+        if (0 == groupID) return true;
+        auto [groupCfg, fesCfg] = FestivalGroup::GetCfg(groupID, _id);
+        return groupCfg ? IsOpen(fesCfg) : false;
 }
 
 void Festival::Pack(MsgFestival& msg)
@@ -655,25 +700,8 @@ void Festival::OnDataReset(const PlayerPtr& p,
                            MsgPlayerChange& msg,
                            MsgActivityFestivalGroupCfg& groupCfg)
 {
-        auto dealFunc = [this, &msg, &p](const auto& act) {
-                if (act.cfg_id() % 10000 == _id)
-                {
-                        if (1 == act.state())
-                        {
-                                _param += 1;
-                                OnEvent(msg, p, E_AET_DataReset, 1, -1, E_LSOT_None, 0);
-                        }
-                        return true;
-                }
-                return false;
-        };
-
-        if (groupCfg.has_activity())
-                dealFunc(groupCfg.activity());
-
-        auto it = groupCfg.activity_list().find(76000000 + _id);
-        if (groupCfg.activity_list().end() != it)
-                dealFunc(it->second);
+        _param += 1;
+        OnEvent(msg, p, E_AET_DataReset, 1, -1, E_LSOT_None, 0);
 }
 
 bool Festival::OnEvent(MsgPlayerChange& msg,
@@ -684,6 +712,10 @@ bool Festival::OnEvent(MsgPlayerChange& msg,
                        ELogServiceOrigType logType,
                        uint64_t logParam)
 {
+        /*
+        LOG_INFO("111111111111111111111 id[{}] eventType[{}] cnt[{}] param[{}]"
+                 , _id, eventType, cnt, param);
+                 */
         auto& seq = _taskList.get<by_task_event_type>();
         auto range = seq.equal_range(eventType);
         for (auto it=range.first; range.second!=it; ++it)
@@ -691,7 +723,7 @@ bool Festival::OnEvent(MsgPlayerChange& msg,
         return range.first != range.second;
 }
 
-void Festival::Mark(const PlayerPtr& p,
+bool Festival::Mark(const PlayerPtr& p,
                     MsgPlayerChange& msg,
                     int64_t taskID,
                     int64_t cnt,
@@ -702,7 +734,11 @@ void Festival::Mark(const PlayerPtr& p,
         auto& seq = _taskList.get<by_id>();
         auto it = seq.find(taskID);
         if (seq.end() != it)
+        {
                 (*it)->Mark(p, msg, cnt, param, logType, logParam);
+                return true;
+        }
+        return false;
 }
 
 bool Festival::Reward(const PlayerPtr& p,
@@ -721,7 +757,7 @@ bool Festival::Reward(const PlayerPtr& p,
 // }}}
 
 // {{{ FestivalTask
-void FestivalTask::Mark(const PlayerPtr& p,
+bool FestivalTask::Mark(const PlayerPtr& p,
                         MsgPlayerChange& msg,
                         int64_t cnt,
                         int64_t param,
@@ -730,6 +766,7 @@ void FestivalTask::Mark(const PlayerPtr& p,
 {
         _cnt += cnt;
         p->Save2DB();
+        return true;
 }
 
 bool FestivalTask::Reward(const PlayerPtr& p,
@@ -793,6 +830,7 @@ bool FestivalTaskImpl::Reward(const PlayerPtr& p,
 }
 // }}}
 
+// {{{ FestivalCommon
 FESTIVAL_REGISTER(0, FestivalGroup, FestivalCommon, FestivalTaskCommon);
 bool FestivalTaskCommon::Reward(const PlayerPtr& p,
                                 const std::shared_ptr<FestivalGroup>& group,
@@ -824,11 +862,14 @@ bool FestivalCommon::Init(MsgPlayerChange& playerChange
 {
         // LOG_INFO("77777777 id:{}", _id);
         ActivityMgr::_taskCfgList.Foreach([this](const auto& cfg) {
-                auto task = FestivalGroup::CreateFestivalTask(0);
-                task->_id = cfg->_id;
-                task->_eventType = cfg->_target;
-                task->_refreshType = cfg->_refreshType;
-                _taskList.emplace(task);
+                if (0 != cfg->_reward)
+                {
+                        auto task = FestivalGroup::CreateFestivalTask(0);
+                        task->_id = cfg->_id;
+                        task->_eventType = cfg->_target;
+                        task->_refreshType = cfg->_refreshType;
+                        _taskList.emplace(task);
+                }
         });
 
         return true;
@@ -895,6 +936,26 @@ bool FestivalCommon::OnEvent(MsgPlayerChange& msg
 
         return range.first != range.second;
 }
+// }}}
 
+// {{{ FestivalShopBase
+bool FestivalShopBase::Init(MsgPlayerChange& playerChange
+                            , const PlayerPtr& p
+                            , const FestivalGroupPtr& group
+                            , const MsgActivityFestivalActivityCfg& msg)
+{
+        if (!SuperType::Init(playerChange, p, group, msg))
+                return false;
+
+        auto [groupCfg, fesCfg] = FestivalGroup::GetCfg(msg.param(), msg.cfg_id() % (1000 * 1000));
+        if (groupCfg && 0 != fesCfg.cfg_id())
+        {
+                group->_time.Init(p, fesCfg.time());
+                _time.Init(p, fesCfg.time());
+        }
+
+        return true;
+}
+// }}}
 
 // vim: fenc=utf8:expandtab:ts=8

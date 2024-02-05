@@ -351,6 +351,8 @@ public :
                                 auto& ipList = serverInfoList[info->_ip];
                                 auto& stList = ipList[st];
                                 stList[sid] = info;
+
+                                _ipList.emplace(info->_ip);
                         }
                 }
 
@@ -418,40 +420,41 @@ public :
         }
 
         template <typename _Ty>
-                void Foreach(const auto& cb)
-                {
-                        for (auto& val : _serverInfoListByType[CalServerType<_Ty>()])
-                                cb(std::dynamic_pointer_cast<_Ty>(val.second));
-                }
+        void Foreach(const auto& cb)
+        {
+                for (auto& val : _serverInfoListByType[CalServerType<_Ty>()])
+                        cb(std::dynamic_pointer_cast<_Ty>(val.second));
+        }
 
         template <typename _Ty>
-                FORCE_INLINE int64_t GetSize() { return _serverInfoListByType[CalServerType<_Ty>()].size(); }
+        FORCE_INLINE int64_t GetSize() { return _serverInfoListByType[CalServerType<_Ty>()].size(); }
 
         template <typename _Ty>
-                FORCE_INLINE std::shared_ptr<_Ty> GetFirst()
-                {
-                        auto& l = _serverInfoListByType[CalServerType<_Ty>()];
-                        return !l.empty() ? std::dynamic_pointer_cast<_Ty>(l.begin()->second) : std::shared_ptr<_Ty>();
-                }
+        FORCE_INLINE std::shared_ptr<_Ty> GetFirst()
+        {
+                auto& l = _serverInfoListByType[CalServerType<_Ty>()];
+                return !l.empty() ? std::dynamic_pointer_cast<_Ty>(l.begin()->second) : std::shared_ptr<_Ty>();
+        }
 
         template <typename _Ty>
-                int64_t CalSidIdx(int64_t sid)
+        int64_t CalSidIdx(int64_t sid)
+        {
+                int64_t i = -1;
+                for (auto& val : _serverInfoListByType[CalServerType<_Ty>()])
                 {
-                        int64_t i = -1;
-                        for (auto& val : _serverInfoListByType[CalServerType<_Ty>()])
-                        {
-                                ++i;
-                                if (sid == val.second->_sid)
-                                        return i;
-                        }
-                        return INVALID_SERVER_IDX;
+                        ++i;
+                        if (sid == val.second->_sid)
+                                return i;
                 }
+                return INVALID_SERVER_IDX;
+        }
 
 public :
         int64_t _rid = -1;
         int64_t _startPort = -1;
         int64_t _endPort = -1;
         std::map<EServerType, std::map<int64_t, stServerInfoBasePtr>> _serverInfoListByType;
+        std::unordered_set<std::string> _ipList;
 };
 
 struct stRedisCfg
@@ -482,6 +485,12 @@ struct stGateServerCfg
         std::string _key;
 };
 typedef std::shared_ptr<stGateServerCfg> stGateServerCfgPtr;
+
+struct stLobbyServerCfg
+{
+        stRedisCfg _redisCfg;
+};
+typedef std::shared_ptr<stLobbyServerCfg> stLobbyServerCfgPtr;
 
 struct stDBGenGuidItem
 {
@@ -522,12 +531,67 @@ public :
                         return false;
                 delete[] buffer;
 
+                if (root.HasMember("redis"))
+                {
+                        auto& redisCfg = root["redis"];
+                        if (redisCfg.HasMember("game_db"))
+                        {
+                                auto& gameDB = redisCfg["game_db"];
+                                _redisCfg._ip = gameDB["ip"].GetString();
+                                _redisCfg._port = gameDB["port"].GetInt64();
+                                _redisCfg._pwd = gameDB["pwd"].GetString();
+                                _redisCfg._dbIdx = gameDB["db"].GetString();
+                                if (gameDB.HasMember("conn_cnt"))
+                                        _redisCfg._connCnt = gameDB["conn_cnt"].GetInt64();
+                                if (gameDB.HasMember("threadCnt"))
+                                        _redisCfg._thCnt = gameDB["thread_cnt"].GetInt64();
+                                if ("-1" == _redisCfg._dbIdx)
+                                        _redisCfg._dbIdx = fmt::format_int(ServerListCfgMgr::GetInstance()->_rid).str();
+                        }
+                }
+
+                if (root.HasMember("mysql"))
+                {
+                        auto& mysqlCfg = root["mysql"];
+                        auto readMysqlCfgFunc = [&mysqlCfg](stMySqlConfig& cfg, const char* dbName) mutable {
+                                auto& db = mysqlCfg[dbName];
+                                cfg._host = db["host"].GetString();
+                                cfg._port = db["port"].GetInt();
+                                cfg._user = db["user"].GetString();
+                                cfg._pwd = db["pwd"].GetString();
+                                if (db.HasMember("conn_cnt"))
+                                        cfg._connCnt = db["conn_cnt"].GetInt64();
+                                if (db.HasMember("thread_cnt"))
+                                        cfg._thCnt = db["thread_cnt"].GetInt64();
+                                cfg._dbName = db["db"].GetString();
+                                if ("-1" == cfg._dbName)
+                                        cfg._dbName = fmt::format("{}_{}", dbName, ServerListCfgMgr::GetInstance()->_rid);
+                        };
+
+                        if (mysqlCfg.HasMember("game_db"))
+                                readMysqlCfgFunc(_mysqlCfg, "game_db");
+
+                        if (mysqlCfg.HasMember("game_log"))
+                                readMysqlCfgFunc(_mysqlLogCfg, "game_log");
+                }
+
                 if (root.HasMember("gate_server"))
                 {
                         auto& gateCfg = root["gate_server"];
                         _gateCfg = std::make_shared<stGateServerCfg>();
                         _gateCfg->_crt = gateCfg["crt"].GetString();
                         _gateCfg->_key = gateCfg["key"].GetString();
+                }
+
+                if (root.HasMember("lobby_server"))
+                {
+                        auto& lobbyCfg = root["lobby_server"];
+                        _lobbyCfg = std::make_shared<stLobbyServerCfg>();
+
+                        _lobbyCfg->_redisCfg = _redisCfg;
+                        _lobbyCfg->_redisCfg._connCnt = 16;
+                        if (lobbyCfg.HasMember("redis_conn_cnt"))
+                                _lobbyCfg->_redisCfg._connCnt = lobbyCfg["redis_conn_cnt"].GetInt64();
                 }
 
                 if (root.HasMember("db_server"))
@@ -549,46 +613,6 @@ public :
                         }
                 }
 
-                if (root.HasMember("redis"))
-                {
-                        auto& redisCfg = root["redis"];
-                        if (redisCfg.HasMember("game_db"))
-                        {
-                                auto& gameDB = redisCfg["game_db"];
-                                _redisCfg._ip = gameDB["ip"].GetString();
-                                _redisCfg._port = gameDB["port"].GetInt64();
-                                _redisCfg._pwd = gameDB["pwd"].GetString();
-                                _redisCfg._dbIdx = gameDB["db"].GetString();
-                                _redisCfg._connCnt = gameDB["conn_cnt"].GetInt64();
-                                _redisCfg._thCnt = gameDB["thread_cnt"].GetInt64();
-                                if ("-1" == _redisCfg._dbIdx)
-                                        _redisCfg._dbIdx = fmt::format_int(ServerListCfgMgr::GetInstance()->_rid).str();
-                        }
-                }
-
-                if (root.HasMember("mysql"))
-                {
-                        auto& mysqlCfg = root["mysql"];
-                        auto readMysqlCfgFunc = [&mysqlCfg](stMySqlConfig& cfg, const char* dbName) mutable {
-                                auto& db = mysqlCfg[dbName];
-                                cfg._host = db["host"].GetString();
-                                cfg._port = db["port"].GetInt();
-                                cfg._user = db["user"].GetString();
-                                cfg._pwd = db["pwd"].GetString();
-                                cfg._connCnt = db["conn_cnt"].GetInt64();
-                                cfg._thCnt = db["thread_cnt"].GetInt64();
-                                cfg._dbName = db["db"].GetString();
-                                if ("-1" == cfg._dbName)
-                                        cfg._dbName = fmt::format("{}_{}", dbName, ServerListCfgMgr::GetInstance()->_rid);
-                        };
-
-                        if (mysqlCfg.HasMember("game_db"))
-                                readMysqlCfgFunc(_mysqlCfg, "game_db");
-
-                        if (mysqlCfg.HasMember("game_log"))
-                                readMysqlCfgFunc(_mysqlLogCfg, "game_log");
-                }
-
                 return true;
         }
 
@@ -602,6 +626,7 @@ public :
         stMySqlConfig _mysqlLogCfg;
 
         stGateServerCfgPtr _gateCfg;
+        stLobbyServerCfgPtr _lobbyCfg;
         stDBServerCfgPtr _dbCfg;
         std::string _baseCfgDir;
 };

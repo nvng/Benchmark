@@ -10,6 +10,15 @@
                                            []() { return std::make_shared<fs>(); }); \
         }, []() { })
 
+#define FESTIVAL_TIME_CHECK(msg) \
+                auto now = GetClock().GetTimeStamp(); \
+                switch (msg.time().type()) { \
+                case 1 : return 1 == msg.state() && msg.time().active_time() <= now; break; \
+                case 2 : return 1 == msg.state() && msg.time().active_time() <= now && now < msg.time().end_time(); break; \
+                default : break; \
+                } \
+                return true
+
 class Player;
 typedef std::shared_ptr<Player> PlayerPtr;
 
@@ -96,7 +105,7 @@ public :
                _flag = msg.flag();
         }
 
-        virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
+        virtual bool Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
 
         virtual bool Reward(const PlayerPtr& p,
                             const std::shared_ptr<FestivalGroup>& group,
@@ -168,7 +177,9 @@ public :
                           const FestivalGroupPtr& group,
                           const MsgActivityFestivalActivityCfg& msg);
 
-        virtual bool IsOpen(const MsgActivityFestivalActivityCfg& msg);
+        virtual bool IsOpen(const MsgActivityFestivalActivityCfg& msg)
+        { FESTIVAL_TIME_CHECK(msg); }
+        virtual bool IsOpen(int64_t groupID);
         virtual void Pack(MsgFestival& msg);
         virtual void UnPack(const MsgFestival& msg);
         virtual void OnOffline(const PlayerPtr& p) { }
@@ -179,7 +190,7 @@ public :
 
         virtual bool OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
 
-        virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t taskID, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
+        virtual bool Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t taskID, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
 
         virtual bool Reward(const PlayerPtr& p,
                             const std::shared_ptr<FestivalGroup>& group,
@@ -259,6 +270,8 @@ public :
         FORCE_INLINE static UnorderedMap<int64_t, stFestivalOptPtr>& GetOptList()
         { static UnorderedMap<int64_t, stFestivalOptPtr> _l; return _l; }
 
+        static const std::shared_ptr<MsgActivityFestivalGroupCfg> GetGroupCfg(int64_t groupID);
+        static const MsgActivityFestivalActivityCfg& GetFesCfg(const std::shared_ptr<MsgActivityFestivalGroupCfg>& groupCfg, int64_t groupID);
         static const std::pair<std::shared_ptr<MsgActivityFestivalGroupCfg>, const MsgActivityFestivalActivityCfg&> GetCfg(int64_t groupID, int64_t fesID);
         static const std::pair<std::shared_ptr<MsgActivityFestivalGroupCfg>, const MsgActivityFestivalActivityCfg&> GetCfg(int64_t taskID)
         { return GetCfg(FestivalTask::ParseGroupGuid(taskID), FestivalTask::ParseFesID(taskID)); }
@@ -298,25 +311,15 @@ public :
                 return true;
         }
 
-        static bool IsOpen(const MsgActivityFestivalGroupCfg& msg)
+        static FORCE_INLINE bool IsOpen(const MsgActivityFestivalGroupCfg& msg)
+        { FESTIVAL_TIME_CHECK(msg); }
+
+        virtual bool IsOpen()
         {
-                auto now = GetClock().GetTimeStamp();
-                switch (msg.time().type())
-                {
-                case 1 :
-                        return 1 == msg.state() && msg.time().active_time() <= now;
-                        break;
-                case 2 :
-                        return 1 == msg.state() && msg.time().active_time() <= now && now < msg.time().end_time();
-                        break;
-                default :
-                        break;
-                }
-
-                return true;
+                if (0 == _id) return true;
+                auto groupCfg = GetGroupCfg(_id);
+                return groupCfg ? IsOpen(*groupCfg) : false;
         }
-
-        virtual bool IsOpen() { return true; }
 
         virtual void Pack(MsgFestivalGroup& msg)
         {
@@ -346,11 +349,19 @@ public :
                 }
         }
 
-        virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t taskID, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam)
+        virtual bool Mark(const PlayerPtr& p
+                          , MsgPlayerChange& msg
+                          , int64_t taskID
+                          , int64_t cnt
+                          , int64_t param
+                          , ELogServiceOrigType logType
+                          , uint64_t logParam)
         {
                 auto fes = _fesList.Get(FestivalTask::ParseFesID(taskID));
-                if (fes)
-                        fes->Mark(p, msg, taskID, cnt, param, logType, logParam);
+                if (fes && fes->IsOpen(FestivalTask::ParseGroupGuid(taskID)))
+                        return fes->Mark(p, msg, taskID, cnt, param, logType, logParam);
+                else
+                        return false;
         }
 
         virtual bool Reward(const PlayerPtr& p
@@ -372,11 +383,17 @@ public :
         }
 
         void OnDataReset(const PlayerPtr& p, MsgPlayerChange& msg);
-        virtual bool OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam)
+        virtual bool OnEvent(MsgPlayerChange& msg
+                             , const PlayerPtr& p
+                             , int64_t eventType
+                             , int64_t cnt
+                             , int64_t param
+                             , ELogServiceOrigType logType
+                             , uint64_t logParam)
         {
                 bool ret = false;
-                _fesList.Foreach([&msg, &p, &ret, eventType, cnt, param, logType, logParam](const auto& fes) {
-                        if (fes->OnEvent(msg, p, eventType, cnt, param, logType, logParam))
+                _fesList.Foreach([this, &msg, &p, &ret, eventType, cnt, param, logType, logParam](const auto& fes) {
+                        if (fes->IsOpen(_id) && fes->OnEvent(msg, p, eventType, cnt, param, logType, logParam))
                                 ret = true;
                 });
                 return ret;
@@ -508,6 +525,16 @@ public :
                      , int64_t param
                      , ELogServiceOrigType logType
                      , uint64_t logParam) override;
+};
+
+class FestivalShopBase : public Festival
+{
+        typedef Festival SuperType;
+public :
+        bool Init(MsgPlayerChange& playerChange
+                  , const PlayerPtr& p
+                  , const FestivalGroupPtr& group
+                  , const MsgActivityFestivalActivityCfg& msg) override;
 };
 
 // vim: fenc=utf8:expandtab:ts=8

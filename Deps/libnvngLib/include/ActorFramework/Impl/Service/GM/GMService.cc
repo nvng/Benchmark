@@ -7,6 +7,17 @@ bool GMActor::Init()
         if (!SuperType::Init())
                 return false;
 
+#ifdef GM_SERVICE_SERVER
+        std::string sqlStr = fmt::format("CREATE TABLE IF NOT EXISTS `gm_data` ( \
+                                         `module` bigint unsigned NULL, \
+                                         `id` bigint unsigned NOT NULL, \
+                                         `state` bigint unsigned NULL COMMENT '1 正常状态  2 已停止', \
+                                         `data` longtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL, \
+                                         INDEX `idx_module_id`(`module`, `id`) USING BTREE, \
+                                         INDEX `idx_module_state`(`module`, `state`) USING BTREE \
+                                        ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;");
+        MySqlMgr::GetInstance()->Exec(sqlStr);
+#endif
         return true;
 }
 

@@ -253,6 +253,13 @@ SPECIAL_ACTOR_MAIL_HANDLE(CDKeyActor, E_MCCKST_ReqUse, CDKeyService::SessionType
                         break;
                 }
 
+                auto now = GetClock().GetTimeStamp();
+                if (info->end_time() < now)
+                {
+                        pb->set_error_type(E_CET_CDKeyTimeout);
+                        break;
+                }
+
                 {
                         auto it = info->platform_list().find(pb->platform());
                         if (info->platform_list().end() == it)

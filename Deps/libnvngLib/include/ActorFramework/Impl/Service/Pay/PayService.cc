@@ -427,7 +427,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqShip, PayService::SessionType::
                                 _shopMgr._payTimeList.emplace(payCfg->_id, GetClock().GetTimeStamp());
                 }
 
-                _activityMgr.OnEvent(*playerChange, shared_from_this(), E_AET_Recharge, 1, payCfg->_id, E_LSOT_PayReqShip, logGuid);
+                _activityMgr.OnEvent(*playerChange, shared_from_this(), E_AET_Recharge, payCfg->_price, payCfg->_id, E_LSOT_PayReqShip, logGuid);
 
                 pb->set_error_type(E_CET_Success);
                 SetAttr<E_PAT_OrderGuid>(0);

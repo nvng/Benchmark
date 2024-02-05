@@ -2,6 +2,8 @@
 
 namespace nl::af::impl {
 
+#define INVALID_GAME_RANK       (-99999999)
+
 #define INIT_OPT() \
 boost::program_options::options_description desc("Usage"); \
 desc.add_options() \
