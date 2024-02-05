@@ -2,7 +2,6 @@
 
 #include "PlayerBase.h"
 #include "Tools/AppBase.h"
-#include <boost/fiber/fiber.hpp>
 
 namespace nl::af::impl {
 
@@ -332,7 +331,7 @@ NET_MSG_HANDLE(LobbyGateSession, E_MCMT_ClientCommon, E_MCCCST_Disconnect)
         GetPlayerMgrBase()->GetPlayerMgrActor(msgHead._to)->SendPush(2, msg);
 }
 
-// {{{
+// {{{ PlayerOfflineDataActor
 
 bool PlayerOfflineDataActor::Init()
 {
@@ -373,7 +372,8 @@ void PlayerOfflineDataActor::Flush2DB(bool isDelete/* = false*/)
         auto& seqGuid = _dataList.get<PlayerOfflineData::by_id>();
         auto& seq = _dataList.get<PlayerOfflineData::by_over_time>();
         auto it = seq.begin();
-        const auto ie = seq.upper_bound(GetClock().GetSteadyTime());
+        // const auto ie = seq.upper_bound(GetClock().GetSteadyTime());
+        const auto ie = seq.end();
         while (ie != it)
         {
                 dataList.clear();
@@ -382,7 +382,7 @@ void PlayerOfflineDataActor::Flush2DB(bool isDelete/* = false*/)
                 for (; ie!=it; ++it)
                 {
                         auto v = std::make_pair(std::make_shared<MsgOfflineOpt>(), MySqlService::E_MySqlS_None);
-                        dataList.emplace(MySqlMgr::GenDataKey(E_MIMT_Offline, (*it)->guid()), v);
+                        dataList.emplace((*it)->guid(), v);
                         if (dataList.size() >= 1024 * 10)
                         {
                                 ++it;
@@ -404,7 +404,7 @@ void PlayerOfflineDataActor::Flush2DB(bool isDelete/* = false*/)
                         default :
                                 {
                                         auto it_ = seqGuid.find(val.first);
-                                        if (seqGuid.end() != it_)
+                                        if (seqGuid.end() == it_)
                                         {
                                                 LOG_WARN("");
                                                 continue;
@@ -422,7 +422,7 @@ void PlayerOfflineDataActor::Flush2DB(bool isDelete/* = false*/)
                                                         dbInfo->add_item_list()->CopyFrom(item);
                                         }
                                         LOG_INFO("11111111111 id[{}] size[{}]", id, dbInfo->item_list_size());
-                                        saveList.emplace_back(std::make_tuple(id, dbInfo, true));
+                                        saveList.emplace_back(std::make_tuple(id, dbInfo, false));
                                 }
                                 break;
                         }
@@ -491,7 +491,6 @@ void PlayerOfflineDataActor::DealGet()
         std::vector<std::tuple<uint64_t, std::shared_ptr<MsgOfflineOpt>, bool>> saveList;
         saveList.reserve(1024 * 10);
 
-        auto saveEmptyInfo = std::make_shared<MsgOfflineOpt>();
         auto& seqData = _dataList.get<PlayerOfflineData::by_id>();
         auto it = _getList.begin();
         while (_getList.end() != it)
@@ -543,7 +542,9 @@ void PlayerOfflineDataActor::DealGet()
                                         }
 
                                         from->CallRet(dbInfo, 0, scPlayerOfflineDataActorMailMainType, E_MIOST_Get);
-                                        saveList.emplace_back(std::make_tuple(id, saveEmptyInfo, true));
+                                        auto clearDBInfo = std::make_shared<MsgOfflineOpt>();
+                                        clearDBInfo->set_version(dbInfo->version() + 1);
+                                        saveList.emplace_back(std::make_tuple(id, clearDBInfo, false));
                                 }
                                 break;
                         }

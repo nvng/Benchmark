@@ -5,9 +5,6 @@
 
 namespace nl::af::impl {
 
-class PlayerBase;
-typedef std::shared_ptr<PlayerBase> PlayerBasePtr;
-
 SPECIAL_ACTOR_DEFINE_BEGIN(PlayerMgrActor, 0xeff);
 SPECIAL_ACTOR_DEFINE_END(PlayerMgrActor);
 
@@ -23,13 +20,6 @@ struct stDisconnectInfo : public stActorMailBase
 {
         uint64_t _uniqueID = 0;
         uint64_t _to = 0;
-};
-
-struct stRefresh : public stActorMailBase
-{
-	std::vector<IActorWeakPtr> _actList;
-	int64_t _subType = 0;
-	int64_t _param = 0;
 };
 
 // {{{ PlayerOfflineDataActor
@@ -91,9 +81,7 @@ public :
         {
                 auto mail = std::make_shared<stMailPlayerOfflineData>();
                 mail->_guid = p->GetID();
-                // return Call(MsgOfflineOpt, p, shared_from_this(), E_MIMT_Offline, E_MIOST_Get, mail);
-                auto ret = Call(MsgOfflineOpt, p, shared_from_this(), E_MIMT_Offline, E_MIOST_Get, mail);
-                return ret;
+                return Call(MsgOfflineOpt, p, shared_from_this(), E_MIMT_Offline, E_MIOST_Get, mail);
         }
 
         void Terminate() override;
@@ -107,6 +95,9 @@ SPECIAL_ACTOR_DEFINE_END(PlayerOfflineDataActor);
 
 // }}}
 
+// {{{ PlayermgrBase
+
+class PlayerBase;
 class PlayerMgrBase;
 extern PlayerMgrBase* GetPlayerMgrBase();
 
@@ -137,7 +128,7 @@ public :
 	void Terminate() override;
 	void WaitForTerminate() override;
 
-	virtual PlayerBasePtr CreatePlayer(uint64_t id, const std::string& nickName, const std::string& icon) { return nullptr; }
+	virtual std::shared_ptr<PlayerBase> CreatePlayer(uint64_t id, const std::string& nickName, const std::string& icon) { return nullptr; }
 	
 	FORCE_INLINE PlayerMgrActorPtr GetPlayerMgrActor(int64_t id) const
 	{ return _playerMgrActorArr[id & _playerMgrActorArrSize]; }
@@ -181,6 +172,8 @@ protected :
 	stPlayerLevelInfoPtr* _lvExpArr = nullptr;
 	int32_t _lvExpArrMax = 0;
 };
+
+// }}}
 
 }; // end of namespace nl::af::impl
 

@@ -66,15 +66,16 @@ ACTOR_MAIL_HANDLE(MySqlBenchmarkActor, 0xfff, 0x0)
 
 ACTOR_MAIL_HANDLE(MySqlBenchmarkActor, 0xfff, 0x1)
 {
+        /*
         boost::this_fiber::sleep_for(std::chrono::seconds(10));
 
         static constexpr int64_t cnt = 10000;
-        std::unordered_map<uint64_t, std::pair<std::shared_ptr<MailTest>, MySqlService::EMySqlServiceStatus>> dataList;
+        std::unordered_map<uint64_t, std::pair<std::shared_ptr<MailReqDBDataList>, MySqlService::EMySqlServiceStatus>> dataList;
         dataList.reserve(cnt);
         for (int64_t i=0; i<cnt; ++i)
         {
                 uint64_t id = (i+1)*(1000 * 1000 * 1000LL) + 1000 * 1000 + GetID();
-                auto dbInfo = std::make_shared<MailTest>();
+                auto dbInfo = std::make_shared<MailReqDBDataList>();
                 auto v = std::make_pair(dbInfo, MySqlService::E_MySqlS_None);
                 dataList.emplace(id, v);
         }
@@ -84,13 +85,14 @@ ACTOR_MAIL_HANDLE(MySqlBenchmarkActor, 0xfff, 0x1)
         MySqlService::GetInstance()->LoadBatch(shared_from_this(), dataList, "test");
         }
 
-        std::vector<std::tuple<uint64_t, std::shared_ptr<MailTest>, bool>> saveList;
+        std::vector<std::tuple<uint64_t, std::shared_ptr<MailReqDBDataList>, bool>> saveList;
         saveList.reserve(cnt);
         for (int64_t i=0; i<cnt; ++i)
         {
                 uint64_t id = (i+1)*(1000 * 1000 * 1000LL) + 1000 * 1000 + GetID();
-                auto dbInfo = std::make_shared<MailTest>();
-                dbInfo->set_data(fmt::format("{}_{}", id, "abc"));
+                auto dbInfo = std::make_shared<MailReqDBDataList>();
+                auto item = dbInfo->add_list();
+                item->set_data(fmt::format("{}_{}", id, "abc"));
                 auto v = std::make_tuple(id, dbInfo, true);
                 saveList.emplace_back(v);
         }
@@ -106,7 +108,7 @@ ACTOR_MAIL_HANDLE(MySqlBenchmarkActor, 0xfff, 0x1)
         for (int64_t i=0; i<cnt; ++i)
         {
                 uint64_t id = (i+1)*(1000 * 1000 * 1000LL) + 1000 * 1000 + GetID();
-                auto dbInfo = std::make_shared<MailTest>();
+                auto dbInfo = std::make_shared<MailReqDBDataList>();
                 auto v = std::make_pair(dbInfo, MySqlService::E_MySqlS_None);
                 dataList.emplace(id, v);
         }
@@ -117,14 +119,18 @@ ACTOR_MAIL_HANDLE(MySqlBenchmarkActor, 0xfff, 0x1)
                 {
                         auto id = v.first;
                         auto dbInfo = v.second.first;
-                        auto data = fmt::format("{}_{}", id, "abc");
-                        if (dbInfo->data() != data)
-                                LOG_INFO("77777777777777777777");
-                        else
-                                ; // LOG_INFO("88888888888888888888");
+                        for (auto& item : dbInfo->list())
+                        {
+                                auto data = fmt::format("{}_{}", id, "abc");
+                                if (item.data() != data)
+                                        LOG_INFO("77777777777777777777");
+                                else
+                                        ; // LOG_INFO("88888888888888888888");
+                        }
                 }
 
         }
+        */
 
         return nullptr;
 }
