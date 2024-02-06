@@ -355,7 +355,7 @@ public :
                 while (boost::fibers::channel_op_status::timeout != ch.pop_wait_for(ret, std::chrono::seconds(IActor::scCallRemoteTimeOut))
                        && guid != ret->_guid)
                 {
-                        LOG_ERROR("远程回复本地不匹配!!! id[{}] local[{}] mt[{:#x}] st[{:#x}] guid[{}] ret.first[{}]",
+                        LOG_ERROR("远程回复本地不匹配!!! id[{}] local[{}] mt[{:#x}] st[{:#x}] guid[{}] ret->_guid[{}]",
                                   GetID(), GetLocalID(), mt, st, guid, ret->_guid);
                 }
 

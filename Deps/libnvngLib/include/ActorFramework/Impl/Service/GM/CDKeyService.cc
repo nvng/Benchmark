@@ -12,6 +12,8 @@ SERVICE_NET_HANDLE(CDKeyService::SessionType, E_MCMT_CDKey, E_MCCKST_ReqUse, Msg
         auto act = CDKeyService::GetInstance()->GetActor_();
         if (act)
         {
+                ++GetApp()->_reqCDKeyCnt;
+
                 auto m = std::make_shared<CDKeyService::SessionType::stServiceMessageWapper>();
                 m->_agent = std::make_shared<typename CDKeyService::SessionType::ActorAgentType>(msgHead._from, shared_from_this());
                 m->_agent->BindActor(act);
@@ -282,6 +284,8 @@ SPECIAL_ACTOR_MAIL_HANDLE(CDKeyActor, E_MCCKST_ReqUse, CDKeyService::SessionType
                 pb->mutable_reward_list()->CopyFrom(*info->mutable_reward_list());
                 pb->set_group(groupID);
                 pb->set_error_type(E_CET_Success);
+
+                ++GetApp()->_reqCDKeySuccessCnt;
         } while (0);
 
         auto ses = msg->_agent->GetSession();

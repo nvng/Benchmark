@@ -199,11 +199,19 @@ __direct_deal__ :
                                                 case E_SSBT_MultiCast :
                                                         {
                                                                 auto pbInfo = std::reinterpret_pointer_cast<stSendRefWapper>(bufInfo._ptr);
+
                                                                 std::size_t msgSendSize = 0;
                                                                 Compress::ECompressType ct = Compress::ECompressType::E_CT_None;
                                                                 if (pbInfo->_msg)
                                                                         std::tie(msgSendSize, ct) = SuperType::SerializeAndCompress(*pbInfo->_msg, sendBuf+sizeof(typename MsgHeaderType::MsgMultiCastHeader));
-                                                                auto [idsMsgSendSize, sct] = SuperType::SerializeAndCompress(*std::reinterpret_pointer_cast<google::protobuf::MessageLite>(pbInfo->_msgExtra), sendBuf+sizeof(typename MsgHeaderType::MsgMultiCastHeader)+msgSendSize+sizeof(uint64_t));
+
+                                                                std::size_t idsMsgSendSize = 0;
+                                                                Compress::ECompressType sct = Compress::ECompressType::E_CT_None;
+                                                                if (pbInfo->_msgExtra)
+                                                                        std::tie(idsMsgSendSize, sct) = SuperType::SerializeAndCompress(*std::reinterpret_pointer_cast<google::protobuf::MessageLite>(pbInfo->_msgExtra), sendBuf+sizeof(typename MsgHeaderType::MsgMultiCastHeader)+msgSendSize+sizeof(uint64_t));
+                                                                else
+                                                                        LOG_WARN("E_SSBT_MultiCast pbInfo->_msgExtra is nullptr!!!");
+
                                                                 *reinterpret_cast<uint64_t*>(sendBuf + sizeof(typename MsgHeaderType::MsgMultiCastHeader) + msgSendSize) = msgHead._to;
                                                                 realSendSize = sizeof(typename MsgHeaderType::MsgMultiCastHeader) + msgSendSize + sizeof(uint64_t) + idsMsgSendSize;
                                                                 new (sendBuf) typename MsgHeaderType::MsgMultiCastHeader(realSendSize,

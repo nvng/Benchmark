@@ -4,7 +4,6 @@
 
 SERVICE_NET_HANDLE(PayService::SessionType, E_MCMT_Pay, E_MCPST_ReqOrderGuid)
 {
-        LOG_INFO("111111111111111111111111111");
         auto ret = std::make_shared<MsgPayOrderGuid>();
         ret->set_guid(PayService::SnowflakePayOrderGuid::Gen());
         SendPB(ret,
@@ -18,6 +17,9 @@ SERVICE_NET_HANDLE(PayService::SessionType, E_MCMT_Pay, E_MCPST_ReqOrderGuid)
 
 SPECIAL_ACTOR_MAIL_HANDLE(PayActor, 0xf, stMailHttpReq)
 {
+        LOG_INFO("target[{}]", msg->_httpReq->_req.target());
+        // LOG_INFO("body[{}]", msg->_httpReq->_req.body());
+
         auto targetList = Tokenizer(msg->_httpReq->_req.target(), "?");
         if (!targetList.empty())
         {
@@ -114,8 +116,7 @@ bool PayService::Init()
 
         _callbackFuncTypeList.emplace("/pay", [](const PayActorPtr& act, const std::shared_ptr<stMailHttpReq>& msg) {
 
-                LOG_INFO("target[{}]", msg->_httpReq->_req.target());
-                LOG_INFO("body[{}]", msg->_httpReq->_req.body());
+                ++GetApp()->_payCnt;
 
                 int64_t code = 200;
                 std::string httpMsg;
@@ -172,7 +173,6 @@ bool PayService::Init()
                                 break;
                         }
 
-                        LOG_INFO("5555555");
                         auto agent = PayService::GetInstance()->GetActor(act, reqShipMsg->player_guid());
                         if (!agent)
                         {
@@ -181,7 +181,6 @@ bool PayService::Init()
                                 break;
                         }
 
-                        LOG_INFO("6666666");
                         auto reqShipRet = Call(MsgPayReqShip, act, agent, E_MCMT_Pay, E_MCPST_ReqShip, reqShipMsg);
                         if (!reqShipRet)
                         {
@@ -190,24 +189,26 @@ bool PayService::Init()
                                 break;
                         }
 
-                        LOG_INFO("7777777");
                         if (E_CET_Success != reqShipRet->error_type())
                         {
                                 code = reqShipRet->code();
                                 httpMsg = reqShipRet->msg();
                         }
+                        else
+                        {
+                                ++GetApp()->_payShipCnt;
+                        }
                 } while (0);
 
-                LOG_INFO("8888888");
                 std::string replyStr = fmt::format("{}\"code\":{}, \"msg\":\"{}\", \"data\":[]{}", "{", code, httpMsg, "}");
+                LOG_INFO("支付发货回调返回 replyStr[{}]", replyStr);
                 msg->_httpReq->Reply(replyStr);
                 return nullptr;
         });
 
         _callbackFuncTypeList.emplace("/gift", [](const PayActorPtr& act, const std::shared_ptr<stMailHttpReq>& msg) {
 
-                LOG_INFO("target[{}]", msg->_httpReq->_req.target());
-                LOG_INFO("body[{}]", msg->_httpReq->_req.body());
+                ++GetApp()->_giftCnt;
 
                 int64_t code = 200;
                 std::string httpMsg;
@@ -280,7 +281,6 @@ bool PayService::Init()
                         }
                         reqMsg->set_sign((*it).value);
 
-                        LOG_INFO("5555555");
                         auto agent = PayService::GetInstance()->GetActor(act, reqMsg->player_guid());
                         if (!agent)
                         {
@@ -289,7 +289,6 @@ bool PayService::Init()
                                 break;
                         }
 
-                        LOG_INFO("6666666");
                         auto reqRet = Call(MsgSDKGift, act, agent, E_MCMT_Pay, E_MCPST_Gift, reqMsg);
                         if (!reqRet)
                         {
@@ -298,16 +297,19 @@ bool PayService::Init()
                                 break;
                         }
 
-                        LOG_INFO("7777777");
                         if (E_CET_Success != reqRet->error_type())
                         {
                                 code = reqRet->code();
                                 httpMsg = reqRet->msg();
                         }
+                        else
+                        {
+                                ++GetApp()->_giftShipCnt;
+                        }
                 } while (0);
 
-                LOG_INFO("8888888");
                 std::string replyStr = fmt::format("{}\"code\":{}, \"msg\":\"{}\", \"data\":[]{}", "{", code, httpMsg, "}");
+                LOG_INFO("礼包发货回调返回 replyStr[{}]", replyStr);
                 msg->_httpReq->Reply(replyStr);
                 return nullptr;
         });
@@ -327,7 +329,6 @@ PayService::ReqOrderGuid(const PlayerPtr& act)
                 if (!payActor)
                         return nullptr;
 
-                LOG_INFO("222222222222222222222222");
                 return Call(MsgPayOrderGuid, act, payActor, E_MCMT_Pay, E_MCPST_ReqOrderGuid, nullptr);
         }
         else if constexpr (E_ServiceType_Local == ServiceType)
@@ -349,7 +350,6 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqOrderGuid, MsgPayOrderGuid)
         {
                 SetAttr<E_PAT_OrderGuid>(ret->guid());
                 ret->set_error_type(E_CET_Success);
-                LOG_INFO("1111111111 order guid:{}", ret->guid());
 
                 auto logGuid = LogService::GetInstance()->GenGuid();
                 std::string str = fmt::format("{}\"guid\":{},\"cfg_id\":{}{}", "{", ret->guid(), msg->cfg_id(), "}");
@@ -364,7 +364,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqShip, PayService::SessionType::
         if (!pb)
                 return nullptr;
 
-        LOG_INFO("111111111111111111111111111 cfg:{}", pb->cfg_id());
+        // LOG_INFO("111111111111111111111111111 cfg:{}", pb->cfg_id());
         do
         {
                 if (0 == GetAttr<E_PAT_OrderGuid>())
@@ -383,8 +383,10 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqShip, PayService::SessionType::
                 }
 
                 std::string price = fmt::format("{:.2f}", payCfg->_price / 10000.0);
+                /*
                 LOG_INFO("22222222222 order_amt[{}] orderAmt[{}] payCfg->_price[{}]"
                          , pb->order_amt(), price, payCfg->_price);
+                         */
                 if (pb->order_amt() != price)
                 {
                         pb->set_error_type(E_CET_Fail);

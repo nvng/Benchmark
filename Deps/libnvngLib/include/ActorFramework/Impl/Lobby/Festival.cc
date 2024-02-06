@@ -253,11 +253,6 @@ bool ActivityMgrBase::OnEvent(MsgPlayerChange& msg,
                 }
         });
 
-        if (ret)
-        {
-                std::string str = fmt::format("{}\"cnt\":{},\"param\":{}{}", "{", cnt, param, "}");
-                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, eventType, logType, logParam);
-        }
         return ret;
 }
 // }}}

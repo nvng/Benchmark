@@ -377,6 +377,7 @@ public :
 
 public :
         static constexpr time_t scCallRemoteTimeOut = 5;
+        static constexpr time_t scMailQueueMaxSize = 1 << 15;
 };
 
 // }}}

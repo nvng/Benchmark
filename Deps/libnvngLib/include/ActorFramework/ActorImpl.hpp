@@ -334,7 +334,7 @@ protected :
                                 double diff = (double)(end-_clock)/CLOCKS_PER_SEC;
                                 double real = (double)(end-realClock)/CLOCKS_PER_SEC;
                                 auto type = mail->Type();
-                                LOG_WARN_IF(diff>=0.001 || real>=0.1,
+                                LOG_WARN_IF(diff>=0.001 || real>=0.001,
                                             "{}",fmt::sprintf("mail type[%#x] mt[%#x] st[%#x] cost[%lfs] real[%lfs]",
                                                               type,
                                                               ActorMailType::MsgMainType(type),
@@ -387,7 +387,9 @@ public :
         {
                 static auto handlerList = GetHandlerList();
                 uint64_t msgType = ActorMailType::MsgTypeMerge(mainType, subType);
-                assert(nullptr == handlerList[msgType]);
+                LOG_FATAL_IF(nullptr != handlerList[msgType]
+                             , "actor 重复注册消息!!! mt[{:#x}] st[{:#x}]"
+                             , mainType, subType);
                 handlerList[msgType] = cb;
         }
 
@@ -446,8 +448,17 @@ struct stRegistActorMailHandleProxy {
         static void MailHandle(IActor* act, typename _Ay::ActorMailType* mail) {
                 auto from = mail->_from.lock(); /* 必须在此持有，否则回调中若删除，则 Finish 会出问题。*/
                 auto msg = ParseMailData<_My>(mail, _Mt, _St);
-                auto ret = dynamic_cast<_Ay*>(act)->template MailHandle<_Mt, _St, _My>(from, msg);
-                mail->Finish(ret);
+                auto dealAct = dynamic_cast<_Ay*>(act);
+                if (nullptr != dealAct)
+                {
+                        auto ret = dealAct->template MailHandle<_Mt, _St, _My>(from, msg);
+                        mail->Finish(ret);
+                }
+                else
+                {
+                        LOG_ERROR("act handler recv type[{:#x}]，Actor 类型错误!!! _Ay[{}]"
+                                  , mail->Type(), typeid(_Ay).name());
+                }
         }
 };
 
@@ -460,8 +471,17 @@ struct stRegistActorMailHandleProxy<_Ay, _Mt, _St, int> {
         stRegistActorMailHandleProxy() { _Ay::RegisterMailHandler(_Mt, _St, MailHandle); }
         static void MailHandle(IActor* act, typename _Ay::ActorMailType* mail) {
                 auto from = mail->_from.lock(); /* 必须在此持有，否则回调中若删除，则 Finish 会出问题。*/
-                auto ret = dynamic_cast<_Ay*>(act)->template MailHandle<_Mt, _St>(from);
-                mail->Finish(ret);
+                auto dealAct = dynamic_cast<_Ay*>(act);
+                if (nullptr != dealAct)
+                {
+                        auto ret = dealAct->template MailHandle<_Mt, _St>(from);
+                        mail->Finish(ret);
+                }
+                else
+                {
+                        LOG_ERROR("act handler recv type[{:#x}]，Actor 类型错误!!! _Ay[{}]"
+                                  , mail->Type(), typeid(_Ay).name());
+                }
         }
 };
 

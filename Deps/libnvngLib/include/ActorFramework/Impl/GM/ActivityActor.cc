@@ -190,6 +190,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(ActivityActor, 0xf)
                 auto m = std::make_shared<stMailHttpReq>();
                 m->_httpReq = req;
                 GetApp()->_activityActor->SendPush(0, m);
+                ++GetApp()->_activityReqCnt;
         });
 
         return nullptr;

@@ -453,7 +453,8 @@ ACTOR_MAIL_HANDLE(MainCityActor, E_MCMT_GameCommon, E_MCGCST_LoadFinish)
 		return ret;
 
         // PLAYER_DLOG_INFO("主场景 load 玩家[{}] 成功!!!", from->GetID());
-	ret->set_error_type(E_IET_Fail);
+	ret->set_error_type(E_IET_Success);
+        ++GetApp()->_mainCityCnt;
 	return ret;
 }
 
@@ -491,6 +492,8 @@ ACTOR_MAIL_HANDLE(MainCityActor, E_MCMT_GameCommon, E_MCGCST_ReqExitRegion)
         retMsg->set_error_type(E_IET_Success);
 	_loadPlayerList.Remove(from->GetID());
         _playerList.Remove(from->GetID());
+
+        --GetApp()->_mainCityCnt;
 	return retMsg;
 }
 

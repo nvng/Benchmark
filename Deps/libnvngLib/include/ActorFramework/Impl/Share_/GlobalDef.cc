@@ -148,25 +148,25 @@ bool ReadCompetitionCfg(UnorderedMap<int64_t, stCompetitionCfgInfoPtr>& _list)
                 // auto timeDay = GetClock().TimeClear_Slow(now, Clock::E_CTT_DAY);
 
                 auto ret = cfgTime
-                        - (HOUR_TO_SEC(zoneHour) + MIN_TO_SEC(zoneMin))
-                        + HOUR_TO_SEC(timeInfo->_timeZoneHour) + MIN_TO_SEC(timeInfo->_timeZoneMin);
+                        + ((HOUR_TO_SEC(zoneHour) + MIN_TO_SEC(zoneMin)))
+                        - (HOUR_TO_SEC(timeInfo->_timeZoneHour) + MIN_TO_SEC(timeInfo->_timeZoneMin));
                 if (0 == flag)
                 {
                         timeInfo->_openTime = ret;
                         if (3 == cfg->_openTimeType)
                                 timeInfo->_openTime = 0;
-                        LOG_INFO("id[{}] 赛区[{}] 时区[{}:{}] OpenTime[{}]",
-                                 cfg->_id, timeInfo->_type, timeInfo->_timeZoneHour, timeInfo->_timeZoneMin,
-                                 GetClock().GetTimeString_Slow(timeInfo->_openTime));
+                        LOG_INFO("id[{}] 赛区[{}] 时区[{}:{}] OpenTime[{}] diff[{}:{}]"
+                                 , cfg->_id, timeInfo->_type, timeInfo->_timeZoneHour, timeInfo->_timeZoneMin
+                                 , timeInfo->_openTime, timeInfo->_openTime / 3600, (timeInfo->_openTime % 3600) / 60);
                 }
                 else
                 {
                         timeInfo->_endTime = ret;
                         if (3 == cfg->_openTimeType)
                                 timeInfo->_endTime = 24 * 3600;
-                        LOG_INFO("id[{}] 赛区[{}] 时区[{}:{}] EndTime[{}]",
-                                 cfg->_id, timeInfo->_type, timeInfo->_timeZoneHour, timeInfo->_timeZoneMin,
-                                 GetClock().GetTimeString_Slow(timeInfo->_endTime));
+                        LOG_INFO("id[{}] 赛区[{}] 时区[{}:{}] EndTime[{}] diff[{}:{}]"
+                                 , cfg->_id, timeInfo->_type, timeInfo->_timeZoneHour, timeInfo->_timeZoneMin
+                                 , timeInfo->_endTime, timeInfo->_endTime / 3600, (timeInfo->_endTime % 3600) / 60);
                 }
         };
 

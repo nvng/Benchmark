@@ -1599,9 +1599,23 @@ void CompetitionKnockoutQueueMgrActor::ReqQueue(const std::shared_ptr<stMailReqQ
                 auto now = GetClock().GetTimeStamp();
                 time_t baseTime = GetClock().TimeClear_Slow(now, Clock::E_CTT_DAY);
                 if (2 == competitionCfg->_openTimeType)
-                        baseTime = (baseTime - GetClock().GetWeekDay()) + competitionCfg->_openTimeTypeParam;
+                        baseTime = (baseTime - DAY_TO_SEC(GetClock().GetWeekDay())) + DAY_TO_SEC(competitionCfg->_openTimeTypeParam);
 
                 auto timeInfo = competitionCfg->_timeInfoList.Get(competitionCfg->_timeInfoList.Size()<=1 ? 0 : pb->param_2());
+                /*
+                if (timeInfo)
+                {
+                        LOG_INFO("idx[{}] now[{}] baseTime[{}] openTime[{}] ocfg[{}] endTime[{}] ecfg[{}]"
+                                 , competitionCfg->_timeInfoList.Size()<=1 ? 0 : pb->param_2()
+                                 , GetClock().GetTimeString_Slow(now)
+                                 , GetClock().GetTimeString_Slow(baseTime)
+                                 , GetClock().GetTimeString_Slow(baseTime + timeInfo->_openTime)
+                                 , timeInfo->_openTime
+                                 , GetClock().GetTimeString_Slow(baseTime + timeInfo->_endTime)
+                                 , timeInfo->_endTime);
+                }
+                */
+
                 if (!timeInfo || now<baseTime+timeInfo->_openTime || baseTime+timeInfo->_endTime<now)
                 {
                         if (timeInfo)

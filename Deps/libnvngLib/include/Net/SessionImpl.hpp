@@ -359,7 +359,9 @@ public :
         {
                 auto msgType = MsgHeaderType::MsgTypeMerge(mainType, subType);
                 static auto handleList = GetMsgHandleList();
-                assert(nullptr == handleList[msgType]);
+                LOG_FATAL_IF(nullptr != handleList[msgType]
+                             , "重复注册网络消息 mt[{:#x}] st[{:#x}]!!!"
+                             , mainType, subType);
                 if (0 <= msgType && msgType < MsgHeaderType::scArraySize)
                         handleList[msgType] = cb;
         }

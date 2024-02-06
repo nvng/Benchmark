@@ -223,6 +223,7 @@ NET_MSG_HANDLE(LoginGateSession, E_MCMT_Login, E_MCLST_Login, MsgClientLoginChec
         auto act = GetApp()->DistLoginActor(msg->user_id());
         if (act)
         {
+                ++GetApp()->_reqLoginCnt;
                 auto m = std::make_shared<stClientLoginCheckMail>();
                 m->_ses = shared_from_this();
                 m->_msg = msg;

@@ -174,6 +174,7 @@ bool GMService::Init()
                 auto act = GMService::GetInstance()->GetServiceActor();
                 if (act)
                         act->SendPush(0x0, m);
+                ++GetApp()->_gmReqCnt;
         });
 
         RegistOpt(99999999, 0, [](const GMActorPtr& gmActor, const auto& msg) -> std::pair<bool, std::string> {

@@ -48,6 +48,9 @@ void LogActor::DealTimeout()
 
                         if (oldSize != sqlStr.size())
                         {
+                                GetApp()->_saveSize += sqlStr.size();
+                                GetApp()->_saveCnt += 1;
+
                                 sqlStr.pop_back();
                                 sqlStr += ";";
                                 MySqlMgr::GetInstance()->Exec(sqlStr);
