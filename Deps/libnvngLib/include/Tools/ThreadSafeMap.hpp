@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Util.h"
-
 #include <type_traits>
 
 template <typename _Ty> struct is_shared_pointer : public std::false_type { };
@@ -16,11 +14,11 @@ class ThreadSafeUnorderedMap
 {
         static_assert(is_shared_pointer<_Vy>::value || is_weak_pointer<_Vy>::value);
 public :
-        ThreadSafeUnorderedMap(const std::string& flag)
+        explicit ThreadSafeUnorderedMap(const std::string& flag)
         {
         }
 
-        ThreadSafeUnorderedMap(ThreadSafeUnorderedMap&& rhs)
+        explicit ThreadSafeUnorderedMap(ThreadSafeUnorderedMap&& rhs)
         {
                 _list = std::move(rhs._list);
         }
@@ -54,17 +52,14 @@ public :
 
         FORCE_INLINE _Vy Get(_Ky k)
         {
-                _Vy ret;
-                _list.visit(k, [&ret](auto& val) {
-                        ret = val.second;
-                });
-                return ret;
+                bool found = false;
+                return Get(k, found);
         }
 
         FORCE_INLINE _Vy Get(_Ky k, bool& found)
         {
                 _Vy ret;
-                found = _list.visit(k, [&ret](auto& val) {
+                found = _list.cvisit(k, [&ret](auto& val) {
                         ret = val.second;
                 });
                 return ret;
@@ -77,7 +72,7 @@ public :
         FORCE_INLINE void ForeachClear(const auto& cb)
         {
                 decltype(_list) tmpList = std::move(_list);
-                tmpList.visit_all([&cb](auto& val) {
+                tmpList.cvisit_all([&cb](auto& val) {
                         cb(val.second);
                 });
         }
@@ -85,7 +80,7 @@ public :
         FORCE_INLINE void Foreach(const auto& cb)
         {
                 decltype(_list) tmpList = _list;
-                tmpList.visit_all([&cb](auto& val) {
+                tmpList.cvisit_all([&cb](auto& val) {
                         cb(val.second);
                 });
         }

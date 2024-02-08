@@ -43,7 +43,7 @@ public :
                   , _ch(1 << 1)
                   , _msgQueue(Next2N(qSize))
         {
-                LOG_ERROR_IF(!CHECK_2N(qSize), "qSize[{}] 必须设置为 2^N !!!", qSize);
+                LOG_ERROR_PS_IF(!CHECK_2N(qSize), "qSize[{}] 必须设置为 2^N !!!", qSize);
         }
 
         ~ActorImpl() override
@@ -74,7 +74,7 @@ public :
                 auto thisPtr = reinterpret_cast<ImplType*>(this)->shared_from_this();
                 if (!ServiceType::GetService()->AddActor(thisPtr))
                 {
-                        LOG_ERROR("actor 添加失败!!! id[{}]", GetID());
+                        LOG_ERROR_PS("actor 添加失败!!! id[{}]", GetID());
                         return false;
                 }
 
@@ -105,6 +105,8 @@ public :
         {
                 const auto type = m->Type();
                 const bool checkTypeRet = 0 != m->Flag() || (0<=type && type<HandleArraySize);
+                LOG_ERROR_PS_IF(!checkTypeRet, "Push 时消息 type[{:#x}] 出错!!! flag[{}] HandleArraySize[{}]"
+                                , type, m->Flag(), HandleArraySize);
                 if (checkTypeRet && boost::fibers::channel_op_status::success != _msgQueue.try_push(m))
                 {
                         LOG_ERROR("send 阻塞!!! type[{:#x}]", type);
@@ -353,7 +355,8 @@ protected :
                                 }
                                 else
                                 {
-                                        LOG_ERROR("处理邮件时出错!!!");
+                                        LOG_ERROR("处理邮件时 type[{:#x}] 检查出错!!! flag[{}] HandleArraySize[{}]"
+                                                  , type, mail->Flag(), HandleArraySize);
                                 }
                         }
                 }
@@ -399,11 +402,11 @@ protected :
 public :
         FORCE_INLINE static void RegisterMailHandler(uint64_t mainType, uint64_t subType, typename ActorMailType::HandleType cb)
         {
-                static auto handlerList = GetHandlerList();
+                auto handlerList = GetHandlerList();
                 uint64_t msgType = ActorMailType::MsgTypeMerge(mainType, subType);
                 LOG_FATAL_IF(msgType<0 || HandleArraySize<=msgType || nullptr != handlerList[msgType]
-                             , "actor 重复注册消息!!! mt[{:#x}] st[{:#x}]"
-                             , mainType, subType);
+                             , "actor 重复注册消息!!! mt[{:#x}] st[{:#x}] msgType[{:#x}] HandleArraySize[{}]"
+                             , mainType, subType, msgType, HandleArraySize);
                 handlerList[msgType] = cb;
         }
 

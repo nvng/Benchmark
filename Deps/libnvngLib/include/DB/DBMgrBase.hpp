@@ -37,7 +37,7 @@ protected :
 
                 for (decltype(thCnt) i=0; i<thCnt; ++i)
                 {
-                        _ioCtxArr.emplace_back(std::make_shared<boost::asio::io_context>(1));
+                        _ioCtxArr.emplace_back(std::make_shared<boost::asio::io_context>());
                         std::thread t([this, i]() {
                                 SetThreadName("{}_{}", _markString, i);
                                 auto w = boost::asio::make_work_guard(*_ioCtxArr[i]);

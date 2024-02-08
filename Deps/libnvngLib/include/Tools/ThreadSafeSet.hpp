@@ -1,138 +1,54 @@
 #pragma once
 
-#include "Util.h"
+#include <boost/unordered/concurrent_flat_set.hpp>
 
-#define ThreadSafeSetCommon(_Fy, _Ly) \
-template <typename _Vy, std::size_t _Offset> \
-class ThreadSafeSetInternal##_Fy \
-{ \
-public : \
-        ThreadSafeSetInternal##_Fy(const std::string& flag) \
-                : _cnt(Next2N(std::thread::hardware_concurrency()) - 1) \
-                , _flag(flag) \
-        { \
-                _listMutex = new SpinLock[_cnt+1]; \
-                _list = new _Ly<_Vy>[_cnt+1]; \
-        } \
-\
-        ~ThreadSafeSetInternal##_Fy() \
-        { \
-                delete[] _listMutex; \
-                _listMutex = nullptr; \
-                delete[] _list; \
-                _list = nullptr; \
-        } \
-\
-        FORCE_INLINE bool Add(const _Vy& v) \
-        { \
-                auto idx = Idx(v); \
-                LOCK_GUARD(_listMutex[idx], idx, _flag); \
-                return _list[idx].emplace(v).second; \
-        } \
- \
-        FORCE_INLINE _Vy Remove(const _Vy& v) \
-        { \
-                auto idx = Idx(v); \
-                LOCK_GUARD(_listMutex[idx], idx, _flag); \
-                auto it = _list[idx].find(v); \
-                if (_list[idx].end() != it) \
-                { \
-                        auto ret = *it; \
-                        _list[idx].erase(it); \
-                        return ret; \
-                } \
-                return _Vy(); \
-        } \
- \
-        FORCE_INLINE _Vy Get(const _Vy& v) \
-        { \
-                auto idx = Idx(v); \
-                LOCK_GUARD(_listMutex[idx], idx, _flag); \
-                auto it = _list[idx].find(v); \
-                return _list[idx].end() != it ? *it : _Vy(); \
-        } \
- \
-        FORCE_INLINE _Vy Get(const _Vy& v, bool& found) \
-        { \
-                found = false; \
-                auto idx = Idx(v); \
-                LOCK_GUARD(_listMutex[idx], idx, _flag); \
-                auto it = _list[idx].find(v); \
-                if (_list[idx].end() != it) { \
-                        found = true; \
-                        return *it; \
-                } else \
-                        return _Vy(); \
-        } \
- \
-        FORCE_INLINE void Clear() \
-        { \
-                for (int64_t i=0; i<_cnt+1; ++i) \
-                { \
-                        LOCK_GUARD(_listMutex[i], i, _flag); \
-                        _list[i].clear(); \
-                } \
-        } \
- \
-        FORCE_INLINE std::size_t Size() \
-        { \
-                int64_t sum = 0; \
-                for (int64_t i=0; i<_cnt+1; ++i) \
-                { \
-                        LOCK_GUARD(_listMutex[i], i, _flag); \
-                        sum += _list[i].size(); \
-                } \
-                return sum; \
-        } \
- \
-	template <typename _Fy> \
-	FORCE_INLINE void Foreach(const _Fy& cb) \
-	{ \
-                for (int64_t i=0; i<_cnt+1; ++i) \
-                { \
-                        _listMutex[i].lock(); \
-                        _Ly<_Vy> tmpList = _list[i]; \
-                        _listMutex[i].unlock(); \
- \
-                        for (auto& val : tmpList) \
-                                cb(val); \
-                } \
-	} \
- \
-        template <typename _Fy> \
-        FORCE_INLINE void ForeachAndClear(_Fy cb) \
-        { \
-                for (int64_t i=0; i<_cnt+1; ++i) \
-                { \
-                        _listMutex[i].lock(); \
-                        _Ly<_Vy> tmpList = std::move(_list[i]); \
-                        _listMutex[i].unlock(); \
-\
-                        for (auto& val : tmpList) \
-                                cb(val); \
-                } \
-        } \
- \
-private : \
-        FORCE_INLINE int64_t Idx(uint64_t id) const { return (id >> _Offset) & _cnt; } \
-private : \
-        const int64_t _cnt = 0; \
-        SpinLock* _listMutex = nullptr; \
-        _Ly<_Vy>* _list = nullptr; \
-        const std::string _flag; \
-}
+template <typename _Vy>
+class ThreadSafeUnorderedSet
+{
+public :
+        explicit ThreadSafeUnorderedSet(const std::string& flag)
+        {
+        }
 
-#include <set>
-#include <unordered_set>
+        explicit ThreadSafeUnorderedSet(ThreadSafeUnorderedSet&& rhs)
+        {
+                _list = std::move(rhs._list);
+        }
 
-ThreadSafeSetCommon(Set, std::set);
-ThreadSafeSetCommon(UnorderedSet, std::unordered_set);
+        ~ThreadSafeUnorderedSet() = default;
 
-template <typename _Vy, std::size_t _Offset=8>
-using ThreadSafeSet = ThreadSafeSetInternalSet<_Vy, _Offset>;
+        FORCE_INLINE bool Add(_Vy v)
+        { return _list.emplace(v); }
 
-template <typename _Vy, std::size_t _Offset=8>
-using ThreadSafeUnorderedSet = ThreadSafeSetInternalUnorderedSet<_Vy, _Offset>;
+        FORCE_INLINE void Remove(_Vy v)
+        { _list.erase(v); }
+
+        FORCE_INLINE bool Get(_Vy v)
+        { return _list.cvisit(v); }
+
+        FORCE_INLINE void Clear() { _list.clear(); }
+        FORCE_INLINE std::size_t Empty() { return _list.empty(); }
+        FORCE_INLINE std::size_t Size() { return _list.size(); }
+
+        FORCE_INLINE void ForeachClear(const auto& cb)
+        {
+                decltype(_list) tmpList = std::move(_list);
+                tmpList.cvisit_all([&cb](auto& val) {
+                        cb(val.second);
+                });
+        }
+
+        FORCE_INLINE void Foreach(const auto& cb)
+        {
+                decltype(_list) tmpList = _list;
+                tmpList.cvisit_all([&cb](auto& val) {
+                        cb(val.second);
+                });
+        }
+
+private :
+        boost::concurrent_flat_set<_Vy> _list;
+};
 
 #define SetCommon(_Fy, _Ly) \
 template <typename _Vy> \

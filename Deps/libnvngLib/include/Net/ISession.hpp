@@ -177,7 +177,7 @@ public :
                 _ioCtxArr.reserve(threadCnt);
                 for (decltype(threadCnt) i=0; i<threadCnt; ++i)
                 {
-                        _ioCtxArr.emplace_back(std::make_shared<boost::asio::io_context>(1));
+                        _ioCtxArr.emplace_back(std::make_shared<boost::asio::io_context>());
                         std::thread t([this, i, flagName]() {
                                 SetThreadName("net_{}_{}", flagName, i);
                                 auto w = boost::asio::make_work_guard(*_ioCtxArr[i]);

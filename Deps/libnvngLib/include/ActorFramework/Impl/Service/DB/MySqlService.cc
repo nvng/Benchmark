@@ -562,6 +562,7 @@ bool MySqlSaveTask::DealFromCache(const std::shared_ptr<MySqlActor>& act)
                 }
                 seq.erase(it);
 
+                /* TODO: 暂时删除，按设计，不应该出现串服情况。
                 if (E_IET_DBDataDelete == _pb->error_type())
                 {
                         // LOG_INFO("玩家[{}] 被删除!!!", msg->_pb->guid());
@@ -572,6 +573,7 @@ bool MySqlSaveTask::DealFromCache(const std::shared_ptr<MySqlActor>& act)
                         // LOG_INFO("玩家[{}] 存储!!!", msg->_pb->guid());
                         info->_sid = _sid;
                 }
+                */
 
                 info->_version = _pb->version();
                 info->_overTime = GetClock().GetSteadyTime() + 7 * 24 * 3600;

@@ -150,14 +150,14 @@ private :
         static void StartForeverInternal(double startTime
                                          , double interval
                                          , const auto& cb
-                                         , std::shared_ptr<boost::asio::steady_timer>&& timer)
+                                         , const std::shared_ptr<boost::asio::steady_timer>& timer)
         {
                 timer->expires_from_now(std::chrono::milliseconds((time_t)(startTime * 1000)));
-                timer->async_wait([t{std::move(timer)}, interval, cb{ std::move(cb) }](const auto& ec) mutable {
+                timer->async_wait([t{timer}, interval, cb{ std::move(cb) }](const auto& ec) mutable {
                         if (boost::system::errc::success == ec.value())
                         {
                                 if (cb())
-                                        StartForeverInternal(interval, interval, std::move(cb), std::move(t));
+                                        StartForeverInternal(interval, interval, std::move(cb), t);
                         }
                 });
         }

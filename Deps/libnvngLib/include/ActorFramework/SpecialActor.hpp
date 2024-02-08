@@ -24,9 +24,9 @@ public :
 #define SPECIAL_ACTOR_DEFINE_BEGIN_EXTRA(at, mt) \
         constexpr static uint64_t sc##at##MailMainType = mt; \
         constexpr static uint64_t sc##at##HandleArraySize = ActorMail::scSubTypeMax + 1; \
-        class at : public ActorImpl<at, SpecialActorMgr, ActorMail, sc##at##HandleArraySize> { \
-                friend class ActorImpl<at, SpecialActorMgr, ActorMail, sc##at##HandleArraySize>; \
-                typedef ActorImpl<at, SpecialActorMgr, ActorMail, sc##at##HandleArraySize> SuperType; \
+        class at : public ActorImpl<at, SpecialActorMgr, ActorMail, ActorMail::scArraySize> { \
+                friend class ActorImpl<at, SpecialActorMgr, ActorMail, ActorMail::scArraySize>; \
+                typedef ActorImpl<at, SpecialActorMgr, ActorMail, ActorMail::scArraySize> SuperType; \
         public : \
                 using SuperType::SendPush; \
                 FORCE_INLINE void SendPush(uint64_t subType, const ActorMailDataPtr& msg) \
@@ -37,13 +37,16 @@ public :
                         const auto mainType = SuperType::ActorMailType::MsgMainType(m->Type()); \
                         const auto subType = SuperType::ActorMailType::MsgSubType(m->Type()); \
                         const bool checkTypeRet = 0 != m->Flag() || (mt==mainType && 0<=subType && subType<sc##at##HandleArraySize); \
+                        LOG_ERROR_PS_IF(!checkTypeRet \
+                                        , "{} Push 时消息 type[{:#x}] 出错!!! flag[{}] mt[{:#x}] mainType[{:#x}] HandleArraySize[{}]" \
+                                        , #at, subType, m->Flag(), mt, mainType, sc##at##HandleArraySize); \
                         if (checkTypeRet && boost::fibers::channel_op_status::success != _msgQueue.try_push(m)) { \
-                                LOG_ERROR("send 阻塞!!! subType[{:#x}]", subType); \
+                                LOG_ERROR("{} send 阻塞!!! subType[{:#x}]", #at, subType); \
                                 if (!IsTerminate()) \
-                                _msgQueue.push(m); \
+                                        _msgQueue.push(m); \
                                 else \
-                                LOG_WARN("actor id:{} 已停止，mail 被丢弃!!! subType[{:#x}]", GetID(), subType); \
-                                LOG_WARN("send 阻塞结束!!! subType[{:#x}]", subType); \
+                                        LOG_WARN("{} id:{} 已停止，mail 被丢弃!!! subType[{:#x}]", #at, GetID(), subType); \
+                                LOG_WARN("{} send 阻塞结束!!! subType[{:#x}]", #at, subType); \
                         } \
                 } \
                 void Run() override { \
@@ -56,16 +59,17 @@ public :
                                         if (0!=mail->Flag() || (mt==mainType && 0<=subType && subType<sc##at##HandleArraySize)) \
                                                 mail->Run(this, handlerList[subType]); \
                                         else \
-                                                LOG_ERROR("处理邮件时出错!!!"); \
+                                                LOG_ERROR("处理邮件时 type[{:#x}] 检查出错!!! flag[{}] mt[{:#x}] mainType[{:#x}] HandleArraySize[{}]" \
+                                                          , subType, mail->Flag(), mt, mainType, sc##at##HandleArraySize); \
                                 } \
                         } \
                         FLAG_ADD(SuperType::_flag, 1<<15); \
                 } \
                 FORCE_INLINE static void RegisterMailHandler(uint64_t mainType, uint64_t subType, typename ActorMailType::HandleType cb) { \
-                        static auto handlerList = GetHandlerList(); \
+                        auto handlerList = GetHandlerList(); \
                         LOG_FATAL_IF(mt!=mainType ||  subType<0 || sc##at##HandleArraySize<=subType || nullptr != handlerList[subType] \
-                                     , "actor 重复注册消息!!! mt[{:#x}] st[{:#x}]" \
-                                     , mainType, subType); \
+                                     , "{} 重复注册消息!!! mt[{:#x}] mainType[{:#x}] subType[{:#x}] HandleArraySize[{}]" \
+                                     , #at, mt, mainType, subType, sc##at##HandleArraySize); \
                         handlerList[subType] = cb; \
                 }
 

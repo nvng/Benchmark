@@ -706,7 +706,7 @@ void PlayerBase::InitDeletePlayerTimer(uint64_t deleteUniqueID, double internal/
         if (FLAG_HAS(_internalFlag, E_PIF_InDeleteTimer))
                 return;
 
-        internal = LimitRange(internal, 1 * 60.0, 10 * 60.0);
+        internal = LimitRange(internal, 30.0, 10 * 60.0);
         FLAG_ADD(_internalFlag, E_PIF_InDeleteTimer);
         std::weak_ptr<PlayerBase> weakPlayer = shared_from_this();
         _deleteTimer.Start(weakPlayer, internal, [weakPlayer, deleteUniqueID, internal]() {
