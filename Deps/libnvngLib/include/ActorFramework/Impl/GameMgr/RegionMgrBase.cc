@@ -58,7 +58,8 @@ static int64_t GenGuid(_Ty& l, ERegionType rt, const std::unordered_set<int64_t>
 }
 
 RegionMgrActor::RegionMgrActor(const std::shared_ptr<RegionCfg>& cfg)
-        : _cfg(cfg)
+        : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize)
+          , _cfg(cfg)
 {
 }
 
@@ -845,7 +846,8 @@ NET_MSG_HANDLE(GameMgrLobbySession, E_MCMT_QueueCommon, E_MCQCST_ReqQueueList, M
 // {{{ QueueMgrActor
 
 QueueMgrActor::QueueMgrActor(const std::shared_ptr<RegionCfg>& cfg)
-        : _cfg(cfg)
+        : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize)
+          , _cfg(cfg)
 {
 }
 

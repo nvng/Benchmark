@@ -21,7 +21,8 @@ struct stMailFighterReconnect : public stActorMailBase
 SPECIAL_ACTOR_DEFINE_BEGIN(RegionMgrActor, E_MIMT_GameCommon)
 public :
         RegionMgrActor(const std::shared_ptr<RegionCfg>& cfg)
-                : _cfg(cfg)
+                : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize)
+                  , _cfg(cfg)
         {
         }
 

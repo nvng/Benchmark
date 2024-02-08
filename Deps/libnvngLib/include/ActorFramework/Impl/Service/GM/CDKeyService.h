@@ -8,6 +8,7 @@
 SPECIAL_ACTOR_DEFINE_BEGIN(CDKeyActor, E_MCMT_CDKey);
 
 public :
+        CDKeyActor() : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize) { }
         bool Init() override;
 
         std::pair<bool, std::string> AddInfo(const std::shared_ptr<MsgCDKeyInfo>& info);

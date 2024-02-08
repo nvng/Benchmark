@@ -81,6 +81,7 @@ typedef std::shared_ptr<Robot> RobotPtr;
 SPECIAL_ACTOR_DEFINE_BEGIN(RobotActor, E_MIMT_Robot);
 #if defined(ROBOT_SERVICE_SERVER) || defined (ROBOT_SERVICE_LOCAL)
 public :
+        RobotActor() : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize) { }
         bool Init() override;
         void InitSaveTimer();
 #endif

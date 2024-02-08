@@ -3,7 +3,7 @@
 namespace nl::af::impl {
 
 #if 0
-SPECIAL_ACTOR_DEFINE_BEGIN(ServiceDistcoveryActor, 0xffe);
+SPECIAL_ACTOR_DEFINE_BEGIN(ServiceDistcoveryActor);
 
 public :
         bool Init() override

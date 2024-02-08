@@ -68,7 +68,7 @@ struct stRegionMgrMailCustom : public stActorMailBase
 };
 
 struct stQueueInfo;
-SPECIAL_ACTOR_DEFINE_BEGIN(RegionMgrActor, 0xeff)
+SPECIAL_ACTOR_DEFINE_BEGIN(RegionMgrActor)
 
         explicit RegionMgrActor(const std::shared_ptr<RegionCfg>& cfg);
         GameMgrGameSession::ActorAgentTypePtr ReqCreateRegionAgent(const std::shared_ptr<MailRegionCreateInfo>& cfg,

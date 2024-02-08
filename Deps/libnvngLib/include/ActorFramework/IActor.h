@@ -14,8 +14,11 @@ typedef std::weak_ptr<IActor> IActorWeakPtr;
 
 typedef std::shared_ptr<google::protobuf::MessageLite> ActorMailDataPtr;
 
+class ActorMail;
 class IActorMail
 {
+public :
+        typedef void(*HandleType)(IActor*, ActorMail*);
 public :
         virtual ~IActorMail() {}
 
@@ -26,14 +29,12 @@ public :
         virtual void Finish(const ActorMailDataPtr& msg) { }
         virtual bool Parse(google::protobuf::MessageLite& pb) { return false; }
         virtual std::tuple<std::shared_ptr<void>, std::string_view, bool> ParseExtra(google::protobuf::MessageLite& pb) { return { nullptr, "", false, }; }
-        virtual void Run(IActor* act, void* handlerList) = 0;
+        virtual void Run(IActor* act, HandleType cb) = 0;
 };
 typedef std::shared_ptr<IActorMail> IActorMailPtr;
 
 class ActorMail : public IActorMail
 {
-public :
-        typedef void(*HandleType)(IActor*, ActorMail*);
 public :
         ActorMail(const IActorPtr& from,
                   const ActorMailDataPtr& msg,
@@ -48,9 +49,8 @@ public :
         IActorPtr GetFrom() override { return _from.lock(); }
         virtual const google::protobuf::MessageLite* GetPB() const { return nullptr; }
         ActorMailDataPtr GetData() override { return _msg; }
-        void Run(IActor* act, void* handlerList) override
+        void Run(IActor* act, HandleType cb) override
         {
-                auto cb = reinterpret_cast<HandleType*>(handlerList)[_type];
                 if (cb)
                 {
                         cb(act, const_cast<ActorMail*>(this));
@@ -76,7 +76,7 @@ public :
         typedef std::function<void()> CallbackType;
         CallbackMail(const CallbackType& cb) : _cb(std::move(cb)) { }
         uint64_t Flag() const override { return 3; }
-        void Run(IActor* act, void* handlerList) override { _cb(); }
+        void Run(IActor* act, HandleType cb) override { _cb(); }
         CallbackType _cb;
 };
 
@@ -419,7 +419,7 @@ public :
         }
 
         uint64_t Flag() const override { return 1; }
-        void Run(IActor* act, void* handlerList) override { _cb(_timerGuid); }
+        void Run(IActor* act, HandleType cb) override { _cb(_timerGuid); }
 
         const TimerGuidType _timerGuid = 0;
         std::function<void(TimerGuidType)> _cb;

@@ -431,10 +431,10 @@ struct stActivityCfg
 };
 typedef std::shared_ptr<stActivityCfg> stActivityCfgPtr;
 
-SPECIAL_ACTOR_DEFINE_BEGIN(ActivityMgrActor, 0xefe);
+SPECIAL_ACTOR_DEFINE_BEGIN(ActivityMgrActor);
 
 public :
-        ActivityMgrActor() : SuperType(1 << 6) { }
+        ActivityMgrActor() : SuperType(SpecialActorMgr::GenActorID(), 1 << 6) { }
 
 SPECIAL_ACTOR_DEFINE_END(ActivityMgrActor);
 

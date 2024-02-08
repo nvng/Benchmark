@@ -6,7 +6,7 @@
 SPECIAL_ACTOR_DEFINE_BEGIN(PayActor, E_MCMT_Pay);
 
 public :
-        PayActor() : SuperType(1 << 10) { }
+        PayActor() : SuperType(SpecialActorMgr::GenActorID(), 1 << 10) { }
 
 SPECIAL_ACTOR_DEFINE_END(PayActor);
 

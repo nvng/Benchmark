@@ -13,7 +13,7 @@ struct stPkgStatusInfo
 };
 typedef std::shared_ptr<stPkgStatusInfo> stPkgStatusInfoPtr;
 
-SPECIAL_ACTOR_DEFINE_BEGIN(PkgStatusActor, 0xffe);
+SPECIAL_ACTOR_DEFINE_BEGIN(PkgStatusActor);
 
 public :
         bool Init() override;

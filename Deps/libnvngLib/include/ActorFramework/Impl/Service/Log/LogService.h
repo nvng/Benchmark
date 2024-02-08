@@ -14,7 +14,8 @@ SPECIAL_ACTOR_DEFINE_BEGIN(LogActor, E_MIMT_Log);
 
 public :
         explicit LogActor(uint64_t idx)
-                : _idx(idx)
+                : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize)
+                  , _idx(idx)
         {
         }
 

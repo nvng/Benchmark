@@ -39,13 +39,13 @@ class MySqlExecActor;
 
 #endif
 
-SPECIAL_ACTOR_DEFINE_BEGIN(MySqlActor, 0x1);
+SPECIAL_ACTOR_DEFINE_BEGIN(MySqlActor);
 
 #ifdef MYSQL_SERVICE_SERVER
 
 public :
         explicit MySqlActor(int64_t idx)
-                : SuperType(1 << 3)
+                : SuperType(SpecialActorMgr::GenActorID(), 1 << 3)
                   , _idx(idx)
         {
                 for (int64_t i=E_MySql_TT_None+1; i<EMySqlTaskType_ARRAYSIZE; ++i)
@@ -88,11 +88,11 @@ SPECIAL_ACTOR_DEFINE_END(MySqlActor);
 
 #ifdef MYSQL_SERVICE_SERVER
 
-SPECIAL_ACTOR_DEFINE_BEGIN(MySqlExecActor, 0x2);
+SPECIAL_ACTOR_DEFINE_BEGIN(MySqlExecActor);
 
 public :
         MySqlExecActor(const std::shared_ptr<MySqlActor>& act, int64_t idx, EMySqlTaskType taskType)
-                : SuperType(1 << 3), _mysqlAct(act), _idx(idx), _taskType(taskType)
+                : SuperType(SpecialActorMgr::GenActorID(), 1 << 3), _mysqlAct(act), _idx(idx), _taskType(taskType)
         {
         }
 

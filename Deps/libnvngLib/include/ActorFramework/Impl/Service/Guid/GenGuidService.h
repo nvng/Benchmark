@@ -37,7 +37,8 @@ SPECIAL_ACTOR_DEFINE_BEGIN(GenGuidActor, E_MIMT_GenGuid);
 
 public :
         GenGuidActor(int64_t idx, uint64_t minGuid, uint64_t maxGuid)
-                : _idx(idx)
+                : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize)
+                  , _idx(idx)
         {
                 const int64_t step = (maxGuid - minGuid + 1) / scInitArrSize;
                 for (int64_t i=0; i<scInitArrSize; ++i)

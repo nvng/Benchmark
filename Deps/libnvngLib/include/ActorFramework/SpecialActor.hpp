@@ -21,45 +21,64 @@ public :
         }
 };
 
-class SpecialActor : public ActorImpl<SpecialActor, SpecialActorMgr>
-{
-        typedef ActorImpl<SpecialActor, SpecialActorMgr> SuperType;
-protected :
-        SpecialActor(std::size_t queueSize = 1 << 15)
-                : SuperType(SpecialActorMgr::GenActorID(), queueSize)
-        {
-        }
-
-        ~SpecialActor() override
-        {
-        }
-
-        friend class ActorImpl<SpecialActor, SpecialActorMgr>;
-        DECLARE_SHARED_FROM_THIS(SpecialActor);
-};
-
-#define SPECIAL_ACTOR_DEFINE_BEGIN(at, mt) \
-        struct stSpecialActorMainType##mt { }; \
+#define SPECIAL_ACTOR_DEFINE_BEGIN_EXTRA(at, mt) \
         constexpr static uint64_t sc##at##MailMainType = mt; \
-        static_assert(0<=mt && mt<=nl::af::SpecialActor::ActorMailType::scMainTypeMax); \
-        class at; \
-        typedef std::shared_ptr<at> at##Ptr; \
-        typedef std::weak_ptr<at> at##WeakPtr; \
-        class at : public nl::af::SpecialActor { \
-                typedef nl::af::SpecialActor SuperType; \
-                using SuperType::SendPush; \
+        constexpr static uint64_t sc##at##HandleArraySize = ActorMail::scSubTypeMax + 1; \
+        class at : public ActorImpl<at, SpecialActorMgr, ActorMail, sc##at##HandleArraySize> { \
+                friend class ActorImpl<at, SpecialActorMgr, ActorMail, sc##at##HandleArraySize>; \
+                typedef ActorImpl<at, SpecialActorMgr, ActorMail, sc##at##HandleArraySize> SuperType; \
         public : \
-                FORCE_INLINE void SendPush(const CallbackMail::CallbackType& cb) \
-                { SuperType::SendPush(cb); } \
+                using SuperType::SendPush; \
                 FORCE_INLINE void SendPush(uint64_t subType, const ActorMailDataPtr& msg) \
                 { return SuperType::SendPush(nullptr, sc##at##MailMainType, subType, msg); } \
                 FORCE_INLINE void SendPush(const IActorPtr& from, uint64_t subType, const ActorMailDataPtr& msg) \
-                { return SuperType::SendPush(from, sc##at##MailMainType, subType, msg); }
+                { return SuperType::SendPush(from, sc##at##MailMainType, subType, msg); } \
+                void Push(const IActorMailPtr& m) override { \
+                        const auto mainType = SuperType::ActorMailType::MsgMainType(m->Type()); \
+                        const auto subType = SuperType::ActorMailType::MsgSubType(m->Type()); \
+                        const bool checkTypeRet = 0 != m->Flag() || (mt==mainType && 0<=subType && subType<sc##at##HandleArraySize); \
+                        if (checkTypeRet && boost::fibers::channel_op_status::success != _msgQueue.try_push(m)) { \
+                                LOG_ERROR("send 阻塞!!! subType[{:#x}]", subType); \
+                                if (!IsTerminate()) \
+                                _msgQueue.push(m); \
+                                else \
+                                LOG_WARN("actor id:{} 已停止，mail 被丢弃!!! subType[{:#x}]", GetID(), subType); \
+                                LOG_WARN("send 阻塞结束!!! subType[{:#x}]", subType); \
+                        } \
+                } \
+                void Run() override { \
+                        auto handlerList = SuperType::GetHandlerList(); \
+                        while (!IsTerminate()) { \
+                                IActorMailPtr mail = _msgQueue.value_pop(); \
+                                if (mail) { \
+                                        const auto mainType = SuperType::ActorMailType::MsgMainType(mail->Type()); \
+                                        const auto subType = SuperType::ActorMailType::MsgSubType(mail->Type()); \
+                                        if (0!=mail->Flag() || (mt==mainType && 0<=subType && subType<sc##at##HandleArraySize)) \
+                                                mail->Run(this, handlerList[subType]); \
+                                        else \
+                                                LOG_ERROR("处理邮件时出错!!!"); \
+                                } \
+                        } \
+                        FLAG_ADD(SuperType::_flag, 1<<15); \
+                } \
+                FORCE_INLINE static void RegisterMailHandler(uint64_t mainType, uint64_t subType, typename ActorMailType::HandleType cb) { \
+                        static auto handlerList = GetHandlerList(); \
+                        LOG_FATAL_IF(mt!=mainType ||  subType<0 || sc##at##HandleArraySize<=subType || nullptr != handlerList[subType] \
+                                     , "actor 重复注册消息!!! mt[{:#x}] st[{:#x}]" \
+                                     , mainType, subType); \
+                        handlerList[subType] = cb; \
+                }
 
 #define SPECIAL_ACTOR_DEFINE_END(at) \
                 DECLARE_SHARED_FROM_THIS(at); \
                 EXTERN_ACTOR_MAIL_HANDLE(); \
-        }
+        }; \
+        typedef std::shared_ptr<at> at##Ptr; \
+        typedef std::weak_ptr<at> at##WeakPtr
+
+#define SPECIAL_ACTOR_DEFINE_BEGIN_BASE(at)     SPECIAL_ACTOR_DEFINE_BEGIN_EXTRA(at, 0)
+#define SPECIAL_ACTOR_DEFINE_BEGIN_FUNC(_1, _2, FUNC_NAME, ...)      FUNC_NAME
+#define SPECIAL_ACTOR_DEFINE_BEGIN(...)         SPECIAL_ACTOR_DEFINE_BEGIN_FUNC(__VA_ARGS__, SPECIAL_ACTOR_DEFINE_BEGIN_EXTRA, SPECIAL_ACTOR_DEFINE_BEGIN_BASE, ...)(__VA_ARGS__)
 
 #define SPECIAL_ACTOR_MAIL_HANDLE_BASE(at, st, dt) ACTOR_MAIL_HANDLE(at, sc##at##MailMainType, st, dt)
 #define SPECIAL_ACTOR_MAIL_HANDLE_EMPTY(at, st)    ACTOR_MAIL_HANDLE(at, sc##at##MailMainType, st)

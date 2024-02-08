@@ -5,7 +5,9 @@
 
 namespace nl::af::impl {
 
-SPECIAL_ACTOR_DEFINE_BEGIN(PlayerMgrActor, 0xeff);
+SPECIAL_ACTOR_DEFINE_BEGIN(PlayerMgrActor);
+public :
+        PlayerMgrActor() : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize) { }
 SPECIAL_ACTOR_DEFINE_END(PlayerMgrActor);
 
 struct stLoginInfo : public stActorMailBase
@@ -57,6 +59,7 @@ struct stMailPlayerOfflineData : public stActorMailBase
 SPECIAL_ACTOR_DEFINE_BEGIN(PlayerOfflineDataActor, E_MIMT_Offline);
 
 public :
+        PlayerOfflineDataActor() : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize) { }
         bool Init() override;
         void Flush2DB(bool isDelete = false);
         void InitFlush2DBTimer();

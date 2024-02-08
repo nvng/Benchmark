@@ -7,6 +7,7 @@
 SPECIAL_ACTOR_DEFINE_BEGIN(GMActor, E_MIMT_GM);
 
 public :
+        GMActor() : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize) { }
         bool Init() override;
 
 #ifdef GM_SERVICE_SERVER

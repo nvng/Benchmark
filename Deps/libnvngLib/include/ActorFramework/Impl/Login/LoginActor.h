@@ -3,7 +3,7 @@
 SPECIAL_ACTOR_DEFINE_BEGIN(LoginActor, E_MCMT_Login);
 
 public :
-        LoginActor() : SuperType(1 << 10) { }
+        LoginActor() : SuperType(SpecialActorMgr::GenActorID(), 1 << 10) { }
 
 SPECIAL_ACTOR_DEFINE_END(LoginActor);
 

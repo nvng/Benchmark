@@ -2,9 +2,11 @@
 
 namespace nl::af::impl {
 
-SPECIAL_ACTOR_DEFINE_BEGIN(GlobalVarActor, 0xfff);
+SPECIAL_ACTOR_DEFINE_BEGIN(GlobalVarActor);
 
 public :
+        GlobalVarActor() : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize) { }
+
         bool Init() override
         {
                 if (!SuperType::Init())

@@ -22,7 +22,7 @@ class PlayerBase : public ActorImpl<PlayerBase, PlayerMgrBase>
 public :
 #ifndef ____BENCHMARK____
         PlayerBase(uint64_t guid, const std::string& nickName, const std::string& icon)
-                : SuperType(guid), _nickName(nickName), _iconStr(icon)
+                : SuperType(guid, 1 << 4), _nickName(nickName), _iconStr(icon)
         {
         }
 #else

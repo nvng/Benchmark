@@ -23,18 +23,22 @@ struct stHttpReqReply : public stActorMailBase
                 } \
         } while (0)
 
-template <typename ImplType, typename ServiceType, typename _My=ActorMail, typename _Tag=stDefaultTag>
-class ActorImpl : public IActor, public std::enable_shared_from_this<ActorImpl<ImplType, ServiceType, _My, _Tag>>
+template <typename ImplType
+        , typename ServiceType
+        , typename _My=ActorMail
+        , std::size_t HandleArraySize = _My::scArraySize
+        , typename _Tag=stDefaultTag>
+class ActorImpl : public IActor, public std::enable_shared_from_this<ActorImpl<ImplType, ServiceType, _My, HandleArraySize, _Tag>>
 {
         typedef IActor SuperType;
-        typedef ActorImpl<ImplType, ServiceType, _My, _Tag> ThisType;
+        typedef ActorImpl<ImplType, ServiceType, _My, HandleArraySize, _Tag> ThisType;
 
 public :
         typedef _My ActorMailType;
         typedef std::shared_ptr<ActorMailType> ActorMailTypePtr;
 
 public :
-        ActorImpl(uint64_t id, std::size_t qSize=1<<4)
+        ActorImpl(uint64_t id, std::size_t qSize)
                 : _id(id)
                   , _ch(1 << 1)
                   , _msgQueue(Next2N(qSize))
@@ -54,7 +58,7 @@ protected :
         }
 
 public :
-        void Terminate() override { FLAG_ADD(_flag, 1<<14); Push(nullptr); }
+        void Terminate() override { FLAG_ADD(_flag, 1<<14); _msgQueue.push(nullptr); }
         FORCE_INLINE bool IsTerminate() const { return FLAG_HAS(_flag, 1<<14); }
         void WaitForTerminate() override
         {
@@ -99,14 +103,16 @@ public :
 
         void Push(const IActorMailPtr& m) override
         {
-                if (boost::fibers::channel_op_status::success != _msgQueue.try_push(m))
+                const auto type = m->Type();
+                const bool checkTypeRet = 0 != m->Flag() || (0<=type && type<HandleArraySize);
+                if (checkTypeRet && boost::fibers::channel_op_status::success != _msgQueue.try_push(m))
                 {
-                        LOG_ERROR("send 阻塞!!! type[{:#x}]", m->Type());
+                        LOG_ERROR("send 阻塞!!! type[{:#x}]", type);
                         if (!IsTerminate())
                                 _msgQueue.push(m);
                         else
-                                LOG_WARN("actor id:{} 已停止，mail 被丢弃!!! type[{:#x}]", GetID(), m->Type());
-                        LOG_WARN("send 阻塞结束!!! type[{:#x}]", m->Type());
+                                LOG_WARN("actor id:{} 已停止，mail 被丢弃!!! type[{:#x}]", GetID(), type);
+                        LOG_WARN("send 阻塞结束!!! type[{:#x}]", type);
                 }
         }
 
@@ -314,7 +320,7 @@ public :
         }
 
 protected :
-        void Run()
+        virtual void Run()
         {
                 auto handlerList = GetHandlerList();
                 while (!IsTerminate())
@@ -322,26 +328,33 @@ protected :
                         IActorMailPtr mail = _msgQueue.value_pop();
                         if (mail)
                         {
+                                const auto type = mail->Type();
+                                if (0!=mail->Flag() || (0<=type && type<HandleArraySize))
+                                {
 #ifdef ____PRINT_ACTOR_MAIL_COST_TIME____
-                                _clock = clock();
-                                clock_t realClock = _clock;
+                                        _clock = clock();
+                                        clock_t realClock = _clock;
 #endif
 
-                                mail->Run(this, handlerList);
+                                        mail->Run(this, handlerList[type]);
 
 #ifdef ____PRINT_ACTOR_MAIL_COST_TIME____
-                                clock_t end = clock();
-                                double diff = (double)(end-_clock)/CLOCKS_PER_SEC;
-                                double real = (double)(end-realClock)/CLOCKS_PER_SEC;
-                                auto type = mail->Type();
-                                LOG_WARN_IF(diff>=0.001 || real>=0.001,
-                                            "{}",fmt::sprintf("mail type[%#x] mt[%#x] st[%#x] cost[%lfs] real[%lfs]",
-                                                              type,
-                                                              ActorMailType::MsgMainType(type),
-                                                              ActorMailType::MsgSubType(type),
-                                                              diff,
-                                                              real));
+                                        clock_t end = clock();
+                                        double diff = (double)(end-_clock)/CLOCKS_PER_SEC;
+                                        double real = (double)(end-realClock)/CLOCKS_PER_SEC;
+                                        LOG_WARN_IF(diff>=0.001 || real>=0.001,
+                                                    "{}",fmt::sprintf("mail type[%#x] mt[%#x] st[%#x] cost[%lfs] real[%lfs]",
+                                                                      type,
+                                                                      ActorMailType::MsgMainType(type),
+                                                                      ActorMailType::MsgSubType(type),
+                                                                      diff,
+                                                                      real));
 #endif
+                                }
+                                else
+                                {
+                                        LOG_ERROR("处理邮件时出错!!!");
+                                }
                         }
                 }
                 FLAG_ADD(_flag, 1<<15);
@@ -362,8 +375,9 @@ public :
 #endif
         }
 
-private :
+public :
         std::atomic_uint_fast16_t _flag = 0;
+private :
         const uint32_t _id = 0;
 #ifdef ____PRINT_ACTOR_MAIL_COST_TIME____
         clock_t _clock = 0;
@@ -387,7 +401,7 @@ public :
         {
                 static auto handlerList = GetHandlerList();
                 uint64_t msgType = ActorMailType::MsgTypeMerge(mainType, subType);
-                LOG_FATAL_IF(nullptr != handlerList[msgType]
+                LOG_FATAL_IF(msgType<0 || HandleArraySize<=msgType || nullptr != handlerList[msgType]
                              , "actor 重复注册消息!!! mt[{:#x}] st[{:#x}]"
                              , mainType, subType);
                 handlerList[msgType] = cb;
@@ -395,7 +409,7 @@ public :
 
         FORCE_INLINE static typename ActorMailType::HandleType* GetHandlerList()
         {
-                static typename ActorMailType::HandleType _handlerList[ActorMailType::scArraySize] = { nullptr };
+                static typename ActorMailType::HandleType _handlerList[HandleArraySize] = { nullptr };
                 return _handlerList;
         }
 };

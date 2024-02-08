@@ -44,7 +44,10 @@ typedef boost::multi_index::multi_index_container<
 	>
 > ActivityListType;
 
-SPECIAL_ACTOR_DEFINE_BEGIN(ActivityActor, 0xeff);
+SPECIAL_ACTOR_DEFINE_BEGIN(ActivityActor);
+
+public :
+        ActivityActor() : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize) { }
         void PackActivity(MsgActivityFestivalCfg& msg);
         void Broadcast2Lobby();
 
