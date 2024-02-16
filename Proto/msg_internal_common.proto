@@ -47,6 +47,7 @@ enum EInternalErrorType
 
   E_IET_DBDataSIDError = 0x20;
   E_IET_DBDataDelete = 0x21;
+  E_IET_DBDataTaskTypeError = 0x22;
 
   E_IET_FighterClientError = 0x30;
   E_IET_GateNotFound = 0x31;

@@ -3,39 +3,137 @@
 #include "Net/ISession.hpp"
 #include "Player/PlayerMgr.h"
 #include "Region/RegionMgr.h"
-
-#include "DBMgr.h"
+#include "MySqlBenchmarkService.h"
+#include "Redis.h"
+#include "Tools/LogHelper.h"
+#include "PingPongBig.h"
+#include <boost/asio/local/stream_protocol.hpp>
+#include <cstdlib>
 
 MAIN_FUNC();
+
+class TcpSessionTest : public ::nl::net::SessionImpl<TcpSessionTest, false, MsgActorAgentHeaderType>
+{
+        typedef ::nl::net::SessionImpl<TcpSessionTest, false, MsgActorAgentHeaderType> SuperType;
+public :
+        boost::asio::local::stream_protocol::socket s;
+        boost::asio::local::stream_protocol::iostream i;
+        boost::asio::local::stream_protocol::acceptor a;
+        boost::asio::local::stream_protocol::endpoint e;
+};
 
 App::App(const std::string& appName)
 	: SuperType(appName, E_ST_Lobby)
 	  , _gateSesList("App_gateSesList")
 {
+        ::nl::net::client::ClientNetMgr::CreateInstance();
 	GlobalSetup_CH::CreateInstance();
 	RegionMgr::CreateInstance();
         RedisMgr::CreateInstance();
         MySqlService::CreateInstance();
+        MySqlBenchmarkService::CreateInstance();
 
 	PlayerMgr::CreateInstance();
         nl::net::NetMgr::CreateInstance();
 
         GenGuidService::CreateInstance();
+        RedisService::CreateInstance();
+
+        PingPongBigService::CreateInstance();
 }
 
 App::~App()
 {
+        ::nl::net::client::ClientNetMgr::DestroyInstance();
 	RegionMgr::DestroyInstance();
-	MySqlService::DestroyInstance();
 
 	PlayerMgr::DestroyInstance();
 
 	GlobalSetup_CH::DestroyInstance();
         RedisMgr::DestroyInstance();
         MySqlService::DestroyInstance();
+        MySqlBenchmarkService::DestroyInstance();
         nl::net::NetMgr::DestroyInstance();
 
         GenGuidService::DestroyInstance();
+        RedisService::DestroyInstance();
+
+        PingPongBigService::DestroyInstance();
+}
+
+SPECIAL_ACTOR_DEFINE_BEGIN(TestActor, 0x777);
+
+public :
+        TestActor() : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize) { }
+
+        bool Init() override;
+
+SPECIAL_ACTOR_DEFINE_END(TestActor);
+
+bool TestActor::Init()
+{
+        if (!SuperType::Init())
+                return false;
+
+        /*
+        MsgClientLogin msg;
+        msg.set_nick_name("abc");
+        for (int64_t i=0; i<100; ++i)
+                PlayerMgr::GetInstance()->AddPlayerOfflineData(GetID(), 0, 0, msg);
+
+        boost::this_fiber::sleep_for(std::chrono::seconds(2));
+
+        {
+                auto info = PlayerMgr::GetInstance()->GetPlayerOfflineData(shared_from_this());
+                LOG_INFO("99999999999 size[{}]", info->item_list_size());
+                for (auto& item : info->item_list())
+                {
+                        MsgClientLogin m;
+                        m.ParseFromString(item.data());
+                        if (m.nick_name() != "abc")
+                                LOG_INFO("11111111 mt[{}] st[{}] name[{}]", item.mt(), item.st(), m.nick_name());
+                }
+        }
+
+        {
+                auto info = PlayerMgr::GetInstance()->GetPlayerOfflineData(shared_from_this());
+                LOG_INFO("10101010109 size[{}]", info->item_list_size());
+                for (auto& item : info->item_list())
+                {
+                        MsgClientLogin m;
+                        m.ParseFromString(item.data());
+                        // LOG_INFO("22222222 mt[{}] st[{}] name[{}]", item.mt(), item.st(), m.nick_name());
+                }
+        }
+        */
+
+        while (true)
+        {
+                LOG_INFO("aaaaaaaaaaaaa");
+                auto reqRet = HttpReq("http://127.0.0.1:5003/test", "");
+                if (!reqRet)
+                        LOG_WARN("1111111111111111");
+                else
+                        ++GetApp()->_cnt;
+                boost::this_fiber::sleep_for(std::chrono::seconds(1));
+        }
+
+        /*
+        while (true)
+        {
+                RedisCmd("SET", "a", "123");
+                ++GetApp()->_cnt;
+                boost::this_fiber::sleep_for(std::chrono::seconds(1));
+        }
+        */
+
+        return true;
+}
+
+void Test()
+{
+                boost::this_fiber::sleep_for(std::chrono::seconds(2));
+                abort();
 }
 
 bool App::Init()
@@ -43,11 +141,15 @@ bool App::Init()
 	LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
 
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "初始化策划全局配置失败!!!");
+        LOG_FATAL_IF(!::nl::net::client::ClientNetMgr::GetInstance()->Init(1, "gate"), "ClientNetMgr init error!!!");
 	LOG_FATAL_IF(!RedisMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_redisCfg), "RedisMgr init error!!!");
+	// LOG_FATAL_IF(!RedisService::GetInstance()->Init(), "RedisService init error!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 	LOG_FATAL_IF(!MySqlService::GetInstance()->Init(), "MySqlService init error!!!");
+	// LOG_FATAL_IF(!MySqlBenchmarkService::GetInstance()->Init(), "MySqlBenchmark init error!!!");
 	LOG_FATAL_IF(!GenGuidService::GetInstance()->Init(), "GenGuidService init error!!!");
+	LOG_FATAL_IF(!PingPongBigService::GetInstance()->Init(), "PingPongBig init error!!!");
 
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
 		static int64_t oldCnt = 0;
@@ -61,7 +163,7 @@ bool App::Init()
 			}
 		});
 #ifdef ____BENCHMARK____
-		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] flag[{}] avg[{}]",
+		LOG_INFO_IF(false, "actorCnt[{}] agentCnt[{}] cnt[{}] flag[{}] avg[{}]",
 			 PlayerMgr::GetInstance()->GetActorCnt(),
 			 agentCnt,
 			 GetApp()->_cnt - oldCnt,
@@ -70,7 +172,7 @@ bool App::Init()
 			 GetFrameController().GetAverageFrameCnt()
 			 );
 #else
-		LOG_INFO_IF(false, "actorCnt[{}] agentCnt[{}] cnt[{}] avg[{}]",
+		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] avg[{}]",
 			 PlayerMgr::GetInstance()->GetActorCnt(),
 			 agentCnt,
 			 GetApp()->_cnt - oldCnt,
@@ -87,12 +189,8 @@ bool App::Init()
 		// Note: 多线程
 		// TODO: 监听端口
 
-                ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([](const auto& cfg) {
-                        MySqlService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
-                });
-
 		auto lobbyInfo = GetServerInfo<stLobbyServerInfo>();
-                NetMgr::GetInstance()->Listen(lobbyInfo->_gate_port, [](auto&& s, auto& sslCtx) {
+                ::nl::net::client::ClientNetMgr::GetInstance()->Listen(lobbyInfo->_gate_port, [](auto&& s, auto& sslCtx) {
                         return std::make_shared<LobbyGateSession>(std::move(s));
                 });
 
@@ -162,6 +260,16 @@ bool App::Init()
 				TimedEventLoop::SetOverTime(eventData, calNextDataResetTimeFunc());
 			});
 		});
+
+                /*
+                static std::vector<TestActorPtr> actList;
+                for (int64_t i=0; i<1; ++i)
+                {
+                        auto act = std::make_shared<TestActor>();
+                        act->Start();
+                        actList.emplace_back(act);
+                }
+                */
         });
 
 	std::vector<std::string> preTask;
@@ -175,17 +283,15 @@ bool App::Init()
                 });
 	});
 
-        /*
 	preTask.clear();
         preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);
-        _startPriorityTaskList->AddTask(preTask, LobbyDBSession::scPriorityTaskKey, [](const std::string& key) {
+        _startPriorityTaskList->AddTask(preTask, MySqlService::GetInstance()->GetServiceName(), [](const std::string& key) {
                 ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([](const auto& cfg) {
-                        nl::net::NetMgr::GetInstance()->Connect(cfg->_ip, cfg->_lobby_port, [](auto&& s) {
-                                return std::make_shared<LobbyDBSession>(std::move(s));
-                        });
+                        MySqlService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
+                        // MySqlBenchmarkService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
                 });
+
         });
-        */
 
 	preTask.clear();
 	preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);
@@ -206,6 +312,9 @@ bool App::Init()
 			_globalVarActor->WaitForTerminate();
 		}
 
+                ::nl::net::client::ClientNetMgr::GetInstance()->Terminate();
+                ::nl::net::client::ClientNetMgr::GetInstance()->WaitForTerminate();
+
 		PlayerMgr::GetInstance()->Terminate();
 		PlayerMgr::GetInstance()->WaitForTerminate();
 
@@ -216,6 +325,46 @@ bool App::Init()
                 MySqlService::GetInstance()->WaitForTerminate();
         });
 	// }}}
+
+        // boost::beast::flat_buffer buf;
+        boost::asio::streambuf buf;
+        for (int64_t i=0; i<1000; ++i)
+        {
+                buf.consume(buf.size() - 1);
+                buf.prepare(1024 * 1024 * 10);
+                buf.commit(1024);
+        }
+        LOG_INFO("111111111111111 buf size[{}] cap[{}]", buf.size(), buf.capacity());
+
+        buf.consume(100);
+        buf.prepare(1000);
+        buf.commit(1000);
+        LOG_INFO("222222222222222 buf size[{}] cap[{}]", buf.size(), buf.capacity());
+
+        decltype(buf) tmp{55};
+        // buf = std::move(tmp);
+        // std::swap(buf, tmp);
+        LOG_INFO("333333333333333 buf size[{}] cap[{}]", buf.size(), buf.capacity());
+        LOG_INFO("444444444444444 tmp size[{}] cap[{}]", tmp.size(), tmp.capacity());
+
+        {
+                boost::asio::streambuf buf;
+                buf.prepare(1024);
+                LOG_INFO("1111 buf data[{}] size[{}] cap[{}]", buf.data().data(), buf.size(), buf.capacity());
+                buf.commit(10);
+                LOG_INFO("1111 buf data[{}] size[{}] cap[{}]", buf.data().data(), buf.size(), buf.capacity());
+                buf.consume(9);
+                LOG_INFO("1111 buf data[{}] size[{}] cap[{}]", buf.data().data(), buf.size(), buf.capacity());
+                buf.prepare(1020);
+                LOG_INFO("1111 buf data[{}] size[{}] cap[{}]", buf.data().data(), buf.size(), buf.capacity());
+
+                buf.prepare(10000);
+                LOG_INFO("1111 buf data[{}] size[{}] cap[{}]", buf.data().data(), buf.size(), buf.capacity());
+        }
+
+        boost::fibers::fiber([]() {
+                Test();
+        });
 
 	return true;
 }

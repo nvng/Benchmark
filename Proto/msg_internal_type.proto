@@ -25,6 +25,7 @@ enum EMsgInternalMainType
 {
   E_MIMT_Internal = 0x0; // 服务器间内部消息
 
+  E_MIMT_Offline = 0xfe5;
   E_MIMT_GenGuid = 0xfe6;
   E_MIMT_DB = 0xfe7;
   E_MIMT_Log = 0xfe8;
@@ -95,6 +96,12 @@ enum EMsgInternalGameCommonSubType
 
   E_MIGCST_SyncRegionEnterCond = 0xe;
   E_MIGCST_SyncPlayerInfo2Region = 0xf;
+}
+
+enum EMsgInternalOfflineSubType
+{
+        E_MIOST_Append = 0x0;
+        E_MIOST_Get = 0x1;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

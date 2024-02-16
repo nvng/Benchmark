@@ -72,6 +72,7 @@ enum EClientErrorType
   E_CET_CDKeyAlreadyUse = 0x71;
   E_CET_CDKeyPlatformError = 0x72;
   E_CET_CDKeyMaxCountLimit = 0x73;
+  E_CET_CDKeyTimeout = 0x74;
 }
 
 enum EPlayerAttrType
@@ -152,17 +153,30 @@ message MsgFestival
 
 message MsgPlayerChange
 {
-  repeated MsgUpdatePlayerAttr change_attr_list = 1;
-  repeated sint64 icon_idx_list = 2;
-  MsgBagBufInfo bag_buf_info = 3;
+        repeated MsgUpdatePlayerAttr change_attr_list = 1;
+        repeated sint64 icon_idx_list = 2;
+        repeated MsgBagBufInfoList bag_buf_info_list = 3;
 
-  MsgPlayerGameSeasonInfo game_season = 10;
-  repeated MsgGoodsItem change_goods_list = 11;
-  repeated MsgHero change_hero_list = 12;
-  repeated sint64 param_list = 13;
-  MsgVIPMgr vip_mgr = 14;
-  map<sint64, sint64> pay_time_list = 15;
-  repeated MsgFestivalTask fes_task_list = 16;
+        MsgPlayerGameSeasonInfo game_season = 10;
+        repeated MsgGoodsItem change_goods_list = 11;
+        repeated MsgHero change_hero_list = 12;
+        repeated sint64 param_list = 13;
+        MsgVIPMgr vip_mgr = 14;
+        map<sint64, sint64> pay_time_list = 15;
+        repeated MsgFestivalTask fes_task_list = 16;
+
+        enum EPlayerChangeType
+        {
+                E_PCT_Shop = 0x0;
+        }
+
+        message MsgPlayerChangeItem
+        {
+                EPlayerChangeType type = 1;
+                bytes data = 2;
+        }
+
+        repeated MsgPlayerChangeItem item_list = 20;
 }
 
 message MsgBattleInfo

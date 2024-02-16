@@ -276,13 +276,17 @@ message MailGMOpt
 
 message MsgOfflineOpt
 {
-        sint64 player_guid = 10;
+        sint64 guid = 10;
+        sint64 over_time = 20;
+        sint64 version = 30;
+
         message MsgOfflineOptItem
         {
-                sint64 type = 10;
-                google.protobuf.Any data = 20;
+                sint64 mt = 10;
+                sint64 st = 20;
+                string data = 30;
         }
-        repeated MsgOfflineOptItem item_list = 20;
+        repeated MsgOfflineOptItem item_list = 40;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

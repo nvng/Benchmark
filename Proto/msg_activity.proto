@@ -33,14 +33,13 @@ enum EMsgClientActivitySubType
 enum EActivityEventType
 {
         E_AET_None = 0;
-        E_AET_FinishCompetitionKnockout = 0x1; // 1=完成排位赛数量
+        E_AET_PVPCnt = 0x1; // 1=完成排位赛数量
         E_AET_PVPRank = 0x2; // 2=排位赛获得X次前X名
         E_AET_CostMoney = 0x3; // 3=消耗货币
         E_AET_FinishPVE = 0x4; // 4=完成自定义比赛数量
         E_AET_FinishPVE_1 = 0x5; // 5=完成无尽模式数量
         E_AET_CompetitionUseGoods = 0x6; // 6=在比赛中使用战斗道具
         E_AET_DataReset = 0x35;
-        E_AET_FirstRecharge = 0x36;
         E_AET_Recharge = 0x37;
         E_AET_BuyZhanLin = 0x38;
         E_AET_ZhanLinExp = 0x39;
@@ -121,6 +120,7 @@ message MsgFestivalGoodsItem
   sint64 guid = 1;
   MsgGoodsItem goods_item = 2;
   sint64 param = 3;
+  sint64 param_1 = 4;
 }
 
 message MsgActivityFestivalActivityCfg
@@ -141,7 +141,7 @@ message MsgActivityFestivalActivityCfg
     sint64 target_arg2 = 4;
     string name = 5;
     sint64 event_type = 6;
-    map<sint64, bool> param_list = 7;
+    map<sint64, sint64> param_list = 7;
     repeated MsgFestivalGoodsItem goods_list = 10;
   }
   repeated MsgActivityRewardItem reward_list = 10;
@@ -150,6 +150,7 @@ message MsgActivityFestivalActivityCfg
   {
     string icon = 1;
     repeated MsgFestivalGoodsItem goods_list = 2;
+    sint64 param = 3;
   }
   repeated MsgActivityCumRewardItem cum_rewards = 11;
 }

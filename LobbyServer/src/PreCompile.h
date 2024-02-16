@@ -10,6 +10,7 @@
 #define LOG_SERVICE_CLIENT
 #define GEN_GUID_SERVICE_CLIENT
 #define MYSQL_SERVICE_CLIENT
+#define MYSQL_BENCHMARK_SERVICE_CLIENT
 
 #define BOOST_SP_DISABLE_THREADS
 #include <boost/shared_ptr.hpp>

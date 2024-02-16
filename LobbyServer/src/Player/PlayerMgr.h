@@ -11,8 +11,12 @@ class PlayerMgr : public PlayerMgrBase, public Singleton<PlayerMgr>
 	typedef PlayerMgrBase SuperType;
 public :
 	bool Init() override;
-	PlayerBasePtr CreatePlayer(uint64_t id, const std::string& nickName, const std::string& icon)  override;
+        std::shared_ptr<PlayerBase> CreatePlayer(uint64_t id, const std::string& nickName, const std::string& icon) override;
 
 public :
 	bool ReadLevelUpCfg();
+
+public :
+        static constexpr int64_t scPlayerOfflineDataActorArrSize = 1;
+        PlayerOfflineDataActorPtr _playerOfflineDataActorArr[scPlayerOfflineDataActorArrSize];
 };

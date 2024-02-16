@@ -13,8 +13,9 @@
 MAIN_FUNC();
 
 App::App(const std::string& appName)
-: SuperType(appName, E_ST_Game)
+        : SuperType(appName, E_ST_Game)
 {
+        ::nl::net::client::ClientNetMgr::CreateInstance();
         GlobalSetup_CH::CreateInstance();
 
         RegionMgr::CreateInstance();
@@ -23,6 +24,7 @@ App::App(const std::string& appName)
 
 App::~App()
 {
+        ::nl::net::client::ClientNetMgr::DestroyInstance();
         RegionMgr::DestroyInstance();
         NetMgrImpl::DestroyInstance();
 
@@ -32,6 +34,7 @@ App::~App()
 bool App::Init()
 {
         LOG_FATAL_IF(!SuperType::Init(), "AppBase init error!!!");
+        LOG_FATAL_IF(!::nl::net::client::ClientNetMgr::GetInstance()->Init(1, "gate"), "ClientNetMgr init error!!!");
 
         LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "读取策划全局配置失败!!!");
         LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
@@ -65,7 +68,7 @@ bool App::Init()
 
         // {{{ start task
         _startPriorityTaskList->AddFinalTaskCallback([]() {
-                NetMgr::GetInstance()->Listen(GetApp()->GetServerInfo<stGameServerInfo>()->_gate_port, [](auto&& s, auto& sslCtx) {
+                ::nl::net::client::ClientNetMgr::GetInstance()->Listen(GetApp()->GetServerInfo<stGameServerInfo>()->_gate_port, [](auto&& s, auto& sslCtx) {
                         return std::make_shared<GameGateSession>(std::move(s));
                 });
 
@@ -95,6 +98,9 @@ bool App::Init()
 
         // {{{ stop task
         _stopPriorityTaskList->AddFinalTaskCallback([]() {
+                ::nl::net::client::ClientNetMgr::GetInstance()->Terminate();
+                ::nl::net::client::ClientNetMgr::GetInstance()->WaitForTerminate();
+
                 RegionMgr::GetInstance()->Terminate();
                 RegionMgr::GetInstance()->WaitForTerminate();
         });

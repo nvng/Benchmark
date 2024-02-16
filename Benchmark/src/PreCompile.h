@@ -1,6 +1,7 @@
 #ifndef __PRE_COMPILE_H__
 #define __PRE_COMPILE_H__
 
+// #define ____PRINT_ACTOR_MAIL_COST_TIME____
 #define ____BENCHMARK____
 
 #define BOOST_SP_DISABLE_THREADS

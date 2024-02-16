@@ -99,9 +99,10 @@ message DBRankInfo
 {
   ERankType type = 10;
   sint64 flag = 20;
+  sint64 version = 30;
 
-  repeated MsgAreaRankScoreRankInfo area_rank_score_rank_info_list = 30;
-  repeated MsgNormalRankInfo normal_rank_info = 40;
+  repeated MsgAreaRankScoreRankInfo area_rank_score_rank_info_list = 40;
+  repeated MsgNormalRankInfo normal_rank_info = 50;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

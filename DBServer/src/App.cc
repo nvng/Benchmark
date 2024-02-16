@@ -22,24 +22,19 @@ bool App::Init()
 	LOG_FATAL_IF(!GenGuidService::GetInstance()->Init(), "GenGuidService init fail!!!");
 
         GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
-                static int64_t loadVersionCnt = 0;
-                static int64_t loadVersionSize = 0;
-                static int64_t loadCnt = 0;
-                static int64_t loadSize = 0;
-                static int64_t saveCnt = 0;
-                static int64_t saveSize = 0;
-
-                (void)loadVersionCnt;
-                (void)loadVersionSize;
-                (void)loadCnt;
-                (void)loadSize;
-                (void)saveCnt;
-                (void)saveSize;
+                [[maybe_unused]] static int64_t loadVersionCnt = 0;
+                [[maybe_unused]] static int64_t loadVersionSize = 0;
+                [[maybe_unused]] static int64_t loadCnt = 0;
+                [[maybe_unused]] static int64_t loadSize = 0;
+                [[maybe_unused]] static int64_t saveCnt = 0;
+                [[maybe_unused]] static int64_t saveSize = 0;
+                [[maybe_unused]] static int64_t checkIDCnt = 0;
+                [[maybe_unused]] static int64_t checkIDSize = 0;
 
                 LOG_INFO_IF(0 != GetApp()->_loadVersionCnt - loadVersionCnt
                             || 0 != GetApp()->_loadCnt - loadCnt
                             || 0 != GetApp()->_saveCnt - saveCnt,
-                            "avg[{}] actorCnt[{}] lvc[{}] lvs[{}] lc[{}] ls[{}] sc[{}] ss[{}]",
+                            "avg[{}] actorCnt[{}] lvc[{}] lvs[{:.9f}] lc[{}] ls[{:.9f}] sc[{}] ss[{:.9f} cc[{}] cs[{:.9f}]]",
                             GetFrameController().GetAverageFrameCnt(),
                             SpecialActorMgr::GetInstance()->GetActorCnt(),
                             GetApp()->_loadVersionCnt - loadVersionCnt,
@@ -47,7 +42,9 @@ bool App::Init()
                             GetApp()->_loadCnt - loadCnt,
                             (GetApp()->_loadSize - loadSize) / (1024.0 * 1024.0),
                             GetApp()->_saveCnt - saveCnt,
-                            (GetApp()->_saveSize - saveSize) / (1024.0 * 1024.0)
+                            (GetApp()->_saveSize - saveSize) / (1024.0 * 1024.0),
+                            GetApp()->_checkIDCnt - checkIDCnt,
+                            (GetApp()->_checkIDSize - checkIDSize) / (1024.0 * 1024.0)
                            );
 
                 loadVersionCnt = GetApp()->_loadVersionCnt;
@@ -56,6 +53,8 @@ bool App::Init()
                 loadSize = GetApp()->_loadSize;
                 saveCnt = GetApp()->_saveCnt;
                 saveSize = GetApp()->_saveSize;
+                checkIDCnt = GetApp()->_checkIDCnt;
+                checkIDSize = GetApp()->_checkIDSize;
         });
         
 	_startPriorityTaskList->AddFinalTaskCallback([]() {
@@ -65,6 +64,9 @@ bool App::Init()
 	});
 
         _stopPriorityTaskList->AddFinalTaskCallback([]() {
+                NetMgr::GetInstance()->Terminate();
+                NetMgr::GetInstance()->WaitForTerminate();
+
                 GenGuidService::GetInstance()->Terminate();
                 GenGuidService::GetInstance()->WaitForTerminate();
 

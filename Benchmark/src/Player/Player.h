@@ -13,7 +13,6 @@ public :
 
         bool Init() override;
 
-        static uint64_t GenPlayerGuid();
         void UnPack(const MsgPlayerInfo& msg);
 
 public :
@@ -26,12 +25,13 @@ public :
         std::weak_ptr<ClientGateSession> _ses;
         MsgPlayerInfo _msgPlayerInfo;
         std::unordered_map<int64_t, int64_t> _goodsList;
+        bool _inTimer = false;
 
 public :
-        FORCE_INLINE void ChangeState(int stateType, StateEventInfo& evt) { _stateMgr.ChangeState(stateType, shared_from_this(), evt); }
+        FORCE_INLINE void ChangeState(int stateType, StateEventInfo& evt) { CheckThreadSafe(); _stateMgr.ChangeState(stateType, shared_from_this(), evt); }
         FORCE_INLINE void OnEvent(int64_t mt, int64_t st, const ActorMailDataPtr& msg)
-        { StateEventInfo evt(ActorMail::MsgTypeMerge(mt, st)); evt._data = msg; OnEvent(evt); }
-        FORCE_INLINE void OnEvent(StateEventInfo& evt) { _stateMgr.OnEvent(shared_from_this(), evt); }
+        { CheckThreadSafe(); StateEventInfo evt(ActorMail::MsgTypeMerge(mt, st)); evt._data = msg; OnEvent(evt); }
+        FORCE_INLINE void OnEvent(StateEventInfo& evt) { CheckThreadSafe(); _stateMgr.OnEvent(shared_from_this(), evt); }
 private :
         PlayerStateMgr _stateMgr;
 

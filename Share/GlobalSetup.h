@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Share/GlobalDef.h"
-
 #include "msg_rank.pb.h"
 
 class GlobalSetup_CH : public Singleton<GlobalSetup_CH>
@@ -21,9 +20,9 @@ public :
         int64_t _dataResetNonZero = 0;
         std::vector<int64_t> _changeNickNameCostList;
 
-        int64_t _dailyShopRefreshCost = 0;
         int64_t _gameSeasonMinBattleCntForReward = 0;
         int64_t _randomShopFreeRefreshInterval = 0;
+        std::vector<int64_t> _randomShopRefreshCostList;
 
         std::tuple<int64_t, int64_t, int64_t> _rankDefArr[ERankType_ARRAYSIZE];
 
@@ -42,7 +41,13 @@ public :
                 return i;
         }
         std::vector<int64_t> _queueOnlyRobotRankList;
-        std::vector<int64_t> _randomMapInfoList;
+        std::map<int64_t, std::vector<int64_t>> _randomMapInfoList;
+        int64_t _pveEndlessRebornCost = 0;
+        int64_t _randomShopRefreshCntDaily = 0;
+        std::unordered_set<std::string> _payIPLimitList;
+
+        bool _whiteListSwitch = false;
+        std::unordered_set<uint64_t> _whiteList;
 };
 
 // vim: fenc=utf8:expandtab:ts=8

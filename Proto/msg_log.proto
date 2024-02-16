@@ -29,7 +29,7 @@ enum ELogServiceOrigType
         E_LSOT_None = 0x0;
         E_LSOT_PiFu = 0x1;
         E_LSOT_Mail = 0x2;
-        E_LSOT_AD = 0x3;
+        E_LSOT_ADUse = 0x3;
         E_LSOT_Hero = 0x4;
         E_LSOT_Festival = 0x5;
         E_LSOT_CDKey = 0x6;
@@ -50,6 +50,7 @@ enum ELogServiceOrigType
         E_LSOT_MailReward = 0x26;
         E_LSOT_Gift = 0x27;
         E_LSOT_FestivalOnEvent = 0x28;
+        E_LSOT_Login = 0x29;
 
         E_LSOT_Pay = 0x10;
         E_LSOT_ShopBuy = 0x11;
@@ -60,6 +61,7 @@ enum ELogServiceOrigType
         E_LSOT_ShopBuyOther = 0x16;
         E_LSOT_ShopSell = 0x17;
         E_LSOT_PayGift = 0x18;
+        E_LSOT_ADClick = 0x19;
 
         E_LSOT_GameConclude = 0x20;
 
@@ -83,6 +85,7 @@ enum ELogServiceLogSubType
         E_LSLST_MonthCard = 0x5;
         E_LSLST_ZhanLing = 0x6;
         E_LSLST_PiFu = 0x7;
+        E_LSLST_Login = 0x8;
 
         E_LSLST_CDKey = 0x10;
         E_LSLST_Festival = 0x11;

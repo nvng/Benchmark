@@ -22,15 +22,22 @@ import "msg_client_common.proto";
 
 enum EMsgClientADSubType
 {
-  E_MCADST_Use = 0x0;
+        E_MCADST_Click = 0x0;
+        E_MCADST_Use = 0x1;
+}
+
+message MsgADClick
+{
+        EClientErrorType error_type = 1;
+        sint64 id = 2;
 }
 
 message MsgADUse
 {
-  EClientErrorType error_type = 1;
-  sint64 id = 2;
+        EClientErrorType error_type = 1;
+        sint64 id = 2;
 
-  MsgPlayerChange player_change = 10;
+        MsgPlayerChange player_change = 10;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

@@ -1,0 +1,5 @@
+#	id	名称	每次持续时间	持续时间软上限	每天领取的掉落id	比赛金币加成	比赛经验加成	额外道具栏数量	专属角色	专属头像	专属头像框	专属道具皮肤	排位额外免扣分次数	排位赛额外加成场次	排位赛额外加成积分	免广告领奖	是否有蓄力条	<end>
+#	int	string	int	int	int	int	int	int	int	int	int	int	int	int	int	bool	int	<end>
+#	idx	name	days	daysLimit	dayLoot	addGold	addExp	itemField	hero	head	headSculpture	itemSkin	deductiblePoints	additionalNumber	additionalPoints	close_ad	energyBar	<end>
+#	1210000001	白银VIP	30	35	1201000101	300	300	0	1102000014	1208000014	1208010002	1201000103	0	0	0	0	0	<end>
+#	1210000002	黄金VIP	30	35	1201000102	500	500	1	0	0	0	1201000104	0	0	0	1	0	<end>

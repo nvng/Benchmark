@@ -1,4 +1,5 @@
 #include "GlobalSetup.h"
+#include <cassert>
 
 bool GlobalSetup_CH::Init()
 {
@@ -51,8 +52,44 @@ bool GlobalSetup_CH::Init()
         assert(_queueOnlyRobotRankList.size() >= 2);
 
         // 随机地图信息。
-        ss >> tmpStr >> tmpStr >> tmpStr >> _randomMapInfoList >> tmpStr;
-        assert(_randomMapInfoList.size() >= 2);
+        ss >> tmpStr >> tmpStr >> tmpStr >> tmpStr;
+        std::vector<int64_t> mapList;
+        for (auto& str : Tokenizer<std::string>(tmpStr, "_"))
+        {
+                std::vector<int64_t> tmpList = Tokenizer<int64_t>(str, "|");
+                assert(tmpList.size() >= 2);
+                for (int64_t i=1; i<tmpList.size(); ++i)
+                        mapList.emplace_back(tmpList[i]);
+                _randomMapInfoList[tmpList[0]] = mapList;
+        }
+        ss >> tmpStr;
+
+        // 随机商店刷新费用列表。
+        ss >> tmpStr >> tmpStr >> tmpStr >> tmpStr;
+        _randomShopRefreshCostList = Tokenizer<int64_t>(tmpStr, "|");
+        ss >> tmpStr;
+
+        // 无尽模式复活消耗钻石。
+        ss >> tmpStr >> tmpStr >> tmpStr >> _pveEndlessRebornCost >> tmpStr;
+
+        // 随机商店每日刷新次数。
+        ss >> tmpStr >> tmpStr >> tmpStr >> _randomShopRefreshCntDaily >> tmpStr;
+
+        // 支付IP限制列表
+        std::vector<std::string> strList;
+        ss >> tmpStr >> tmpStr >> tmpStr >> strList >> tmpStr;
+        for (auto& ip : strList)
+                _payIPLimitList.emplace(ip);
+
+        // 白名单及开关
+        tmpList.clear();
+        ss >> tmpStr >> tmpStr >> tmpStr >> tmpList >> tmpStr;
+        if (!tmpList.empty())
+        {
+                _whiteListSwitch = tmpList[0];
+                for (int64_t i=1; i<tmpList.size(); ++i)
+                        _whiteList.emplace(tmpList[i]);
+        }
 
         return true;
 }

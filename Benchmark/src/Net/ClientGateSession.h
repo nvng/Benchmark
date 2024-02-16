@@ -24,7 +24,7 @@ public :
 	void OnConnect() override;
 	void OnClose(int32_t reasonType) override;
 
-        void OnRecv(SuperType::BuffTypePtr::element_type* buf, const SuperType::BuffTypePtr& bufRef) override;
+        void OnRecv(SuperType::BuffType buf, const VoidPtr& bufRef) override;
 
 public :
 	std::weak_ptr<Player> _player;

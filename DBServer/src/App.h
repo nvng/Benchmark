@@ -18,6 +18,8 @@ public :
   std::atomic_int64_t _loadSize;
   std::atomic_int64_t _saveCnt;
   std::atomic_int64_t _saveSize;
+  std::atomic_int64_t _checkIDCnt;
+  std::atomic_int64_t _checkIDSize;
 };
 
 extern App* GetApp();

@@ -14,6 +14,7 @@ public :
 
 public :
   std::atomic_uint64_t _cnt;
+  std::atomic_uint64_t _recvCnt;
 };
 
 extern App* GetApp();

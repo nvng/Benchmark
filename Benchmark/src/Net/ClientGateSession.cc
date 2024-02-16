@@ -16,7 +16,7 @@ void ClientGateSession::OnConnect()
 	msg->set_player_guid(playerGuid);
 	SendPB(msg, E_MCMT_ClientCommon, E_MCCCST_Login);
 
-#if 1
+#if 0
 	if (0 != RandInRange(0, 3))
 	{
                 std::weak_ptr<ClientGateSession> weakSes = shared_from_this();
@@ -53,7 +53,7 @@ void ClientGateSession::OnClose(int32_t reasonType)
         });
 }
 
-void ClientGateSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const SuperType::BuffTypePtr& bufRef)
+void ClientGateSession::OnRecv(SuperType::BuffType buf, const VoidPtr& bufRef)
 {
         auto msgHead = *reinterpret_cast<MsgHeaderType*>(buf);
 	switch (msgHead._type)
@@ -81,8 +81,9 @@ void ClientGateSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
 		// SendPB(nullptr, 0x7f, 0);
                 */
 		break;
-                /*
         case MsgHeaderType::MsgTypeMerge<E_MCMT_Game, Jump::E_MCGST_Sync>() :
+                ++GetApp()->_recvCnt;
+                /*
                 {
                         SendBuf<MsgHeaderType>(bufRef, buf, msgHead._size, msgHead.CompressType(), E_MCMT_Game, Jump::E_MCGST_Sync);
                         auto p = _player.lock();
@@ -91,10 +92,13 @@ void ClientGateSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
                         for (int64_t i=0; i<200; ++i)
                                 SendPB(msg, E_MCMT_Game, Jump::E_MCGST_SyncCommon);
                 }
-                break;
                 */
+                break;
         // case MsgHeaderType::MsgTypeMerge<E_MCMT_Game, Jump::E_MCGST_SyncCommon>() :
                 // SendBuf<MsgHeaderType>(bufRef, buf, msgHead._size, msgHead.CompressType(), E_MCMT_Game, Jump::E_MCGST_SyncCommon);
+                break;
+        case MsgHeaderType::MsgTypeMerge<E_MCMT_Shop, E_MCSST_Refresh>() :
+                SendBuf<MsgHeaderType>(bufRef, buf, msgHead._size, msgHead.CompressType(), E_MCMT_Shop, E_MCSST_Refresh);
                 break;
 	default :
                 if (true)
@@ -114,7 +118,7 @@ void ClientGateSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
                                 LOG_INFO("1111111 type[{:#x}] newType[{:#x}] mt[{:#x}] st[{:#x}]",
                                          msgHead._type, tmpMsgHeader._type, MsgHeaderType::MsgMainType(msgHead._type), MsgHeaderType::MsgSubType(msgHead._type));
                                          */
-                                auto mail = std::make_shared<nl::net::ActorNetMail<ActorMail, MsgHeaderType>>(nullptr, tmpMsgHeader, bufRef.get(), bufRef);
+                                auto mail = std::make_shared<nl::net::ActorNetMail<ActorMail, MsgHeaderType>>(nullptr, tmpMsgHeader, buf, bufRef);
                                 p->Push(mail);
                         }
                         else

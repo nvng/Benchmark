@@ -21,6 +21,13 @@ bool PlayerMgr::Init()
 {
 	if (!SuperType::Init())
 		return false;
+
+        for (int64_t i=0; i<scPlayerOfflineDataActorArrSize+1; ++i)
+        {
+                _playerOfflineDataActorArr[i] = std::make_shared<PlayerOfflineDataActor>();
+                _playerOfflineDataActorArr[i]->Start();
+        }
+
 	return ReadLevelUpCfg();
 }
 
@@ -31,7 +38,7 @@ PlayerBasePtr PlayerMgr::CreatePlayer(uint64_t id, const std::string& nickName, 
 
 bool PlayerMgr::ReadLevelUpCfg()
 {
-        auto fileName = ServerCfgMgr::GetInstance()->GetConfigAbsolute("PlayerLevel.txt");
+        auto fileName = ServerCfgMgr::GetInstance()->GetConfigAbsolute("Levelup.txt");
         std::stringstream ss;
         if (!ReadFileToSS(ss, fileName))
                 return false;

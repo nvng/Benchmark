@@ -53,6 +53,7 @@ using namespace nl::net::server;
 #include "NetMgrImpl.h"
 
 #include "Share/GlobalDef.h"
+#include "Share/GlobalSetup.h"
 
 #include "App.h"
 

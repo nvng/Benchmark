@@ -19,7 +19,6 @@ option optimize_for = LITE_RUNTIME;
 // package PokerProto;
 
 import "msg_client_common.proto";
-import "msg_internal_common.proto";
 
 enum EMsgClientPaySubType
 {
@@ -44,7 +43,7 @@ message MsgPayReqShip
         string orderno_cp = 0x11;
         sint64 userid = 0x12;
         sint64 game_id = 0x13;
-        sint64 order_amt = 0x14;
+        string order_amt = 0x14;
         sint64 pay_amt = 0x15;
         sint64 pay_time = 0x16;
         sint64 player_guid = 0x17;
@@ -65,7 +64,7 @@ message MsgPayClientShip
 
 message MsgSDKGift
 {
-        EInternalErrorType error_type = 1;
+        EClientErrorType error_type = 1;
 
         sint64 userid = 10;
         sint64 game_id = 11;

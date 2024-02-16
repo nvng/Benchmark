@@ -34,6 +34,8 @@ bool App::Init()
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "player mgr init fail!!!");
 	LOG_FATAL_IF(!::nl::net::client::ClientNetMgr::GetInstance()->Init(serverInfo->_netProcCnt, "client"), "client net mgr init fail!!!");
 
+        ServerListCfgMgr::GetInstance()->PrintPortDistInfo();
+
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
 		std::size_t lobbyPlayerCnt = 0;
 		std::size_t gamePlayerCnt = 0;
@@ -50,7 +52,7 @@ bool App::Init()
                 [[maybe_unused]] static int64_t serverRecvCnt = 0;
                 [[maybe_unused]] static int64_t gameRecvCnt = 0;
                 [[maybe_unused]] static int64_t loginRecvCnt = 0;
-		LOG_INFO_IF(true, "cnt[{}] sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
+		LOG_INFO_IF(false, "cnt[{}] sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
                             GetApp()->_cnt,
 			    NetMgrImpl::GetInstance()->GetSessionCnt(),
 			    PlayerMgr::GetInstance()->GetPlayerCnt(),

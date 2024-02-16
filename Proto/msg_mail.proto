@@ -97,16 +97,17 @@ message DBPlayerMailSys
 message DBSysMail
 {
         sint64 guid = 10;
-        repeated MsgSysMailInfo sys_mail_list = 20;
+        sint64 version = 20;
+        repeated MsgSysMailInfo sys_mail_list = 30;
 
         message MsgPlayerMailList
         {
                 sint64 player_guid = 10;
                 repeated MsgSysMailInfo mail_list = 20;
         }
-        repeated MsgPlayerMailList player_mail_list = 30;
+        repeated MsgPlayerMailList player_mail_list = 40;
 
-        repeated sint64 remove_mail_guid_list = 40;
+        repeated sint64 remove_mail_guid_list = 50;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

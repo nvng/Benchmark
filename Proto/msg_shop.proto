@@ -66,6 +66,7 @@ message MsgShopRefresh
   EClientErrorType error_type = 1;
   sint64 id = 2;
   sint64 param = 3;
+  sint64 param_1 = 4;
 
   MsgShop shop = 10;
   MsgShopPlayerData shop_player_data = 11;
@@ -129,28 +130,29 @@ message MsgShop
 
 message MsgShopMgr
 {
-  repeated MsgShopPlayerData shop_player_data_list = 10;
-  repeated MsgShop shop_list = 20;
+        repeated MsgShopPlayerData shop_player_data_list = 10;
+        repeated MsgShop shop_list = 20;
 
-  message MsgBuyOtherLimitItem
-  {
-    sint64 drop_type = 10;
-    sint64 sub_type = 20;
-    sint64 cnt = 30;
-  }
-  repeated MsgBuyOtherLimitItem buy_other_item_list = 100;
+        message MsgBuyOtherLimitItem
+        {
+                sint64 drop_type = 10;
+                sint64 sub_type = 20;
+                sint64 cnt = 30;
+        }
+        repeated MsgBuyOtherLimitItem buy_other_item_list = 100;
 
-  message MsgPayTimeItem
-  {
-        sint64 cfg_id = 10;
-        sint64 time = 20;
-  }
-  repeated MsgPayTimeItem pay_time_list = 110;
+        message MsgPayTimeItem
+        {
+                sint64 cfg_id = 10;
+                sint64 time = 20;
+        }
+        repeated MsgPayTimeItem pay_time_list = 110;
 }
 
 message DBShopMgr
 {
-  repeated MsgShop shop_list = 10;
+        sint64 version = 10;
+        repeated MsgShop shop_list = 20;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

@@ -16,28 +16,21 @@ bool Player::Init()
 {
 	SuperType::Init();
 
-
         _stateMgr.Init();
         StateEventInfo evt(ActorMail::MsgTypeMerge(E_MCMT_Internal, E_MCIST_HeartBeat));
         _stateMgr.SetCurState(E_PST_None, shared_from_this(), evt, true);
 	return true;
 }
 
-uint64_t Player::GenPlayerGuid()
-{
-	// TODO:后面根据规则生成
-	return RandInRange(10000000, 10000000*10-1);
-        // return 10 * 1000 * 1000 + RandInRange(0, 40000);
-        // return 99999999;
-}
-
 void Player::UnPack(const MsgPlayerInfo& msg)
 {
-	_msgPlayerInfo.CopyFrom(msg);
+        CheckThreadSafe();
+	// _msgPlayerInfo.CopyFrom(msg);
 }
 
 void Player::SendPB(uint16_t mainType, uint16_t subType, const MessageLitePtr& pb/*=nullptr*/)
 {
+        // CheckThreadSafe();
         auto ses = _ses.lock();
         if (ses)
                 ses->SendPB(pb, mainType, subType);
@@ -45,16 +38,20 @@ void Player::SendPB(uint16_t mainType, uint16_t subType, const MessageLitePtr& p
 
 bool Player::UseGMGoods()
 {
+        CheckThreadSafe();
         return true;
 }
 
 void Player::DealPlayerChange(const MsgPlayerChange& msg)
 {
+        CheckThreadSafe();
 }
 
 void Player::OnDisconnect()
 {
+        // CheckThreadSafe();
         // OnEvent(E_MCMT_ClientCommon, E_MCCCST_Disconnect, nullptr);
+        _ses.reset();
 }
 
 ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClientLoginRet)
@@ -82,19 +79,23 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_ClientCommon, E_MCCCST_DataResetNoneZero)
 
 ACTOR_MAIL_HANDLE(Player, E_MCMT_GameCommon, E_MCGCST_SwitchRegion, MsgSwitchRegion)
 {
-        try
-        {
         // LOG_INFO("玩家[{}] 收到 SwitchRegion type[{}]", GetID(), msg->region_type());
         OnEvent(E_MCMT_GameCommon, E_MCGCST_SwitchRegion, msg);
-        } catch (...) { LOG_FATAL("222222222222222222222222222111 this[{}]", fmt::ptr(this)); }
 
-        try {
         // 必须要切完再发，LoadFinish 设计意义在于等待客户端加载完成。
         auto sendMsg = std::make_shared<MsgLoadFinish>();
         sendMsg->set_region_type(msg->region_type());
         SendPB(E_MCMT_GameCommon, E_MCGCST_LoadFinish, sendMsg);
-        } catch (...) { LOG_FATAL("222222222222222222222222222222 this[{}]", fmt::ptr(this)); }
 
+        return nullptr;
+}
+
+ACTOR_MAIL_HANDLE(Player, E_MCMT_Shop, E_MCSST_Refresh, MsgShopRefresh)
+{
+        auto sendMsg = std::make_shared<MsgShopRefresh>();
+        sendMsg->set_id(INT64_MAX);
+        sendMsg->set_param(INT64_MAX);
+        SendPB(E_MCMT_Shop, E_MCSST_Refresh, sendMsg);
         return nullptr;
 }
 

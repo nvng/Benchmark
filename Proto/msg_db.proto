@@ -27,9 +27,7 @@ import "msg_activity.proto";
 
 enum EMsgInternalDBSubType
 {
-  E_MIDBST_DBDataVersion = 0x0;
-  E_MIDBST_SaveDBData = 0x1;
-  E_MIDBST_LoadDBData = 0x3;
+        E_MIDBST_ReqDBDataList = 0x0;
 }
 
 // 约定：凡是DB结构，每个字段初始序号间隔10，方便后面插入。
@@ -42,9 +40,8 @@ message DBPlayerInfo
   string icon = 40;
   string we_chat_icon = 50;
   repeated sint64 icon_idx_list = 60;
-  repeated sint64 icon_frame_idx_list = 70;
-  repeated sint64 attr_list = 80;
-  repeated sint64 cdkey_list = 90;
+  repeated sint64 attr_list = 70;
+  repeated sint64 cdkey_list = 80;
 
   repeated MsgGoodsItem goods_list = 100;
   DBPlayerMailSys mail_sys = 110;
@@ -72,22 +69,40 @@ message DBRobotInfo
 
 message DBRobotList
 {
-  repeated DBRobotInfo robot_list = 10;
+        sint64 version = 1;
+        repeated DBRobotInfo robot_list = 10;
 }
 
 message MsgDBDataVersion
 {
-  EInternalErrorType error_type = 1;
-  sint64 guid = 2;
-  sint64 version = 3;
+        EInternalErrorType error_type = 1;
+        sint64 guid = 2;
+        sint64 version = 3;
+}
+
+message MsgDBDataVersionList
+{
+        map<sint64, MsgDBDataVersion> item_list = 1;
 }
 
 message MsgDBData
 {
-  EInternalErrorType error_type = 1;
-  sint64 guid = 2;
-  sint64 version = 3;
-  bytes data = 5;
+        EInternalErrorType error_type = 1;
+        sint64 guid = 2;
+        sint64 version = 3;
+        bytes data = 5;
+}
+
+message MsgDBDataList
+{
+        EInternalErrorType error_type = 1;
+        message MsgDBDataItem
+        {
+                sint64 guid = 1;
+                sint64 version = 2;
+                bytes data = 3;
+        }
+        repeated MsgDBDataItem item_list = 2;
 }
 
 enum EMsgInternalGenGuidSubType
@@ -115,6 +130,48 @@ message MsgGenGuid
         EInternalErrorType error_type = 1;
         EGenGuidType type = 2;
         sint64 id = 3;
+}
+
+enum EMySqlTaskType
+{
+        E_MySql_TT_None = 0x0;
+        E_MySql_TT_Version = 0x1;
+        E_MySql_TT_Load = 0x2;
+        E_MySql_TT_Save = 0x3;
+        E_MySql_TT_CheckIDUsable = 0x4;
+}
+
+message MailReqDBData
+{
+        EInternalErrorType error_type = 1;
+        EMySqlTaskType task_type = 2;
+
+        sint64 guid = 3;
+        sint64 version = 4;
+        bytes data = 5;
+}
+
+message MailReqDBDataList
+{
+        repeated MailReqDBData list = 1;
+}
+
+message MailTest
+{
+        sint64 version = 1;
+        string data = 2;
+}
+
+message DBLoginInfo
+{
+        sint64 app_id = 1;
+        sint64 user_id = 2;
+        string token = 4;
+        string sign = 5;
+        sint64 time_out = 6;
+
+        sint64 player_guid = 10;
+        sint64 version = 11;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

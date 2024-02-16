@@ -5,6 +5,7 @@
 #include "Net/SessionImpl.hpp"
 #include "RegionMgr.h"
 #include "RequestActor.h"
+#include "PingPongBig.h"
 
 MAIN_FUNC();
 
@@ -15,6 +16,7 @@ App::App(const std::string& appName)
 	RegionMgr::CreateInstance();
 
         RobotService::CreateInstance();
+        PingPongBigService::CreateInstance();
 }
 
 App::~App()
@@ -22,6 +24,7 @@ App::~App()
 	RegionMgr::DestroyInstance();
 	GlobalSetup_CH::DestroyInstance();
         RobotService::DestroyInstance();
+        PingPongBigService::DestroyInstance();
 }
 
 bool App::Init()
@@ -30,6 +33,7 @@ bool App::Init()
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "GlobalSetup_CH init error!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!RobotService::GetInstance()->Init(), "RobotService init error!!!");
+	LOG_FATAL_IF(!PingPongBigService::GetInstance()->Init(), "PingPongBigService init error!!!");
 
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
                 static int64_t oldCnt = 0;

@@ -48,9 +48,8 @@ message MsgPlayerInfo
   string icon = 3;
   string we_chat_icon = 4;
   repeated sint64 icon_idx_list = 5;
-  repeated sint64 icon_frame_idx_list = 6;
-  repeated sint64 attr_list = 7;
-  repeated sint64 cdkey_list = 8;
+  repeated sint64 attr_list = 6;
+  repeated sint64 cdkey_list = 7;
 
   MsgQueueInfo queue_info = 10;
   MsgMatchInfo match_info = 11;

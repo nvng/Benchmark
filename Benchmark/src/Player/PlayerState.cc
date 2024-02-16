@@ -4,6 +4,8 @@
 #include "msg_client.pb.h"
 #include "msg_common.pb.h"
 #include "msg_jump.pb.h"
+#include "msg_shop.pb.h"
+#include <cstdint>
 #include <memory>
 
 // namespace Jump {
@@ -25,12 +27,11 @@ PlayerStateMgr::CreateStateByType(int stateType)
 {
         switch (stateType)
         {
-                case E_PST_None : return new PlayerNoneState(); break;
-                case E_PST_Lobby : return new PlayerLobbyState(); break;
-                case E_PST_Queue : return new PlayerQueueState(); break;
-                case E_PST_Game : return new PlayerGameState(); break;
-                default :
-                break;
+        case E_PST_None : return new PlayerNoneState(); break;
+        case E_PST_Lobby : return new PlayerLobbyState(); break;
+        case E_PST_Queue : return new PlayerQueueState(); break;
+        case E_PST_Game : return new PlayerGameState(); break;
+        default : break;
         }
 
         return nullptr;
@@ -38,6 +39,8 @@ PlayerStateMgr::CreateStateByType(int stateType)
 
 void PlayerNoneState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
 {
+        player->CheckThreadSafe();
+        // LOG_INFO("玩家[{}] 收到登录消息 type[{:#x}]", player->GetID(), evt._eventType);
         switch (evt._eventType)
         {
                 case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_SwitchRegion>() :
@@ -46,14 +49,10 @@ void PlayerNoneState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
                                 switch (msg->region_type())
                                 {
                                         case E_RT_MainCity :
-                                                try {
                                                 player->ChangeState(E_PST_Lobby, evt);
-                                                } catch (...) { LOG_FATAL("33333333333333333333333"); }
                                                 break;
                                         default :
-                                                try {
                                                 player->ChangeState(E_PST_Game, evt);
-                                                } catch (...) { LOG_FATAL("44444444444444444444444"); }
                                                 break;
                                 }
                         }
@@ -69,21 +68,40 @@ void PlayerNoneState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
 
 void PlayerLobbyState::Enter(const PlayerPtr& player, StateEventInfo& evt)
 {
-        auto sendMsg = std::make_shared<MsgReqQueue>();
-        auto baseInfo = sendMsg->mutable_base_info();
-        baseInfo->set_region_type(E_RT_PVE);
-        baseInfo->set_queue_type(E_QT_Normal);
-        player->SendPB(E_MCMT_QueueCommon, E_MCQCST_ReqQueue, sendMsg);
+        player->CheckThreadSafe();
+        // LOG_INFO("玩家[{}] 进入大厅状态!!!", player->GetID());
+        if (false)
+        {
+                auto sendMsg = std::make_shared<MsgReqQueue>();
+                auto baseInfo = sendMsg->mutable_base_info();
+                baseInfo->set_region_type(E_RT_PVE);
+                baseInfo->set_queue_type(E_QT_Normal);
+                player->SendPB(E_MCMT_QueueCommon, E_MCQCST_ReqQueue, sendMsg);
+        }
+
+        /*
+        for (int64_t i=0; i<10; ++i)
+        {
+                auto sendMsg = std::make_shared<MsgShopRefresh>();
+                sendMsg->set_id(INT64_MAX);
+                sendMsg->set_param(INT64_MAX);
+                player->SendPB(E_MCMT_Shop, E_MCSST_Refresh, sendMsg);
+        }
+        */
 }
 
 void PlayerLobbyState::Exit(const PlayerPtr& player, StateEventInfo& evt)
 {
+        player->CheckThreadSafe();
         _reqQueueTimerGuid = INVALID_TIMER_GUID;
         _exitQueueTimerGuid = INVALID_TIMER_GUID;
 }
 
 void PlayerLobbyState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
 {
+        player->CheckThreadSafe();
+        // LOG_INFO("玩家[{}] 收到大厅消息 type[{:#x}]", player->GetID(), evt._eventType);
+
         switch (evt._eventType)
         {
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_SwitchRegion>() :
@@ -95,9 +113,7 @@ void PlayerLobbyState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
                                 // player->ChangeState(E_PST_Lobby, evt);
                                 break;
                         default :
-                                try {
                                 player->ChangeState(E_PST_Game, evt);
-                                } catch (...) { LOG_FATAL("55555555555555555555555"); }
                                 break;
                         }
                 }
@@ -201,6 +217,7 @@ DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_QueueCommon, E_MCQCST_ExitQueue, MsgExitQu
 
 void PlayerQueueState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
 {
+        player->CheckThreadSafe();
         switch (evt._eventType)
         {
         default :
@@ -216,18 +233,24 @@ DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_GameCommon, E_MCGCST_RegionInfo, Jump::Msg
 DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_GameCommon, E_MCGCST_OnFighterEnter, Jump::MsgFighterEnter);
 DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_GameCommon, E_MCGCST_OnFighterExit, MsgFighterExit);
 DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_GameCommon, E_MCGCST_UpdateRegionStateInfo, Jump::MsgRegionStateInfo);
+DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_GameCommon, E_MCGCST_Conclude, Jump::MsgConcludeInfo);
 DEFINE_STATE_ACTOR_MAIL_HANDLE_EMPTY(E_MCMT_GameCommon, E_MCGCST_GameDisconnect);
 
 DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_Game, Jump::E_MCGST_Sync, Jump::MsgSync);
 // DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_Game, Jump::E_MCGST_SyncCommon, Jump::MsgSync);
+DEFINE_STATE_ACTOR_MAIL_HANDLE(E_MCMT_Game, Jump::E_MCGST_ChangeAI, Jump::MsgChangeAI);
 
 void PlayerGameState::Enter(const PlayerPtr& player, StateEventInfo& evt)
 {
+        player->CheckThreadSafe();
+        // LOG_INFO("玩家[{}] 进入游戏状态!!!", player->GetID());
         // player->SendPB(E_MCMT_GameCommon, E_MCGCST_ReqExitRegion);
 }
 
 void PlayerGameState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
 {
+        player->CheckThreadSafe();
+        // LOG_INFO("玩家[{}] 收到游戏消息 type[{:#x}]", player->GetID(), evt._eventType);
         switch (evt._eventType)
         {
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_SwitchRegion>() :
@@ -236,28 +259,62 @@ void PlayerGameState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
                         switch (msg->region_type())
                         {
                         case E_RT_MainCity :
-                                try {
                                 player->ChangeState(E_PST_Lobby, evt);
-                                                } catch (...) { LOG_FATAL("66666666666666666666666"); }
                                 break;
                         default :
-                                try {
                                 player->ChangeState(E_PST_Game, evt);
-                                                } catch (...) { LOG_FATAL("77777777777777777777777"); }
                                 break;
                         }
                 }
                 break;
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_RegionInfo>() :
                 // LOG_INFO("玩家[{}] 收到 RegionInfo!!!", player->GetID());
-                player->SendPB(E_MCMT_GameCommon, E_MCGCST_ReqExitRegion);
-                /*
-                _sendMsg = std::make_shared<Jump::MsgSync>();
-                _sendMsg->set_player_guid(player->GetID());
-                player->SendPB(E_MCMT_Game, Jump::E_MCGST_Sync, _sendMsg);
-                for (int64_t i=0; i<200; ++i)
-                        player->SendPB(E_MCMT_Game, Jump::E_MCGST_SyncCommon, _sendMsg);
+                {
+                        /*
+                        ::nl::util::SteadyTimer::StaticStart(RandInRange(0.0, 10.0), [player]() {
+                                player->SendPB(E_MCMT_GameCommon, E_MCGCST_ReqExitRegion);
+                        });
                         */
+
+                        std::weak_ptr<Player> weakPlayer = player;
+                        if (!player->_inTimer)
+                        {
+                                player->_inTimer = true;
+                                ::nl::util::SteadyTimer::StartForever(0.1, [weakPlayer]() {
+                                        auto player = weakPlayer.lock();
+                                        if (player)
+                                        {
+                                                auto sendMsg = std::make_shared<Jump::MsgSync>();
+                                                sendMsg->set_player_guid(player->GetID());
+                                                sendMsg->set_state(RandInRange(Jump::E_SST_1, Jump::ESyncStateType_ARRAYSIZE));
+                                                sendMsg->set_param_1(INT64_MAX);
+                                                sendMsg->set_param_2(INT64_MAX);
+                                                sendMsg->set_param_3(INT64_MAX);
+                                                player->SendPB(E_MCMT_Game, Jump::E_MCGST_Sync, sendMsg);
+                                                return true;
+                                        }
+                                        return false;
+                                });
+                        }
+
+                        ::nl::util::SteadyTimer::StaticStart(RandInRange(0.0, 10.0), [weakPlayer]() {
+                                auto player = weakPlayer.lock();
+                                if (player)
+                                {
+                                        auto ses = player->_ses.lock();
+                                        if (ses)
+                                                ses->Close(1777);
+                                }
+                        });
+
+                        /*
+                           _sendMsg = std::make_shared<Jump::MsgSync>();
+                           _sendMsg->set_player_guid(player->GetID());
+                           player->SendPB(E_MCMT_Game, Jump::E_MCGST_Sync, _sendMsg);
+                           for (int64_t i=0; i<200; ++i)
+                           player->SendPB(E_MCMT_Game, Jump::E_MCGST_SyncCommon, _sendMsg);
+                           */
+                }
                 break;
                 // case E_PSET_ReqQueue :
                 // 	{
@@ -271,11 +328,22 @@ void PlayerGameState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
                 // 	}
                 // 	break;
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_Game, Jump::E_MCGST_Sync>() :
-                /*
-                player->SendPB(E_MCMT_Game, Jump::E_MCGST_Sync, _sendMsg);
-                for (int64_t i=0; i<100; ++i)
-                        player->SendPB(E_MCMT_Game, Jump::E_MCGST_SyncCommon, nullptr);
+                {
+                        /*
+                        auto sendMsg = std::make_shared<Jump::MsgSync>();
+                        sendMsg->set_player_guid(player->GetID());
+                        sendMsg->set_state(Jump::E_SST_3);
+                        sendMsg->set_param_1(INT64_MAX);
+                        sendMsg->set_param_2(INT64_MAX);
+                        sendMsg->set_param_3(INT64_MAX);
+                        player->SendPB(E_MCMT_Game, Jump::E_MCGST_Sync, _sendMsg);
                         */
+                        /*
+                           player->SendPB(E_MCMT_Game, Jump::E_MCGST_Sync, _sendMsg);
+                           for (int64_t i=0; i<100; ++i)
+                           player->SendPB(E_MCMT_Game, Jump::E_MCGST_SyncCommon, nullptr);
+                           */
+                }
                 break;
         // case Player::ActorMailType::MsgTypeMerge<E_MCMT_Game, Jump::E_MCGST_SyncCommon>() :
 
@@ -283,6 +351,9 @@ void PlayerGameState::OnEvent(const PlayerPtr& player, StateEventInfo& evt)
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_OnFighterExit>() :
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_UpdateRegionStateInfo>() :
         case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_GameDisconnect>() :
+        case Player::ActorMailType::MsgTypeMerge<E_MCMT_GameCommon, E_MCGCST_Conclude>() :
+
+        case Player::ActorMailType::MsgTypeMerge<E_MCMT_Game, Jump::E_MCGST_ChangeAI>() :
                 break;
         default :
                 LOG_INFO("玩家[{}] 在 E_PST_Game 状态收到消息 mt[{:#x}] st[{:#x}]",

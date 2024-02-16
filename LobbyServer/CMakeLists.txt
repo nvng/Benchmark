@@ -9,6 +9,7 @@ set(SRC_DIR
         ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Log
         ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Guid
         ../Deps/libnvngLib/include/ActorFramework/Impl/Service/DB
+        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Benchmark
         )
 
 include($ENV{HOME}/git/config/cmake/project.cmake)
