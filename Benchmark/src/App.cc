@@ -21,7 +21,7 @@ App::~App()
 
 bool App::Init()
 {
-	int64_t sid = 10;
+	int64_t sid = 100;
         std::ifstream f("sid.txt");
 	std::string str;
 	getline(f, str);
@@ -33,7 +33,7 @@ bool App::Init()
 	f.close();
 
 	std::ofstream f1("sid.txt", std::ios_base::trunc);
-	f1 << ((sid+1>=20) ? 10 : sid + 1);
+	f1 << ((sid+1>=1000) ? 1000 : sid + 1);
         f1.close();
 
         _serverInfo = std::make_shared<stServerInfoBase>(E_ST_None);

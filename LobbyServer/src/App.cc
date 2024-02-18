@@ -7,8 +7,6 @@
 #include "Redis.h"
 #include "Tools/LogHelper.h"
 #include "PingPongBig.h"
-#include <boost/asio/local/stream_protocol.hpp>
-#include <cstdlib>
 
 MAIN_FUNC();
 
@@ -146,7 +144,7 @@ bool App::Init()
 			}
 		});
 #ifdef ____BENCHMARK____
-		LOG_INFO_IF(false, "actorCnt[{}] agentCnt[{}] cnt[{}] flag[{}] avg[{}]",
+		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] flag[{}] avg[{}]",
 			 PlayerMgr::GetInstance()->GetActorCnt(),
 			 agentCnt,
 			 GetApp()->_cnt - oldCnt,
@@ -255,7 +253,7 @@ bool App::Init()
                 */
         });
 
-	_startPriorityTaskList->AddTask({}, LobbyGameMgrSession::_sPriorityTaskKey, [](const std::string& key) {
+	_startPriorityTaskList->AddTask(LobbyGameMgrSession::_sPriorityTaskKey, [](const std::string& key) {
 		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
                 LOG_INFO("777777777 ip[{}] port[{}]", gameMgrInfo->_ip, gameMgrInfo->_lobby_port);
                 NetMgr::GetInstance()->Connect(gameMgrInfo->_ip, gameMgrInfo->_lobby_port, [](auto&& s) {
@@ -263,20 +261,19 @@ bool App::Init()
                 });
 	});
 
-        _startPriorityTaskList->AddTask({LobbyGameMgrSession::_sPriorityTaskKey}, MySqlService::GetInstance()->GetServiceName(), [](const std::string& key) {
+        _startPriorityTaskList->AddTask(MySqlService::GetInstance()->GetServiceName(), [](const std::string& key) {
                 ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([](const auto& cfg) {
                         MySqlService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
                         // MySqlBenchmarkService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
                 });
+        }, { LobbyGameMgrSession::_sPriorityTaskKey });
 
-        });
-
-	_startPriorityTaskList->AddTask({LobbyGameMgrSession::_sPriorityTaskKey}, LobbyGameSession::scPriorityTaskKey, [](const std::string& key) {
+	_startPriorityTaskList->AddTask(LobbyGameSession::scPriorityTaskKey, [](const std::string& key) {
 		auto lobbyInfo = GetApp()->GetServerInfo<stLobbyServerInfo>();
                 NetMgr::GetInstance()->Listen(lobbyInfo->_game_port, [](auto&& s, auto& sslCtx) {
 			return std::make_shared<LobbyGameSession>(std::move(s));
                 });
-	});
+	}, { LobbyGameMgrSession::_sPriorityTaskKey });
 
 	// }}}
 

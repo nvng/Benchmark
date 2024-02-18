@@ -20,7 +20,7 @@ bool PlayerMgr::Init()
                 return false;
 
         // int64_t perCnt = 5000;
-        int64_t perCnt = 80000;
+        int64_t perCnt = 20000;
         ServerListCfgMgr::GetInstance()->Foreach<stGateServerInfo>([this, perCnt](const stGateServerInfoPtr& gateInfo) {
                 for (int i=0; i<perCnt; ++i)
                 {
@@ -38,7 +38,7 @@ bool PlayerMgr::Init()
                 LOG_INFO("gggggggggate ip:{} port:{}", gateInfo->_ip, gateInfo->_client_port);
                 for (int i=0; i<perCnt; ++i)
                 {
-                        NetMgrBase<ClientGateSession::Tag>::GetInstance()->Connect("127.0.0.1", gateInfo->_client_port, [](auto&& s) {
+                        NetMgrBase<ClientGateSession::Tag>::GetInstance()->Connect(/*gateInfo->_ip*/ "172.17.0.4", gateInfo->_client_port, [](auto&& s) {
                                 return std::make_shared<ClientGateSession>(std::move(s));
                         });
                 }

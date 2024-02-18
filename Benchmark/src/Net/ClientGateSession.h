@@ -26,6 +26,9 @@ public :
 
         void OnRecv(SuperType::BuffType buf, const VoidPtr& bufRef) override;
 
+        // void InitSendHeartBeatTimer() override { }
+        // void InitCheckHeartBeatTimer() override { }
+
 public :
 	std::weak_ptr<Player> _player;
 

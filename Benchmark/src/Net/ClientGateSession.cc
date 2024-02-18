@@ -10,11 +10,13 @@ void ClientGateSession::OnConnect()
 	SuperType::OnConnect();
 	++GetApp()->_cnt;
 
+        /*
         auto msg = std::make_shared<MsgClientLogin>();
 	static std::atomic_int64_t cnt = 0;
 	auto playerGuid = PlayerMgr::GetInstance()->_idList[++cnt % PlayerMgr::GetInstance()->_idList.size()];
 	msg->set_player_guid(playerGuid);
 	SendPB(msg, E_MCMT_ClientCommon, E_MCCCST_Login);
+        */
 
 #if 0
 	if (0 != RandInRange(0, 3))
@@ -101,7 +103,7 @@ void ClientGateSession::OnRecv(SuperType::BuffType buf, const VoidPtr& bufRef)
                 SendBuf<MsgHeaderType>(bufRef, buf, msgHead._size, msgHead.CompressType(), E_MCMT_Shop, E_MCSST_Refresh);
                 break;
 	default :
-                if (true)
+                if (false)
                 {
                         /*
                            LOG_INFO("收到网关消息 mt[{:#x}] st[{:#x}] size[{}]",

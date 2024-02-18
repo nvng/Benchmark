@@ -52,7 +52,7 @@ bool App::Init()
                 [[maybe_unused]] static int64_t serverRecvCnt = 0;
                 [[maybe_unused]] static int64_t gameRecvCnt = 0;
                 [[maybe_unused]] static int64_t loginRecvCnt = 0;
-		LOG_INFO_IF(false, "cnt[{}] sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
+		LOG_INFO_IF(true, "cnt[{}] sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
                             GetApp()->_cnt,
 			    NetMgrImpl::GetInstance()->GetSessionCnt(),
 			    PlayerMgr::GetInstance()->GetPlayerCnt(),
@@ -74,15 +74,15 @@ bool App::Init()
 	// {{{ start task
 	_startPriorityTaskList->AddFinalTaskCallback([this]() {
                 auto gateInfo = GetServerInfo<stGateServerInfo>();
-                ::nl::net::client::ClientNetMgr::GetInstance()->Listen(gateInfo->_client_port, [](auto&& s, const auto& sslCtx) {
-                        return std::make_shared<GateClientSession>(std::move(s));
-                });
+                // for (int64_t i=0; i<gateInfo->_netProcCnt; ++i)
+                {
+                        ::nl::net::client::ClientNetMgr::GetInstance()->Listen(gateInfo->_client_port, [](auto&& s, const auto& sslCtx) {
+                                return std::make_shared<GateClientSession>(std::move(s));
+                        });
+                }
 	});
 
-	std::vector<std::string> preTaskList;
-
-	preTaskList.clear();
-	_startPriorityTaskList->AddTask(preTaskList, GateGameSession::scPriorityTaskKey, [](const std::string& key) {
+	_startPriorityTaskList->AddTask(GateGameSession::scPriorityTaskKey, [](const std::string& key) {
 		ServerListCfgMgr::GetInstance()->Foreach<stGameServerInfo>([](const stGameServerInfoPtr& sInfo) {
                         ::nl::net::NetMgr::GetInstance()->Connect(sInfo->_ip, sInfo->_gate_port, [](auto&& s) {
                                 return std::make_shared<GateGameSession>(std::move(s));
@@ -90,15 +90,13 @@ bool App::Init()
 		});
 	});
 
-	preTaskList.clear();
-	preTaskList.emplace_back(GateGameSession::scPriorityTaskKey);
-	_startPriorityTaskList->AddTask(preTaskList, GateLobbySession::scPriorityTaskKey, [](const std::string& key) {
+	_startPriorityTaskList->AddTask(GateLobbySession::scPriorityTaskKey, [](const std::string& key) {
 		ServerListCfgMgr::GetInstance()->Foreach<stLobbyServerInfo>([](const stLobbyServerInfoPtr& sInfo) {
                         ::nl::net::NetMgr::GetInstance()->Connect(sInfo->_ip, sInfo->_gate_port, [](auto&& s) {
                                 return std::make_shared<GateLobbySession>(std::move(s));
                         });
 		});
-	});
+	}, { GateGameSession::scPriorityTaskKey });
 	// }}}
 
 	// {{{ stop task

@@ -3,7 +3,7 @@
 #include "GameLobbySession.h"
 #include "GameGateSession.h"
 #include "GameMgrSession.h"
-#include "Jump/Region.h"
+#include "Region/Jump/Region.h"
 #include "Net/ISession.hpp"
 #include "RegionMgr.h"
 #include "NetMgrImpl.h"
@@ -75,25 +75,20 @@ bool App::Init()
                 LOG_INFO("server start success");
         });
 
-        std::vector<std::string> preTask;
-        preTask.clear();
-        _startPriorityTaskList->AddTask(preTask, GameMgrSession::scPriorityTaskKey, [](const std::string& key) {
+        _startPriorityTaskList->AddTask(GameMgrSession::scPriorityTaskKey, [](const std::string& key) {
                 auto gameMgrServerInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
                 NetMgr::GetInstance()->Connect(gameMgrServerInfo->_ip, gameMgrServerInfo->_game_port, [](auto&& s) {
                         return std::make_shared<GameMgrSession>(std::move(s));
                 });
         });
 
-
-        preTask.clear();
-        preTask.emplace_back(GameMgrSession::scPriorityTaskKey);
-        _startPriorityTaskList->AddTask(preTask, GameLobbySession::scPriorityTaskKey, [](const std::string& key) {
+        _startPriorityTaskList->AddTask(GameLobbySession::scPriorityTaskKey, [](const std::string& key) {
                 ServerListCfgMgr::GetInstance()->Foreach<stLobbyServerInfo>([](const stLobbyServerInfoPtr& sInfo) {
                         NetMgr::GetInstance()->Connect(sInfo->_ip, sInfo->_game_port, [](auto&& s) {
                                 return std::make_shared<GameLobbySession>(std::move(s));
                         });
                 });
-        });
+        }, { GameMgrSession::scPriorityTaskKey });
         // }}}
 
         // {{{ stop task

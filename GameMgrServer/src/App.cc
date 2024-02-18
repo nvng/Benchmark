@@ -52,7 +52,6 @@ bool App::Init()
 	});
 
 	// {{{ start task
-	std::vector<std::string> preTask;
         _startPriorityTaskList->AddFinalTaskCallback([]() {
         });
 
@@ -64,22 +63,19 @@ bool App::Init()
 	 * 强制切换在主场景。
 	 */
 
-	preTask.clear();
-	_startPriorityTaskList->AddTask(preTask, GameMgrGameSession::scPriorityTaskKey, [](const std::string& key) {
+	_startPriorityTaskList->AddTask(GameMgrGameSession::scPriorityTaskKey, [](const std::string& key) {
 		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
                 NetMgr::GetInstance()->Listen(gameMgrInfo->_game_port, [](auto&& s, auto& ioCtx) {
                         return std::make_shared<GameMgrGameSession>(std::move(s));
                 });
 	});
 
-	preTask.clear();
-	preTask.emplace_back(GameMgrGameSession::scPriorityTaskKey);
-	_startPriorityTaskList->AddTask(preTask, GameMgrLobbySession::scPriorityTaskKey, [](const std::string& key) {
+	_startPriorityTaskList->AddTask(GameMgrLobbySession::scPriorityTaskKey, [](const std::string& key) {
 		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
                 NetMgr::GetInstance()->Listen(gameMgrInfo->_lobby_port, [](auto&& s, auto& ioCtx) {
                         return std::make_shared<GameMgrLobbySession>(std::move(s));
                 });
-	});
+	}, { GameMgrGameSession::scPriorityTaskKey });
 	// }}}
 
 	// {{{
