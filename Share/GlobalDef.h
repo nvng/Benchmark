@@ -2,7 +2,7 @@
 
 enum EPlayerLogModuleType
 {
-        E_LOG_MT_PVE = E_LOG_MT_UserDefine,
+        E_LOG_MT_PVE = 1UL << 0,
 };
 
 #define SNOW_FLAKE_START_TIME 1692871881
