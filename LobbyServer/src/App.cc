@@ -94,6 +94,7 @@ bool TestActor::Init()
         }
         */
 
+        /*
         while (true)
         {
                 LOG_INFO("aaaaaaaaaaaaa");
@@ -104,15 +105,14 @@ bool TestActor::Init()
                         ++GetApp()->_cnt;
                 boost::this_fiber::sleep_for(std::chrono::seconds(1));
         }
+        */
 
-        /*
         while (true)
         {
                 RedisCmd("SET", "a", "123");
                 ++GetApp()->_cnt;
-                boost::this_fiber::sleep_for(std::chrono::seconds(1));
+                // boost::this_fiber::sleep_for(std::chrono::seconds(1));
         }
-        */
 
         return true;
 }
@@ -162,7 +162,6 @@ bool App::Init()
 #endif
 		oldCnt = GetApp()->_cnt;
 	});
-
 
 
 	// {{{ start task
@@ -241,16 +240,6 @@ bool App::Init()
 				TimedEventLoop::SetOverTime(eventData, calNextDataResetTimeFunc());
 			});
 		});
-
-                /*
-                static std::vector<TestActorPtr> actList;
-                for (int64_t i=0; i<1; ++i)
-                {
-                        auto act = std::make_shared<TestActor>();
-                        act->Start();
-                        actList.emplace_back(act);
-                }
-                */
         });
 
 	_startPriorityTaskList->AddTask(LobbyGameMgrSession::_sPriorityTaskKey, [](const std::string& key) {
@@ -298,6 +287,24 @@ bool App::Init()
                 MySqlService::GetInstance()->WaitForTerminate();
         });
 	// }}}
+
+
+        /*
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        static std::vector<TestActorPtr> actList;
+        for (int64_t i=0; i<1024 * 10; ++i)
+        {
+                auto act = std::make_shared<TestActor>();
+                act->Start();
+                actList.emplace_back(act);
+        }
+        */
+
+        LOG_INFO("111111111111111111111 size[{}]", sizeof(LobbyGateSession::ActorAgentType));
+        LOG_INFO("222222222222222222222 size[{}]", sizeof(boost::fibers::fiber::id));
+        LOG_INFO("333333333333333333333 size[{}]", sizeof(channel_t<ActorCallMailPtr>));
+        LOG_INFO("444444444444444444444 size[{}]", sizeof(TestActor));
 
 	return true;
 }
