@@ -24,7 +24,6 @@ public :
 
 App::App(const std::string& appName)
 	: SuperType(appName, E_ST_Lobby)
-	  , _gateSesList("App_gateSesList")
 {
         ::nl::net::client::ClientNetMgr::CreateInstance();
 	GlobalSetup_CH::CreateInstance();

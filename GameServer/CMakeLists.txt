@@ -1,20 +1,16 @@
-cmake_minimum_required(VERSION 3.25)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 
-set(SRC_DIR
+PROJECT(GameServer.out)
+
+SET(SRC_DIR
         ./src/Region
         ./src/Region/Jump
         ../Deps/libnvngLib/include/ActorFramework/Impl/Game
         )
 
-include($ENV{HOME}/git/config/cmake/project.cmake)
+INCLUDE($ENV{HOME}/git/config/cmake/project.cmake)
 
-project(GameServer.out)
-
-# 第二个 Proto 参数用于指定外部文件夹在输出文件夹中的位置
-add_subdirectory(../Proto Proto)
-
-add_executable(${PROJECT_NAME} ${SRC_LIST})
-target_link_libraries(${PROJECT_NAME} proto)
-target_precompile_headers(${PROJECT_NAME} PRIVATE ./src/PreCompile.h)
+ADD_EXECUTABLE(${PROJECT_NAME} ${SRC_LIST})
+TARGET_PRECOMPILE_HEADERS(${PROJECT_NAME} PRIVATE ./src/PreCompile.h)
 
 #vim: fenc=utf8:expandtab:ts=8:sw=8:fdm=marker:noma:
