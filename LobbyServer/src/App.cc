@@ -12,16 +12,6 @@
 
 MAIN_FUNC();
 
-class TcpSessionTest : public ::nl::net::SessionImpl<TcpSessionTest, false, MsgActorAgentHeaderType>
-{
-        typedef ::nl::net::SessionImpl<TcpSessionTest, false, MsgActorAgentHeaderType> SuperType;
-public :
-        boost::asio::local::stream_protocol::socket s;
-        boost::asio::local::stream_protocol::iostream i;
-        boost::asio::local::stream_protocol::acceptor a;
-        boost::asio::local::stream_protocol::endpoint e;
-};
-
 App::App(const std::string& appName)
 	: SuperType(appName, E_ST_Lobby)
 {
@@ -127,12 +117,6 @@ bool TestActor::Init()
         */
 
         return true;
-}
-
-void Test()
-{
-                boost::this_fiber::sleep_for(std::chrono::seconds(2));
-                abort();
 }
 
 bool App::Init()
@@ -324,46 +308,6 @@ bool App::Init()
                 MySqlService::GetInstance()->WaitForTerminate();
         });
 	// }}}
-
-        // boost::beast::flat_buffer buf;
-        boost::asio::streambuf buf;
-        for (int64_t i=0; i<1000; ++i)
-        {
-                buf.consume(buf.size() - 1);
-                buf.prepare(1024 * 1024 * 10);
-                buf.commit(1024);
-        }
-        LOG_INFO("111111111111111 buf size[{}] cap[{}]", buf.size(), buf.capacity());
-
-        buf.consume(100);
-        buf.prepare(1000);
-        buf.commit(1000);
-        LOG_INFO("222222222222222 buf size[{}] cap[{}]", buf.size(), buf.capacity());
-
-        decltype(buf) tmp{55};
-        // buf = std::move(tmp);
-        // std::swap(buf, tmp);
-        LOG_INFO("333333333333333 buf size[{}] cap[{}]", buf.size(), buf.capacity());
-        LOG_INFO("444444444444444 tmp size[{}] cap[{}]", tmp.size(), tmp.capacity());
-
-        {
-                boost::asio::streambuf buf;
-                buf.prepare(1024);
-                LOG_INFO("1111 buf data[{}] size[{}] cap[{}]", buf.data().data(), buf.size(), buf.capacity());
-                buf.commit(10);
-                LOG_INFO("1111 buf data[{}] size[{}] cap[{}]", buf.data().data(), buf.size(), buf.capacity());
-                buf.consume(9);
-                LOG_INFO("1111 buf data[{}] size[{}] cap[{}]", buf.data().data(), buf.size(), buf.capacity());
-                buf.prepare(1020);
-                LOG_INFO("1111 buf data[{}] size[{}] cap[{}]", buf.data().data(), buf.size(), buf.capacity());
-
-                buf.prepare(10000);
-                LOG_INFO("1111 buf data[{}] size[{}] cap[{}]", buf.data().data(), buf.size(), buf.capacity());
-        }
-
-        boost::fibers::fiber([]() {
-                Test();
-        });
 
 	return true;
 }

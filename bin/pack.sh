@@ -33,8 +33,8 @@ build_func(){
         cp ../$pg/${pg}.out ./
         rm -rf ../$pg/$dir
 
-        # gzexe $pg.out
-        # rm $pg.out~
+        gzexe $pg.out
+        rm $pg.out~
 }
 
 export -f build_func
