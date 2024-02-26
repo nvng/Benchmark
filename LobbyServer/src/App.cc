@@ -305,6 +305,7 @@ bool App::Init()
         LOG_INFO("222222222222222222222 size[{}]", sizeof(boost::fibers::fiber::id));
         LOG_INFO("333333333333333333333 size[{}]", sizeof(channel_t<ActorCallMailPtr>));
         LOG_INFO("444444444444444444444 size[{}]", sizeof(TestActor));
+        LOG_INFO("555555555555555555555 size[{}]", sizeof(nl::util::SteadyTimer));
 
 	return true;
 }
