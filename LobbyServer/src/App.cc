@@ -255,10 +255,7 @@ bool App::Init()
                 */
         });
 
-	std::vector<std::string> preTask;
-
-	preTask.clear();
-	_startPriorityTaskList->AddTask(preTask, LobbyGameMgrSession::_sPriorityTaskKey, [](const std::string& key) {
+	_startPriorityTaskList->AddTask({}, LobbyGameMgrSession::_sPriorityTaskKey, [](const std::string& key) {
 		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
                 LOG_INFO("777777777 ip[{}] port[{}]", gameMgrInfo->_ip, gameMgrInfo->_lobby_port);
                 NetMgr::GetInstance()->Connect(gameMgrInfo->_ip, gameMgrInfo->_lobby_port, [](auto&& s) {
@@ -266,9 +263,7 @@ bool App::Init()
                 });
 	});
 
-	preTask.clear();
-        preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);
-        _startPriorityTaskList->AddTask(preTask, MySqlService::GetInstance()->GetServiceName(), [](const std::string& key) {
+        _startPriorityTaskList->AddTask({LobbyGameMgrSession::_sPriorityTaskKey}, MySqlService::GetInstance()->GetServiceName(), [](const std::string& key) {
                 ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([](const auto& cfg) {
                         MySqlService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
                         // MySqlBenchmarkService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
@@ -276,9 +271,7 @@ bool App::Init()
 
         });
 
-	preTask.clear();
-	preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);
-	_startPriorityTaskList->AddTask(preTask, LobbyGameSession::scPriorityTaskKey, [](const std::string& key) {
+	_startPriorityTaskList->AddTask({LobbyGameMgrSession::_sPriorityTaskKey}, LobbyGameSession::scPriorityTaskKey, [](const std::string& key) {
 		auto lobbyInfo = GetApp()->GetServerInfo<stLobbyServerInfo>();
                 NetMgr::GetInstance()->Listen(lobbyInfo->_game_port, [](auto&& s, auto& sslCtx) {
 			return std::make_shared<LobbyGameSession>(std::move(s));
