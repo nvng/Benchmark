@@ -1,5 +1,7 @@
 #include "App.h"
 
+#include "ActorFramework/ServiceExtra.hpp"
+#include "LobbyGameSession.h"
 #include "Net/ISession.hpp"
 #include "Player/PlayerMgr.h"
 #include "Region/RegionMgr.h"
@@ -7,6 +9,25 @@
 #include "Redis.h"
 #include "Tools/LogHelper.h"
 #include "PingPongBig.h"
+#include "Tools/Util.h"
+
+class Test1ServiceActor
+{
+};
+
+DECLARE_SERVICE_BEGIN(Test1Service, SessionDistributeMod, ServiceSession, ServiceExtraWapper);
+DECLARE_SERVICE_END(Test1Service);
+
+typedef Test1ServiceBase<nl::af::E_ServiceType_Client, stServerInfoBase> Test1ServiceClientType;
+
+class Test2ServiceActor
+{
+};
+
+DECLARE_SERVICE_BEGIN(Test2Service, SessionDistributeMod, ServiceSession, ServiceExtraWapper);
+DECLARE_SERVICE_END(Test2Service);
+
+typedef Test2ServiceBase<nl::af::E_ServiceType_Client, stServerInfoBase> Test2ServiceClientType;
 
 MAIN_FUNC();
 
@@ -27,6 +48,8 @@ App::App(const std::string& appName)
         RedisService::CreateInstance();
 
         PingPongBigService::CreateInstance();
+        Test1ServiceClientType::CreateInstance();
+        Test2ServiceClientType::CreateInstance();
 }
 
 App::~App()
@@ -46,6 +69,8 @@ App::~App()
         RedisService::DestroyInstance();
 
         PingPongBigService::DestroyInstance();
+        Test1ServiceClientType::DestroyInstance();
+        Test2ServiceClientType::DestroyInstance();
 }
 
 SPECIAL_ACTOR_DEFINE_BEGIN(TestActor, 0x777);
@@ -125,12 +150,18 @@ bool App::Init()
         LOG_FATAL_IF(!::nl::net::client::ClientNetMgr::GetInstance()->Init(1, "gate"), "ClientNetMgr init error!!!");
 	LOG_FATAL_IF(!RedisMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_redisCfg), "RedisMgr init error!!!");
 	// LOG_FATAL_IF(!RedisService::GetInstance()->Init(), "RedisService init error!!!");
-	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
+        LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 	LOG_FATAL_IF(!MySqlService::GetInstance()->Init(), "MySqlService init error!!!");
 	// LOG_FATAL_IF(!MySqlBenchmarkService::GetInstance()->Init(), "MySqlBenchmark init error!!!");
 	LOG_FATAL_IF(!GenGuidService::GetInstance()->Init(), "GenGuidService init error!!!");
 	LOG_FATAL_IF(!PingPongBigService::GetInstance()->Init(), "PingPongBig init error!!!");
+	// LOG_FATAL_IF(!Test1ServiceClientType::GetInstance()->Init(), "PingPongBig init error!!!");
+	// LOG_FATAL_IF(!Test2ServiceClientType::GetInstance()->Init(), "PingPongBig init error!!!");
+
+        // auto remoteServerInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
+        // Test1ServiceClientType::GetInstance()->Start(remoteServerInfo->_ip, 9999);
+        // Test2ServiceClientType::GetInstance()->Start(remoteServerInfo->_ip, 9999);
 
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
 		static int64_t oldCnt = 0;
@@ -301,11 +332,18 @@ bool App::Init()
         }
         */
 
+        // spdlog::set_level(spdlog::level::warn);
+        // spdlog::trace("7777777777777777 trace");
+        LOG_TRACE_M(E_LOG_MT_DBMySql, "888888888887");
+        LOG_TRACE("000000000000000000000 size[{}]", sizeof(LobbyGateSession::ActorAgentType));
         LOG_INFO("111111111111111111111 size[{}]", sizeof(LobbyGateSession::ActorAgentType));
-        LOG_INFO("222222222222222222222 size[{}]", sizeof(boost::fibers::fiber::id));
-        LOG_INFO("333333333333333333333 size[{}]", sizeof(channel_t<ActorCallMailPtr>));
+        LOG_WARN("222222222222222222222 size[{}]", sizeof(boost::fibers::fiber::id));
+        LOG_ERROR("333333333333333333333 size[{}]", sizeof(channel_t<ActorCallMailPtr>));
         LOG_INFO("444444444444444444444 size[{}]", sizeof(TestActor));
         LOG_INFO("555555555555555555555 size[{}]", sizeof(nl::util::SteadyTimer));
+        LOG_INFO("666666666666666666666 log active level[{}]", SPDLOG_ACTIVE_LEVEL);
+        // LOG_INFO("666666666666666666666 from editor[{}]", CMAKE_FROM_EDITOR);
+        // LOG_INFO("666666666666666666666 from editor[{}]", CMAKE_CXX_COMPILER);
 
 	return true;
 }

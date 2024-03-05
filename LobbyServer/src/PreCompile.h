@@ -3,6 +3,7 @@
 
 // #define ____PRINT_ACTOR_MAIL_COST_TIME____
 #define ____BENCHMARK____
+// #define ENABLE_MULTI_SEND_MUTEX
 
 #define PING_PONG_SERVICE_CLIENT
 #define PING_PONG_BIG_SERVICE_CLIENT
