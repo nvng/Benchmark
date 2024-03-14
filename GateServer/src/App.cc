@@ -1,27 +1,24 @@
 #include "App.h"
-#include "GateClientSession.h"
-#include "GateGameSession.h"
-#include "GateLobbySession.h"
-#include "Net/ISession.hpp"
-#include "Net/TcpSessionForClient.hpp"
-#include "Tools/ServerList.hpp"
-#include "Tools/TimerMgr.hpp"
 
 MAIN_FUNC();
 
 App::App(const std::string& appName)
-  : SuperType(appName, E_ST_Gate)
+	: SuperType(appName, E_ST_Gate)
 {
 	NetMgrImpl::CreateInstance();
 	PlayerMgr::CreateInstance();
         ::nl::net::client::ClientNetMgr::CreateInstance();
+
+	GlobalSetup_CH::CreateInstance();
 }
 
 App::~App()
 {
+	NetMgrImpl::DestroyInstance();
 	PlayerMgr::DestroyInstance();
         ::nl::net::client::ClientNetMgr::DestroyInstance();
-	NetMgrImpl::DestroyInstance();
+
+	GlobalSetup_CH::DestroyInstance();
 }
 
 bool App::Init()
@@ -30,13 +27,12 @@ bool App::Init()
 	_gateCfg = ServerCfgMgr::GetInstance()->_gateCfg;
         auto serverInfo = GetServerInfo<stGateServerInfo>();
 
+	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "初始化策划全局配置失败!!!");
 	LOG_FATAL_IF(!NetMgrImpl::GetInstance()->Init(), "net mgr init fail!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "player mgr init fail!!!");
-	LOG_FATAL_IF(!::nl::net::client::ClientNetMgr::GetInstance()->Init(serverInfo->_netProcCnt, "client"), "client net mgr init fail!!!");
+	LOG_FATAL_IF(!::nl::net::client::ClientNetMgr::GetInstance()->Init(serverInfo->_netProcCnt, "cli"), "client net mgr init fail!!!");
 
-        ServerListCfgMgr::GetInstance()->PrintPortDistInfo();
-
-	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
+        ::nl::util::SteadyTimer::StartForever(1.0, []() {
 		std::size_t lobbyPlayerCnt = 0;
 		std::size_t gamePlayerCnt = 0;
 		NetMgrImpl::GetInstance()->Foreach([&lobbyPlayerCnt, &gamePlayerCnt](const auto& ses) {
@@ -48,38 +44,46 @@ bool App::Init()
 				gamePlayerCnt += gameSes->GetPlayerCnt();
 		});
 
-                [[maybe_unused]] static int64_t clientRecvCnt = 0;
-                [[maybe_unused]] static int64_t serverRecvCnt = 0;
-                [[maybe_unused]] static int64_t gameRecvCnt = 0;
-                [[maybe_unused]] static int64_t loginRecvCnt = 0;
-		LOG_INFO_IF(true, "cnt[{}] sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
-                            GetApp()->_cnt,
-			    NetMgrImpl::GetInstance()->GetSessionCnt(),
-			    PlayerMgr::GetInstance()->GetPlayerCnt(),
-			    lobbyPlayerCnt,
-			    gamePlayerCnt,
+                [[maybe_unused]]static int64_t oldLobbyPlayerCnt = 0;
+                [[maybe_unused]]static int64_t oldGamePlayerCnt = 0;
+                [[maybe_unused]]static int64_t clientRecvCnt = 0;
+                [[maybe_unused]]static int64_t serverRecvCnt = 0;
+                [[maybe_unused]]static int64_t gameRecvCnt = 0;
+                [[maybe_unused]]static int64_t loginRecvCnt = 0;
+                LOG_INFO_IF(0 != lobbyPlayerCnt - oldLobbyPlayerCnt
+                            || 0 != gamePlayerCnt - oldGamePlayerCnt
+                            || 0 != GetApp()->_clientRecvCnt - clientRecvCnt
+                            || 0 != GetApp()->_serverRecvCnt - serverRecvCnt
+                            || 0 != GetApp()->_gameRecvCnt - gameRecvCnt
+                            || 0 != GetApp()->_loginRecvCnt - loginRecvCnt,
+                            "sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
+                            NetMgrImpl::GetInstance()->GetSessionCnt(),
+                            PlayerMgr::GetInstance()->GetPlayerCnt(),
+                            lobbyPlayerCnt,
+                            gamePlayerCnt,
                             GetApp()->_clientRecvCnt - clientRecvCnt,
                             GetApp()->_serverRecvCnt - serverRecvCnt,
                             GetApp()->_gameRecvCnt - gameRecvCnt,
-                            0,
-			    GetFrameController().GetAverageFrameCnt()
-			   );
+                            GetApp()->_loginRecvCnt - loginRecvCnt,
+                            GetFrameController().GetAverageFrameCnt()
+                           );
 
+                oldLobbyPlayerCnt = lobbyPlayerCnt;
+                oldGamePlayerCnt = gamePlayerCnt;
                 clientRecvCnt = GetApp()->_clientRecvCnt;
                 serverRecvCnt = GetApp()->_serverRecvCnt;
                 gameRecvCnt = GetApp()->_gameRecvCnt;
                 loginRecvCnt = GetApp()->_loginRecvCnt;
+
+                return true;
 	});
 
 	// {{{ start task
 	_startPriorityTaskList->AddFinalTaskCallback([this]() {
                 auto gateInfo = GetServerInfo<stGateServerInfo>();
-                // for (int64_t i=0; i<gateInfo->_netProcCnt; ++i)
-                {
-                        ::nl::net::client::ClientNetMgr::GetInstance()->Listen(gateInfo->_client_port, [](auto&& s, const auto& sslCtx) {
-                                return std::make_shared<GateClientSession>(std::move(s));
-                        });
-                }
+                ::nl::net::client::ClientNetMgr::GetInstance()->Listen(gateInfo->_client_port, [](auto&& s, const auto& sslCtx) {
+                        return std::make_shared<GateClientSession>(std::move(s));
+                });
 	});
 
 	_startPriorityTaskList->AddTask(GateGameSession::scPriorityTaskKey, [](const std::string& key) {
@@ -97,6 +101,15 @@ bool App::Init()
                         });
 		});
 	}, { GateGameSession::scPriorityTaskKey });
+
+	_startPriorityTaskList->AddTask(GateLoginSession::scPriorityTaskKey, [](const std::string& key) {
+		ServerListCfgMgr::GetInstance()->Foreach<stLoginServerInfo>([](const auto& sInfo) {
+                        ::nl::net::NetMgr::GetInstance()->Connect(sInfo->_ip, sInfo->_gate_port, [](auto&& s) {
+                                return std::make_shared<GateLoginSession>(std::move(s));
+                        });
+		});
+	}, { GateLobbySession::scPriorityTaskKey });
+
 	// }}}
 
 	// {{{ stop task
@@ -106,30 +119,7 @@ bool App::Init()
 	});
 	// }}}
 
-        /*
-        for (int64_t i=0; i<1000 * 1000; ++i)
-        {
-                _mainChannel.push([i]() {
-                        boost::fibers::fiber(std::allocator_arg,
-                                             // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                                             // boost::fibers::protected_fixedsize_stack{ 32 * 1024 },
-                                             boost::fibers::segmented_stack{},
-                                             // boost::fibers::fixedsize_stack{ 128 * 1024 },
-                                             // boost::fibers::fixedsize_stack{ 1024 * 1024 },
-                                             [i]() {
-                                                     boost::this_fiber::sleep_for(std::chrono::seconds(1000000));
-                                                     LOG_INFO("1111111 i[{}]", i);
-                                             }).detach();
-                });
-        }
-        */
-
 	return true;
-}
-
-void App::Stop()
-{
-	SuperType::Stop();
 }
 
 // vim: fenc=utf8:expandtab:ts=8

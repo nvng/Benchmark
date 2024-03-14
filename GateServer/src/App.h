@@ -10,7 +10,6 @@ class App : public AppBase, public Singleton<App>
 
 public :
   bool Init() override;
-  void Stop() override;
 
 public :
   stGateServerCfgPtr _gateCfg;
