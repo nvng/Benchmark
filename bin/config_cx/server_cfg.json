@@ -7,6 +7,7 @@
   },
   "lobby_server": {},
   "db_server": {
+          "mysql_conn_cnt" : 64,
           "gen_guid":[
                   { "idx":0, "min_guid":20000000, "max_guid":99999999 }
           ]
@@ -16,9 +17,9 @@
     "game_db": {
       "ip": "10.0.0.180",
       "port": 56379,
-      "pwd": "",
+      "pwd": "XkdrbPH@3@o5KXGT5",
       "db": "-1",
-      "conn_cnt": 1,
+      "conn_cnt": 8,
       "thread_cnt": 1
     }
   },
@@ -29,8 +30,9 @@
       "user": "root",
       "pwd":"274905258",
       "db": "-1",
-      "conn_cnt": 64,
+      "conn_cnt": 1,
       "thread_cnt": 1
     }
-  }
+  },
+  "data_reset_non_zero" : 4
 }
