@@ -288,4 +288,9 @@ message MsgOfflineOpt
         repeated MsgOfflineOptItem item_list = 40;
 }
 
+message MsgServiceCommonRegist
+{
+        string service_name = 1;
+};
+
 // vim: fenc=utf8:expandtab:ts=8

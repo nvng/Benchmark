@@ -4,7 +4,7 @@
 #include "Region/RegionMgr.h"
 
 Player::Player(uint64_t guid, const std::string& nickName, const std::string& icon)
-	: SuperType(guid, nickName, icon)
+	: SuperType(guid, nickName, icon, 1 << 8)
 {
         DLOG_INFO("Player::Player() 构造!!!");
 
@@ -72,9 +72,79 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Client, E_MCCST_GM, MsgLobbyGM)
         return nullptr;
 }
 
-ACTOR_MAIL_HANDLE(Player, 0x7f, 0xf, MsgClientLogin)
+ACTOR_MAIL_HANDLE(Player, 0x7f, 0x0, MsgClientLogin)
 {
         ++GetApp()->_cnt;
+        for (int64_t i=0; i<10; ++i)
+                Send2Client(0x7f, 0xf, msg);
+        Send2Client(0x7f, 0x0, msg);
+        return nullptr;
+}
+
+ACTOR_MAIL_HANDLE(Player, 0x7f, 0x1, MsgClientLogin)
+{
+        ++GetApp()->_cnt;
+        for (int64_t i=0; i<20; ++i)
+                Send2Client(0x7f, 0xf, msg);
+        Send2Client(0x7f, 0x1, msg);
+        return nullptr;
+}
+
+ACTOR_MAIL_HANDLE(Player, 0x7f, 0x2, MsgClientLogin)
+{
+        ++GetApp()->_cnt;
+        for (int64_t i=0; i<40; ++i)
+                Send2Client(0x7f, 0xf, msg);
+        Send2Client(0x7f, 0x2, msg);
+        return nullptr;
+}
+
+ACTOR_MAIL_HANDLE(Player, 0x7f, 0x3, MsgClientLogin)
+{
+        ++GetApp()->_cnt;
+
+        auto perSize = LobbyGateSession::SerializeAndCompressNeedSize(msg);
+        stBufCache<LobbyGateSession> bufCache(160 * perSize * 2, [this](const VoidPtr& bufRef, ISession::BuffType buf, std::size_t bufSize) {
+                auto ses = _clientActor->GetSession();
+                ses->Send(bufRef, buf, bufSize);
+        });
+
+        for (int64_t i=0; i<160; ++i)
+        {
+                auto sendBuf = bufCache.Prepare(perSize);
+                auto [sendSize, _] = LobbyGateSession::Pack(sendBuf, msg, 0x7f, 0xf, LobbyGateSession::MsgHeaderType::E_RMT_Send, 0, GetID(), _clientActor->GetID());
+                bufCache.Commit(sendSize);
+        }
+
+        auto sendBuf = bufCache.Prepare(perSize);
+        auto[sendSize, _] = LobbyGateSession::Pack(sendBuf, msg, 0x7f, 0x3, LobbyGateSession::MsgHeaderType::E_RMT_Send, 0, GetID(), _clientActor->GetID());
+        bufCache.Commit(sendSize);
+
+        bufCache.Deal();
+        return nullptr;
+}
+
+ACTOR_MAIL_HANDLE(Player, 0x7f, 0xc, MsgClientLogin)
+{
+        ++GetApp()->_cnt;
+        Send2Client(0x7f, 0xc, msg);
+        return nullptr;
+}
+
+ACTOR_MAIL_HANDLE(Player, 0x7f, 0xd)
+{
+        ++GetApp()->_cnt;
+        Send2Client(0x7f, 0xd, nullptr);
+        return nullptr;
+}
+
+ACTOR_MAIL_HANDLE(Player, 0x7f, 0xe, MsgClientLogin)
+{
+        return nullptr;
+}
+
+ACTOR_MAIL_HANDLE(Player, 0x7f, 0xf)
+{
         return nullptr;
 }
 

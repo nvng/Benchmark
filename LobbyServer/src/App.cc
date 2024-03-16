@@ -5,11 +5,9 @@
 #include "Net/ISession.hpp"
 #include "Player/PlayerMgr.h"
 #include "Region/RegionMgr.h"
-#include "MySqlBenchmarkService.h"
-#include "Redis.h"
 #include "Tools/LogHelper.h"
-#include "PingPongBig.h"
 #include "Tools/Util.h"
+#include "LogService.h"
 
 class Test1ServiceActor
 {
@@ -39,15 +37,13 @@ App::App(const std::string& appName)
 	RegionMgr::CreateInstance();
         RedisMgr::CreateInstance();
         MySqlService::CreateInstance();
-        MySqlBenchmarkService::CreateInstance();
 
 	PlayerMgr::CreateInstance();
         nl::net::NetMgr::CreateInstance();
 
         GenGuidService::CreateInstance();
-        RedisService::CreateInstance();
+        LogService::CreateInstance();
 
-        PingPongBigService::CreateInstance();
         Test1ServiceClientType::CreateInstance();
         Test2ServiceClientType::CreateInstance();
 }
@@ -62,13 +58,11 @@ App::~App()
 	GlobalSetup_CH::DestroyInstance();
         RedisMgr::DestroyInstance();
         MySqlService::DestroyInstance();
-        MySqlBenchmarkService::DestroyInstance();
         nl::net::NetMgr::DestroyInstance();
 
         GenGuidService::DestroyInstance();
-        RedisService::DestroyInstance();
+        LogService::DestroyInstance();
 
-        PingPongBigService::DestroyInstance();
         Test1ServiceClientType::DestroyInstance();
         Test2ServiceClientType::DestroyInstance();
 }
@@ -149,23 +143,26 @@ bool App::Init()
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "初始化策划全局配置失败!!!");
         LOG_FATAL_IF(!::nl::net::client::ClientNetMgr::GetInstance()->Init(1, "gate"), "ClientNetMgr init error!!!");
 	LOG_FATAL_IF(!RedisMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_redisCfg), "RedisMgr init error!!!");
-	// LOG_FATAL_IF(!RedisService::GetInstance()->Init(), "RedisService init error!!!");
+	// LOG_FATAL_IF(!PingPongBigService::GetInstance()->Init(), "PingPongBigService init error!!!");
+	// LOG_FATAL_IF(!PingPongBigService::GetInstance()->Init(), "PingPongBigService init error!!!");
         LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 	LOG_FATAL_IF(!MySqlService::GetInstance()->Init(), "MySqlService init error!!!");
-	// LOG_FATAL_IF(!MySqlBenchmarkService::GetInstance()->Init(), "MySqlBenchmark init error!!!");
 	LOG_FATAL_IF(!GenGuidService::GetInstance()->Init(), "GenGuidService init error!!!");
-	LOG_FATAL_IF(!PingPongBigService::GetInstance()->Init(), "PingPongBig init error!!!");
-	// LOG_FATAL_IF(!Test1ServiceClientType::GetInstance()->Init(), "PingPongBig init error!!!");
-	// LOG_FATAL_IF(!Test2ServiceClientType::GetInstance()->Init(), "PingPongBig init error!!!");
+	LOG_FATAL_IF(!LogService::GetInstance()->Init(), "LogService init error!!!");
 
-        // auto remoteServerInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
-        // Test1ServiceClientType::GetInstance()->Start(remoteServerInfo->_ip, 9999);
-        // Test2ServiceClientType::GetInstance()->Start(remoteServerInfo->_ip, 9999);
+        /*
+	LOG_FATAL_IF(!Test1ServiceClientType::GetInstance()->Init(), "Test1ServiceClientType init error!!!");
+	LOG_FATAL_IF(!Test2ServiceClientType::GetInstance()->Init(), "Test2ServiceClientType init error!!!");
+
+        auto remoteServerInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
+        Test1ServiceClientType::GetInstance()->Start(remoteServerInfo->_ip, 9999);
+        Test2ServiceClientType::GetInstance()->Start(remoteServerInfo->_ip, 9999);
+        */
 
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
-		static int64_t oldCnt = 0;
-		(void)oldCnt;
+		[[maybe_unused]] static int64_t oldCnt = 0;
+		[[maybe_unused]] static int64_t oldCnt_1 = 0;
 		std::size_t agentCnt = 0;
 		GetApp()->_gateSesList.Foreach([&agentCnt](const auto& weakSes) {
 			auto ses = weakSes.lock();
@@ -175,23 +172,26 @@ bool App::Init()
 			}
 		});
 #ifdef ____BENCHMARK____
-		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] flag[{}] avg[{}]",
+		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] cnt_1[{}] flag[{}] avg[{}]",
 			 PlayerMgr::GetInstance()->GetActorCnt(),
 			 agentCnt,
 			 GetApp()->_cnt - oldCnt,
+			 GetApp()->_cnt_1,
 			 // TimedEventLoop::_timedEventItemCnt,
 			 PlayerBase::_playerFlag,
 			 GetFrameController().GetAverageFrameCnt()
 			 );
 #else
-		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] avg[{}]",
+		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] cnt_1[{}] avg[{}]",
 			 PlayerMgr::GetInstance()->GetActorCnt(),
 			 agentCnt,
 			 GetApp()->_cnt - oldCnt,
+			 GetApp()->_cnt_1,
 			 GetFrameController().GetAverageFrameCnt()
 			 );
 #endif
 		oldCnt = GetApp()->_cnt;
+		oldCnt_1 = GetApp()->_cnt_1;
 	});
 
 
@@ -224,6 +224,10 @@ bool App::Init()
 
                 auto dbInfo = ServerListCfgMgr::GetInstance()->GetFirst<stDBServerInfo>();
                 GenGuidService::GetInstance()->Start(dbInfo->_ip, dbInfo->_gen_guid_service_port);
+
+                ServerListCfgMgr::GetInstance()->Foreach<stLogServerInfo>([](const auto& sInfo) {
+                        LogService::GetInstance()->Start(sInfo->_ip, sInfo->_lobby_port);
+                });
 
 		LOG_WARN("server start success!!!");
 
@@ -284,7 +288,6 @@ bool App::Init()
         _startPriorityTaskList->AddTask(MySqlService::GetInstance()->GetServiceName(), [](const std::string& key) {
                 ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([](const auto& cfg) {
                         MySqlService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
-                        // MySqlBenchmarkService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
                 });
         }, { LobbyGameMgrSession::_sPriorityTaskKey });
 
@@ -338,10 +341,15 @@ bool App::Init()
         LOG_TRACE("000000000000000000000 size[{}]", sizeof(LobbyGateSession::ActorAgentType));
         LOG_INFO("111111111111111111111 size[{}]", sizeof(LobbyGateSession::ActorAgentType));
         LOG_WARN("222222222222222222222 size[{}]", sizeof(boost::fibers::fiber::id));
-        LOG_ERROR("333333333333333333333 size[{}]", sizeof(channel_t<ActorCallMailPtr>));
+        LOG_ERROR("333333333333333333333 size[{}]", sizeof(boost::fibers::buffered_channel<IActorMailPtr>));
         LOG_INFO("444444444444444444444 size[{}]", sizeof(TestActor));
         LOG_INFO("555555555555555555555 size[{}]", sizeof(nl::util::SteadyTimer));
-        LOG_INFO("666666666666666666666 log active level[{}]", SPDLOG_ACTIVE_LEVEL);
+        LOG_INFO("666666666666666666666 IActorMail[{}] ActorMail[{}] ActorCallMail[{}] ActorNetMail[{}]"
+                 , sizeof(::nl::af::IActorMail)
+                 , sizeof(::nl::af::ActorMail)
+                 , sizeof(::nl::af::ActorCallMail<::nl::af::ActorMail>)
+                 , sizeof(::nl::net::ActorNetMail<LobbyGateSession::MsgHandleType>));
+        LOG_INFO("777777777777777777777 size[{}]", sizeof(nl::util::SteadyTimer));
         // LOG_INFO("666666666666666666666 from editor[{}]", CMAKE_FROM_EDITOR);
         // LOG_INFO("666666666666666666666 from editor[{}]", CMAKE_CXX_COMPILER);
 

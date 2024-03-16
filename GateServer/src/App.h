@@ -13,11 +13,11 @@ public :
 
 public :
   stGateServerCfgPtr _gateCfg;
-  std::atomic_int64_t _cnt;
-  std::atomic_int64_t _clientRecvCnt;
-  std::atomic_int64_t _serverRecvCnt;
-  std::atomic_int64_t _gameRecvCnt;
-  std::atomic_int64_t _loginRecvCnt;
+  std::atomic_int64_t _testCnt = 0;
+  std::atomic_int64_t _clientRecvCnt = 0;
+  std::atomic_int64_t _serverRecvCnt = 0;
+  std::atomic_int64_t _gameRecvCnt = 0;
+  std::atomic_int64_t _loginRecvCnt = 0;
 };
 
 extern App* GetApp();

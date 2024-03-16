@@ -56,11 +56,11 @@ bool GlobalSetup_CH::Init()
         std::vector<int64_t> mapList;
         for (auto& str : Tokenizer<std::string>(tmpStr, "_"))
         {
-                std::vector<int64_t> tmpList = Tokenizer<int64_t>(str, "|");
-                assert(tmpList.size() >= 2);
-                for (int64_t i=1; i<static_cast<int64_t>(tmpList.size()); ++i)
-                        mapList.emplace_back(tmpList[i]);
-                _randomMapInfoList[tmpList[0]] = mapList;
+                std::vector<int64_t> tList = Tokenizer<int64_t>(str, "|");
+                assert(tList.size() >= 2);
+                for (int64_t i=1; i<static_cast<int64_t>(tList.size()); ++i)
+                        mapList.emplace_back(tList[i]);
+                _randomMapInfoList[tList[0]] = mapList;
         }
         ss >> tmpStr;
 

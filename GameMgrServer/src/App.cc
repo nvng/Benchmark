@@ -7,7 +7,6 @@
 #include "Net/SessionImpl.hpp"
 #include "RegionMgr.h"
 #include "RequestActor.h"
-#include "PingPongBig.h"
 #include "Tools/Util.h"
 
 SPECIAL_ACTOR_DEFINE_BEGIN(Test1ServiceActor);
@@ -45,7 +44,6 @@ App::App(const std::string& appName)
 	RegionMgr::CreateInstance();
 
         RobotService::CreateInstance();
-        PingPongBigService::CreateInstance();
 
         Test1ServiceServerType::CreateInstance();
         Test2ServiceServerType::CreateInstance();
@@ -56,7 +54,6 @@ App::~App()
 	RegionMgr::DestroyInstance();
 	GlobalSetup_CH::DestroyInstance();
         RobotService::DestroyInstance();
-        PingPongBigService::DestroyInstance();
 
         Test1ServiceServerType::DestroyInstance();
         Test2ServiceServerType::DestroyInstance();
@@ -68,13 +65,14 @@ bool App::Init()
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "GlobalSetup_CH init error!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!RobotService::GetInstance()->Init(), "RobotService init error!!!");
-	LOG_FATAL_IF(!PingPongBigService::GetInstance()->Init(), "PingPongBigService init error!!!");
 
-	// LOG_FATAL_IF(!Test1ServiceServerType::GetInstance()->Init(), "Test1Service init error!!!");
-        // Test1ServiceServerType::GetInstance()->Start(9999);
+        /*
+	LOG_FATAL_IF(!Test1ServiceServerType::GetInstance()->Init(), "Test1Service init error!!!");
+        Test1ServiceServerType::GetInstance()->Start(9999);
 
-	// LOG_FATAL_IF(!Test2ServiceServerType::GetInstance()->Init(), "Test2Service init error!!!");
-        // Test2ServiceServerType::GetInstance()->Start(9999);
+	LOG_FATAL_IF(!Test2ServiceServerType::GetInstance()->Init(), "Test2Service init error!!!");
+        Test2ServiceServerType::GetInstance()->Start(9999);
+        */
 
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
                 static int64_t oldCnt = 0;
@@ -127,32 +125,6 @@ bool App::Init()
 	// }}}
 
 	return true;
-}
-
-ACTOR_MAIL_HANDLE(RequestActor, 0xff, 0xf)
-{
-        auto cfg = std::make_shared<MailRegionCreateInfo>();
-        auto ses = GetRegionMgrBase()->_gameSesArr[0].lock();
-        auto agent = std::make_shared<GameMgrGameSession::ActorAgentType>(cfg, ses, shared_from_this());
-        agent->BindActor(shared_from_this());
-        ses->AddAgent(agent);
-
-        /*
-        auto gameAgent = GetRegionMgrBase()->CreateRegionAgent(cfg, ses, shared_from_this());
-        gameAgent->BindActor(shared_from_this());
-        ses->AddAgent(gameAgent);
-        */
-        auto regionMgr = GetRegionMgrBase()->GetRegionMgrActor(E_RT_PVE);
-        while (agent)
-        {
-                ++GetApp()->_cnt;
-                Call(MailResult, regionMgr, scRegionMgrActorMailMainType, 0xe, nullptr);
-                Call(MailResult, agent, 0xff, 0xf, nullptr);
-                // boost::this_fiber::sleep_for(std::chrono::milliseconds(100));
-                // LOG_INFO("1111111111");
-        }
-
-        return nullptr;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

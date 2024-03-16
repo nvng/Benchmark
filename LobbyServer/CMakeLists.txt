@@ -7,7 +7,6 @@ SET(SRC_DIR
         ActorFramework/Impl/Service/Log
         ActorFramework/Impl/Service/Guid
         ActorFramework/Impl/Service/DB
-        ActorFramework/Impl/Service/Benchmark
         )
 
 INCLUDE($ENV{HOME}/git/config/cmake/project.cmake)

@@ -2,6 +2,11 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 
 PROJECT(Benchmark.out CXX)
 
+SET(SRC_DIR
+        # ActorFramework/Impl/Service/Benchmark/Client/TestConnect
+        ActorFramework/Impl/Service/Benchmark/Client/TestLogin
+        )
+
 INCLUDE($ENV{HOME}/git/config/cmake/project.cmake)
 
 ADD_EXECUTABLE(${PROJECT_NAME} ${SRC_LIST})

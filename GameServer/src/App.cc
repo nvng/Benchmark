@@ -104,11 +104,4 @@ bool App::Init()
         return true;
 }
 
-NET_MSG_HANDLE(GameMgrSession, 0xff, 0xf)
-{
-        ++GetApp()->_cnt;
-        static auto ret = std::make_shared<MailResult>();
-        SendPB(ret, 0xff, 0xf, MsgHeaderType::E_RMT_CallRet, msgHead._guid, msgHead._to, msgHead._from);
-}
-
 // vim: fenc=utf8:expandtab:ts=8

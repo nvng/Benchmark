@@ -27,8 +27,7 @@ void DropCfgCheckItem(int64_t& idx,
                         LOG_FATAL("出现循环引用!!! data:{}", str);
                 }
 
-                int64_t tmpList = idx;
-                DropCfgCheckItem(tmpList, tList, i, idList);
+                DropCfgCheckItem(idx, tList, i, idList);
         }
 }
 

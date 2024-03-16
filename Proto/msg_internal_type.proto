@@ -38,6 +38,7 @@ enum EMsgInternalMainType
   E_MIMT_MatchCommon = 0xfee; // 比赛
   E_MIMT_Match = 0xfef; // 比赛
 
+  E_MIMT_ServiceCommon = 0xffd;
   E_MIMT_GM = 0xffe;
   E_MIMT_Local = 0xfff; // 本地消息。
 }
@@ -102,6 +103,11 @@ enum EMsgInternalOfflineSubType
 {
         E_MIOST_Append = 0x0;
         E_MIOST_Get = 0x1;
+}
+
+enum EMsgInternalServiceCommonSubType
+{
+        E_MISCST_Regist = 0x0;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

@@ -44,19 +44,22 @@ bool App::Init()
 				gamePlayerCnt += gameSes->GetPlayerCnt();
 		});
 
-                [[maybe_unused]]static int64_t oldLobbyPlayerCnt = 0;
-                [[maybe_unused]]static int64_t oldGamePlayerCnt = 0;
-                [[maybe_unused]]static int64_t clientRecvCnt = 0;
-                [[maybe_unused]]static int64_t serverRecvCnt = 0;
-                [[maybe_unused]]static int64_t gameRecvCnt = 0;
-                [[maybe_unused]]static int64_t loginRecvCnt = 0;
-                LOG_INFO_IF(0 != lobbyPlayerCnt - oldLobbyPlayerCnt
+                [[maybe_unused]] static int64_t oldCnt = 0;
+                [[maybe_unused]] static int64_t oldLobbyPlayerCnt = 0;
+                [[maybe_unused]] static int64_t oldGamePlayerCnt = 0;
+                [[maybe_unused]] static int64_t clientRecvCnt = 0;
+                [[maybe_unused]] static int64_t serverRecvCnt = 0;
+                [[maybe_unused]] static int64_t gameRecvCnt = 0;
+                [[maybe_unused]] static int64_t loginRecvCnt = 0;
+                LOG_INFO_IF(0 != GetApp()->_testCnt
+                            || 0 != lobbyPlayerCnt - oldLobbyPlayerCnt
                             || 0 != gamePlayerCnt - oldGamePlayerCnt
                             || 0 != GetApp()->_clientRecvCnt - clientRecvCnt
                             || 0 != GetApp()->_serverRecvCnt - serverRecvCnt
                             || 0 != GetApp()->_gameRecvCnt - gameRecvCnt
                             || 0 != GetApp()->_loginRecvCnt - loginRecvCnt,
-                            "sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
+                            "cnt[{}] sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
+                            GetApp()->_testCnt,
                             NetMgrImpl::GetInstance()->GetSessionCnt(),
                             PlayerMgr::GetInstance()->GetPlayerCnt(),
                             lobbyPlayerCnt,
@@ -68,6 +71,7 @@ bool App::Init()
                             GetFrameController().GetAverageFrameCnt()
                            );
 
+                oldCnt = GetApp()->_testCnt;
                 oldLobbyPlayerCnt = lobbyPlayerCnt;
                 oldGamePlayerCnt = gamePlayerCnt;
                 clientRecvCnt = GetApp()->_clientRecvCnt;
@@ -102,6 +106,7 @@ bool App::Init()
 		});
 	}, { GateGameSession::scPriorityTaskKey });
 
+        /*
 	_startPriorityTaskList->AddTask(GateLoginSession::scPriorityTaskKey, [](const std::string& key) {
 		ServerListCfgMgr::GetInstance()->Foreach<stLoginServerInfo>([](const auto& sInfo) {
                         ::nl::net::NetMgr::GetInstance()->Connect(sInfo->_ip, sInfo->_gate_port, [](auto&& s) {
@@ -109,6 +114,7 @@ bool App::Init()
                         });
 		});
 	}, { GateLobbySession::scPriorityTaskKey });
+        */
 
 	// }}}
 

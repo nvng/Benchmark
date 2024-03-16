@@ -21,6 +21,7 @@ public :
 
 public :
   std::atomic_int64_t _cnt;
+  std::atomic_int64_t _cnt_1;
   std::atomic_int64_t _mainCityCnt;
 
 public :

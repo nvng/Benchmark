@@ -134,11 +134,10 @@ message MsgGenGuid
 
 enum EMySqlTaskType
 {
-        E_MySql_TT_None = 0x0;
-        E_MySql_TT_Version = 0x1;
-        E_MySql_TT_Load = 0x2;
-        E_MySql_TT_Save = 0x3;
-        E_MySql_TT_CheckIDUsable = 0x4;
+        E_MySql_TT_Version = 0x0;
+        E_MySql_TT_Load = 0x1;
+        E_MySql_TT_Save = 0x2;
+        E_MySql_TT_CheckIDUsable = 0x3;
 }
 
 message MailReqDBData
@@ -149,6 +148,7 @@ message MailReqDBData
         sint64 guid = 3;
         sint64 version = 4;
         bytes data = 5;
+        sint64 data_size = 6;
 }
 
 message MailReqDBDataList
