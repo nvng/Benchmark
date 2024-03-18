@@ -13,7 +13,7 @@ public :
 
 public :
   stGateServerCfgPtr _gateCfg;
-  std::atomic_int64_t _testCnt = 0;
+  std::atomic_int64_t _cnt = 0;
   std::atomic_int64_t _clientRecvCnt = 0;
   std::atomic_int64_t _serverRecvCnt = 0;
   std::atomic_int64_t _gameRecvCnt = 0;

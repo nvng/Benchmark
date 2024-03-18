@@ -317,8 +317,7 @@ bool BagMgr::ReadDropCfg()
                         for (int i=0; i<static_cast<int>(tmpList.size()); ++i)
                         {
                                 idList.emplace(tmpList[i]);
-                                auto info = std::make_shared<const stRandomInfo<int64_t>>(tmpList_1[i], tmpList[i]);
-                                cfg->_randomInfo.Add(tmpList_1[i], info);
+                                cfg->_randomInfo.Add(tmpList_1[i], tmpList[i]);
                         }
                         checkList.emplace(cfg->_id, idList);
                 }

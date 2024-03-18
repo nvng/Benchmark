@@ -51,7 +51,7 @@ bool App::Init()
                 [[maybe_unused]] static int64_t serverRecvCnt = 0;
                 [[maybe_unused]] static int64_t gameRecvCnt = 0;
                 [[maybe_unused]] static int64_t loginRecvCnt = 0;
-                LOG_INFO_IF(0 != GetApp()->_testCnt
+                LOG_INFO_IF(0 != GetApp()->_cnt
                             || 0 != lobbyPlayerCnt - oldLobbyPlayerCnt
                             || 0 != gamePlayerCnt - oldGamePlayerCnt
                             || 0 != GetApp()->_clientRecvCnt - clientRecvCnt
@@ -59,7 +59,7 @@ bool App::Init()
                             || 0 != GetApp()->_gameRecvCnt - gameRecvCnt
                             || 0 != GetApp()->_loginRecvCnt - loginRecvCnt,
                             "cnt[{}] sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
-                            GetApp()->_testCnt,
+                            GetApp()->_cnt,
                             NetMgrImpl::GetInstance()->GetSessionCnt(),
                             PlayerMgr::GetInstance()->GetPlayerCnt(),
                             lobbyPlayerCnt,
@@ -71,7 +71,7 @@ bool App::Init()
                             GetFrameController().GetAverageFrameCnt()
                            );
 
-                oldCnt = GetApp()->_testCnt;
+                oldCnt = GetApp()->_cnt;
                 oldLobbyPlayerCnt = lobbyPlayerCnt;
                 oldGamePlayerCnt = gamePlayerCnt;
                 clientRecvCnt = GetApp()->_clientRecvCnt;
