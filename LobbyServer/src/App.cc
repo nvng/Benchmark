@@ -289,14 +289,18 @@ bool App::Init()
                 ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([](const auto& cfg) {
                         MySqlService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
                 });
-        }, { LobbyGameMgrSession::_sPriorityTaskKey });
+        }
+        , { LobbyGameMgrSession::_sPriorityTaskKey }
+        , ServerListCfgMgr::GetInstance()->GetSize<stDBServerInfo>());
 
 	_startPriorityTaskList->AddTask(LobbyGameSession::scPriorityTaskKey, [](const std::string& key) {
 		auto lobbyInfo = GetApp()->GetServerInfo<stLobbyServerInfo>();
                 NetMgr::GetInstance()->Listen(lobbyInfo->_game_port, [](auto&& s, auto& sslCtx) {
 			return std::make_shared<LobbyGameSession>(std::move(s));
                 });
-	}, { LobbyGameMgrSession::_sPriorityTaskKey });
+	}
+        , { LobbyGameMgrSession::_sPriorityTaskKey }
+        , ServerListCfgMgr::GetInstance()->GetSize<stGameServerInfo>());
 
 	// }}}
 

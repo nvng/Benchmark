@@ -96,7 +96,7 @@ bool App::Init()
                                 return std::make_shared<GateGameSession>(std::move(s));
                         });
 		});
-	});
+	}, {}, ServerListCfgMgr::GetInstance()->GetSize<stGameServerInfo>());
 
 	_startPriorityTaskList->AddTask(GateLobbySession::scPriorityTaskKey, [](const std::string& key) {
 		ServerListCfgMgr::GetInstance()->Foreach<stLobbyServerInfo>([](const stLobbyServerInfoPtr& sInfo) {
@@ -104,7 +104,9 @@ bool App::Init()
                                 return std::make_shared<GateLobbySession>(std::move(s));
                         });
 		});
-	}, { GateGameSession::scPriorityTaskKey });
+	}
+        , { GateGameSession::scPriorityTaskKey }
+        , ServerListCfgMgr::GetInstance()->GetSize<stLobbyServerInfo>());
 
         /*
 	_startPriorityTaskList->AddTask(GateLoginSession::scPriorityTaskKey, [](const std::string& key) {

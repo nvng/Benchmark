@@ -107,14 +107,16 @@ bool App::Init()
                 NetMgr::GetInstance()->Listen(gameMgrInfo->_game_port, [](auto&& s, auto& ioCtx) {
                         return std::make_shared<GameMgrGameSession>(std::move(s));
                 });
-	});
+	}, {}, ServerListCfgMgr::GetInstance()->GetSize<stGameServerInfo>());
 
 	_startPriorityTaskList->AddTask(GameMgrLobbySession::scPriorityTaskKey, [](const std::string& key) {
 		auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
                 NetMgr::GetInstance()->Listen(gameMgrInfo->_lobby_port, [](auto&& s, auto& ioCtx) {
                         return std::make_shared<GameMgrLobbySession>(std::move(s));
                 });
-	}, { GameMgrGameSession::scPriorityTaskKey });
+	}
+        , { GameMgrGameSession::scPriorityTaskKey }
+        , ServerListCfgMgr::GetInstance()->GetSize<stLobbyServerInfo>());
 	// }}}
 
 	// {{{

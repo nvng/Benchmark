@@ -88,7 +88,9 @@ bool App::Init()
                                 return std::make_shared<GameLobbySession>(std::move(s));
                         });
                 });
-        }, { GameMgrSession::scPriorityTaskKey });
+        }
+        , { GameMgrSession::scPriorityTaskKey }
+        , ServerListCfgMgr::GetInstance()->GetSize<stLobbyServerInfo>());
         // }}}
 
         // {{{ stop task
