@@ -247,13 +247,14 @@ bool App::Init()
 				return static_cast<double>(Clock::TimeAdd_Slow(zero, DAY_TO_SEC(1)));
 			};
                         // LOG_WARN("app next day change time:{}", Clock::GetTimeString_Slow(calNextDayChangeTimeFunc()));
-			GetTimer().StartWithAbsoluteTimeForever(calNextDayChangeTimeFunc(), 0.0, [calNextDayChangeTimeFunc](TimedEventItem& eventData) {
+                        ::nl::util::SystemTimer::StartForever(calNextDayChangeTimeFunc(), 0.0, [calNextDayChangeTimeFunc](time_t& overTime) {
 				GetApp()->OnDayChange();
 
 				time_t zero = Clock::TimeClear_Slow(GetClock().GetTimeStamp(), Clock::E_CTT_DAY);
 				GetApp()->_globalVarActor->AddVar("appLastDayChangeTimeZero", zero);
-				TimedEventLoop::SetOverTime(eventData, calNextDayChangeTimeFunc());
-			});
+                                overTime = calNextDayChangeTimeFunc();
+                                return true;
+                        });
 
 			auto calNextDataResetTimeFunc = []()
 			{
@@ -266,14 +267,15 @@ bool App::Init()
 			};
 
                         // LOG_WARN("app next data reset time:{}", Clock::GetTimeString_Slow(calNextDataResetTimeFunc()));
-			GetTimer().StartWithAbsoluteTimeForever(calNextDataResetTimeFunc(), 0.0, [calNextDataResetTimeFunc](TimedEventItem& eventData) {
+                        ::nl::util::SystemTimer::StartForever(calNextDataResetTimeFunc(), 0.0, [calNextDataResetTimeFunc](time_t& overTime) {
 				GetApp()->OnDataReset();
 
 				time_t zero = Clock::TimeClear_Slow(GetClock().GetTimeStamp(), Clock::E_CTT_DAY);
 				GetApp()->_globalVarActor->AddVar("appLastDataResetTimeNoneZero", zero);
 
-				TimedEventLoop::SetOverTime(eventData, calNextDataResetTimeFunc());
-			});
+				overTime = calNextDataResetTimeFunc();
+                                return true;
+                        });
 		});
         });
 
@@ -323,6 +325,12 @@ bool App::Init()
 
                 MySqlService::GetInstance()->Terminate();
                 MySqlService::GetInstance()->WaitForTerminate();
+
+                GenGuidService::GetInstance()->Terminate();
+                GenGuidService::GetInstance()->WaitForTerminate();
+
+                LogService::GetInstance()->Terminate();
+                LogService::GetInstance()->WaitForTerminate();
         });
 	// }}}
 
@@ -354,6 +362,7 @@ bool App::Init()
                  , sizeof(::nl::af::ActorCallMail<::nl::af::ActorMail>)
                  , sizeof(::nl::net::ActorNetMail<LobbyGateSession::MsgHandleType>));
         LOG_INFO("777777777777777777777 size[{}]", sizeof(nl::util::SteadyTimer));
+        LOG_INFO("888888888888888888888 size[{}]", sizeof(intmax_t));
         // LOG_INFO("666666666666666666666 from editor[{}]", CMAKE_FROM_EDITOR);
         // LOG_INFO("666666666666666666666 from editor[{}]", CMAKE_CXX_COMPILER);
 

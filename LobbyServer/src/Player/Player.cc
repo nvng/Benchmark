@@ -104,7 +104,7 @@ ACTOR_MAIL_HANDLE(Player, 0x7f, 0x3, MsgClientLogin)
         ++GetApp()->_cnt;
 
         auto perSize = LobbyGateSession::SerializeAndCompressNeedSize(msg);
-        stBufCache<LobbyGateSession> bufCache(160 * perSize * 2, [this](const VoidPtr& bufRef, ISession::BuffType buf, std::size_t bufSize) {
+        stBufCache<LobbyGateSession> bufCache(160 * perSize * 2, [this](const VoidPtr& bufRef, ISession::BuffType buf, std::size_t bufSize, bool realSend) {
                 auto ses = _clientActor->GetSession();
                 ses->Send(bufRef, buf, bufSize);
         });

@@ -32,7 +32,7 @@ bool App::Init()
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "player mgr init fail!!!");
 	LOG_FATAL_IF(!::nl::net::client::ClientNetMgr::GetInstance()->Init(serverInfo->_netProcCnt, "cli"), "client net mgr init fail!!!");
 
-        ::nl::util::SteadyTimer::StartForever(1.0, []() {
+        ::nl::util::SteadyTimer::StartForever(1.0, [](double& interval) {
 		std::size_t lobbyPlayerCnt = 0;
 		std::size_t gamePlayerCnt = 0;
 		NetMgrImpl::GetInstance()->Foreach([&lobbyPlayerCnt, &gamePlayerCnt](const auto& ses) {
@@ -86,8 +86,9 @@ bool App::Init()
 	_startPriorityTaskList->AddFinalTaskCallback([this]() {
                 auto gateInfo = GetServerInfo<stGateServerInfo>();
                 ::nl::net::client::ClientNetMgr::GetInstance()->Listen(gateInfo->_client_port, [](auto&& s, const auto& sslCtx) {
+                // ::nl::net::NetMgr::GetInstance()->Listen(gateInfo->_client_port, [](auto&& s, const auto& sslCtx) {
                         return std::make_shared<GateClientSession>(std::move(s));
-                });
+                }, { "*" });
 	});
 
 	_startPriorityTaskList->AddTask(GateGameSession::scPriorityTaskKey, [](const std::string& key) {

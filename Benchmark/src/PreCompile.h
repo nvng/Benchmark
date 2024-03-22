@@ -32,8 +32,6 @@
 
 #include "App.h"
 
-typedef std::shared_ptr<::google::protobuf::MessageLite> MessageLitePtr;
-
 using namespace nl::af::impl;
 using namespace nl::util;
 using namespace nl::net;
