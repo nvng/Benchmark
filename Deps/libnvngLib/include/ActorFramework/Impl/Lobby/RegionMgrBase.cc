@@ -7,10 +7,8 @@ RegionMgrBase::RegionMgrBase()
           , _regionRelationList("RegionMgrBase_regionRelationList")
           , _gameSesList("RegionMgrBase_gameSesList")
           , _regionRelationSyncList("RegionMgrBase_regionRelationSyncList")
-          , _mainCityActorArrSize(Next2N(std::thread::hardware_concurrency()) - 1)
           , _competitionQueueInfoList("RegionMgrBase_competitionQueueInfoList")
 {
-        _mainCityActorArr = new MainCityActorPtr[_mainCityActorArrSize+1];
 }
 
 RegionMgrBase::~RegionMgrBase()
@@ -21,6 +19,11 @@ RegionMgrBase::~RegionMgrBase()
 
 bool RegionMgrBase::Init()
 {
+        if (!SuperType::Init())
+                return false;
+
+        _mainCityActorArrSize = Next2N(GetAppBase()->GetServerInfo<stServerInfoBase>()->_workersCnt) - 1;
+        _mainCityActorArr = new MainCityActorPtr[_mainCityActorArrSize+1];
         for (int64_t i=0; i<_mainCityActorArrSize+1; ++i)
         {
                 _mainCityActorArr[i] = std::make_shared<MainCityActor>();

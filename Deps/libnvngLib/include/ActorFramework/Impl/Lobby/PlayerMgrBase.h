@@ -137,7 +137,7 @@ private :
 	friend class PlayerBase;
 	friend class LobbyGateSession;
         PlayerMgrActorPtr* _playerMgrActorArr = nullptr;
-        const int64_t _playerMgrActorArrSize = (1 << 3) - 1;
+        int64_t _playerMgrActorArrSize = (1 << 3) - 1;
 
 public :
         FORCE_INLINE void AddPlayerOfflineData(uint64_t guid, int64_t mt, int64_t st, google::protobuf::MessageLite& msg)
@@ -155,10 +155,9 @@ public :
         }
 
         FORCE_INLINE PlayerOfflineDataActorPtr GetPlayerOfflineDataActor(uint64_t guid)
-        { return _playerOfflineDataActorArr[guid & _playerOfflineDataActorArrSize]; }
+        { return _playerOfflineDataActorArr[guid & _playerMgrActorArrSize]; }
 private :
         PlayerOfflineDataActorPtr* _playerOfflineDataActorArr = nullptr;
-        const int64_t _playerOfflineDataActorArrSize = (1 << 3) - 1;
 
 private :
 	ThreadSafeUnorderedMap<uint64_t, std::shared_ptr<stLoginInfo>> _loginInfoList;

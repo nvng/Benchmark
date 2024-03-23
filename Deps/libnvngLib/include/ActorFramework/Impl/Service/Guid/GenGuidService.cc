@@ -80,7 +80,7 @@ uint64_t GenGuidActor::GenGuid()
                                                , [info](const auto& v) { return v == info; }), _itemList.end());
         }
 
-        // Save2DB();
+        Save2DB();
         return guid;
 }
 

@@ -63,9 +63,9 @@ SPECIAL_ACTOR_MAIL_HANDLE(PlayerMgrActor, 0, MsgClientLogin)
                 p->_actorMgrID = GetID();
 #endif
                 std::weak_ptr<stLoginInfo> weakLoginInfo = loginInfo;
-                boost::fibers::fiber(// std::allocator_arg,
+                boost::fibers::fiber(std::allocator_arg,
                                      // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                                     // boost::fibers::segmented_stack{},
+                                     boost::fibers::segmented_stack{},
                                      [p, weakLoginInfo]() mutable {
                         do
                         {
@@ -174,12 +174,8 @@ SPECIAL_ACTOR_MAIL_HANDLE(PlayerMgrActor, 2, stDisconnectInfo)
 
 PlayerMgrBase::PlayerMgrBase()
         : SuperType("PlayerMgrBase")
-          , _playerMgrActorArrSize(Next2N(std::thread::hardware_concurrency()) - 1)
-          , _playerOfflineDataActorArrSize(Next2N(std::thread::hardware_concurrency()) - 1)
           , _loginInfoList("PlayerMgrBase_loginInfoList")
 {
-        _playerMgrActorArr = new PlayerMgrActorPtr[_playerMgrActorArrSize+1];
-        _playerOfflineDataActorArr = new PlayerOfflineDataActorPtr[_playerOfflineDataActorArrSize+1];
 }
 
 PlayerMgrBase::~PlayerMgrBase()
@@ -196,13 +192,17 @@ bool PlayerMgrBase::Init()
 	if (!SuperType::Init())
 		return false;
 
+        _playerMgrActorArrSize = Next2N(GetAppBase()->GetServerInfo<stServerInfoBase>()->_workersCnt) - 1;
+        _playerMgrActorArr = new PlayerMgrActorPtr[_playerMgrActorArrSize+1];
+        _playerOfflineDataActorArr = new PlayerOfflineDataActorPtr[_playerMgrActorArrSize+1];
+
         for (int64_t i=0; i<_playerMgrActorArrSize+1; ++i)
         {
                 _playerMgrActorArr[i] = std::make_shared<PlayerMgrActor>();
                 _playerMgrActorArr[i]->Start();
         }
 
-        for (int64_t i=0; i<_playerOfflineDataActorArrSize+1; ++i)
+        for (int64_t i=0; i<_playerMgrActorArrSize+1; ++i)
         {
                 _playerOfflineDataActorArr[i] = std::make_shared<PlayerOfflineDataActor>();
                 _playerOfflineDataActorArr[i]->Start();
@@ -261,9 +261,9 @@ void PlayerMgrBase::Terminate()
 
         BroadCast(nullptr, E_MIMT_Local, E_MILST_Terminate, nullptr);
 
-        for (int64_t i=0; i<_playerOfflineDataActorArrSize+1; ++i)
+        for (int64_t i=0; i<_playerMgrActorArrSize+1; ++i)
                 _playerOfflineDataActorArr[i]->Terminate();
-        for (int64_t i=0; i<_playerOfflineDataActorArrSize+1; ++i)
+        for (int64_t i=0; i<_playerMgrActorArrSize+1; ++i)
                 _playerOfflineDataActorArr[i]->WaitForTerminate();
 }
 

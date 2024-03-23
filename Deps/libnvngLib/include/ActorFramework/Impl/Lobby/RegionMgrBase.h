@@ -65,7 +65,7 @@ public :
         FORCE_INLINE MainCityActorPtr GetMainCityActor(uint64_t id) const { return _mainCityActorArr[id & _mainCityActorArrSize]; }
 public :
         MainCityActorPtr* _mainCityActorArr = nullptr;
-        const int64_t _mainCityActorArrSize = (1 << 3) - 1;
+        int64_t _mainCityActorArrSize = (1 << 3) - 1;
 
 public :
         ThreadSafeUnorderedMap<int64_t, std::shared_ptr<MsgMatchQueueInfo>> _competitionQueueInfoList;
