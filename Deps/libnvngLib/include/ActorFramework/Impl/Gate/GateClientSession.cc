@@ -173,7 +173,7 @@ void GateClientSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
                                         {
                                                 const auto playerGuid = msg.player_guid();
                                                 std::shared_ptr<GateLobbySession> lobbySes = NetMgrImpl::GetInstance()->DistLobbySession(playerGuid);
-                                                if (lobbySes)
+                                                if (lobbySes && CheckWhiteList(playerGuid))
                                                 {
                                                         p = std::make_shared<Player>(playerGuid, shared_from_this());
                                                         LOG_INFO("客户端[{}] ptr[{}] 发送消息给大厅!!!", playerGuid, (void*)p.get());
@@ -217,7 +217,7 @@ void GateClientSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
                                                 }
                                                 else
                                                 {
-                                                        LOG_WARN("根据客户端 uuid[{}] 分配大厅失败!!!", msg.player_guid());
+                                                        LOG_WARN("根据客户端 uuid[{}] 分配大厅失败 或 白名单检查失败!!!", msg.player_guid());
                                                 }
                                         }
                                         else
@@ -233,6 +233,28 @@ void GateClientSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
 		}
 		break;
 	}
+}
+
+bool CheckWhiteList(uint64_t playerGuid)
+{
+        if (GlobalSetup_CH::GetInstance()->_whiteListSwitch)
+        {
+                const auto& whiteList = GlobalSetup_CH::GetInstance()->_whiteList;
+                if (!whiteList.empty())
+                {
+                        auto it = whiteList.find(playerGuid);
+                        if (whiteList.end() == it)
+                        {
+                                std::string listStr;
+                                for (auto id : whiteList)
+                                        listStr += fmt::format("{},", id);
+
+                                LOG_INFO("白名单列表[{}]", listStr);
+                                return false;
+                        }
+                }
+        }
+        return true;
 }
 
 bool CheckMsgRecvTimeIllegal(GateClientSession* ses, uint64_t mt, uint64_t st)

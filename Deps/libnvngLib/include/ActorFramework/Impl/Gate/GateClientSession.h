@@ -53,6 +53,7 @@ public :
         DECLARE_SHARED_FROM_THIS(GateClientSession);
 };
 
+bool CheckWhiteList(uint64_t playerGuid);
 bool CheckMsgRecvTimeIllegal(GateClientSession* ses, uint64_t mt, uint64_t st);
 void RegistCheckIllegalMsgTime(GateClientSession* ses, uint64_t mt, uint64_t st, uint8_t maxCnt, uint16_t maxInterval);
 
