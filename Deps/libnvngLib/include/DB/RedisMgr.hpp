@@ -263,7 +263,7 @@ public :
                                                 {
                                                         mail->_bufRef = rxBackend;
                                                         for (int64_t i=0; i<mail->_cmdList.size() && idx<arr.elements.size(); ++i, ++idx)
-                                                                mail->_resultList.emplace_back(boost::apply_visitor(OuterExtractor<Iterator>(), arr.elements[i]));
+                                                                mail->_resultList.emplace_back(boost::apply_visitor(OuterExtractor<Iterator>(), arr.elements[idx]));
 
                                                         auto act = mail->_act.lock();
                                                         if (act)
