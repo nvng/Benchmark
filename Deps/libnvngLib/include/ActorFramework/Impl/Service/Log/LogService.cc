@@ -16,9 +16,9 @@ bool LogActor::Init()
 
 void LogActor::InitSaveTimer()
 {
-        LogActorWeakPtr weakThis = shared_from_this();
-        ::nl::util::SteadyTimer::StaticStart(0.1, [weakThis]() {
-                auto thisPtr = weakThis.lock();
+        LogActorWeakPtr weakPtr = shared_from_this();
+        _timer.Start(weakPtr, 0.1, [weakPtr]() {
+                auto thisPtr = weakPtr.lock();
                 if (thisPtr)
                 {
                         thisPtr->DealTimeout();
@@ -33,11 +33,9 @@ void LogActor::DealTimeout()
 {
         for (int64_t i=0; i<ELogServiceLogMainType_ARRAYSIZE; ++i)
         {
-                do
+                auto reg = _sqlPrefixArr[i];
+                if (reg)
                 {
-                        auto reg = _sqlPrefixArr[i];
-                        if (!reg)
-                                break;
 
                         std::string sqlStr;
                         sqlStr.reserve(1024 * 1024);
@@ -46,13 +44,14 @@ void LogActor::DealTimeout()
                         auto oldSize = sqlStr.size();
                         for (auto& msg : _logList)
                                 sqlStr += msg->data_list(i);
+
                         if (oldSize != sqlStr.size())
                         {
                                 sqlStr.pop_back();
                                 sqlStr += ";";
                                 MySqlMgr::GetInstance()->Exec(sqlStr);
                         }
-                } while (0);
+                }
         }
         _logList.clear();
 }

@@ -247,8 +247,8 @@ private :
                                                    }
                                                    else
                                                    {
-                                                           LOG_WARN_IF(size>0, "async read head error ses id[{}] recvSize[{}] needSize[{}] param[{}]"
-                                                                       , ses->GetID(), size, ses->_msgHead._size, (int64_t)ses->_msgHead._param);
+                                                           LOG_WARN_IF(size>0, "async read head error ses id[{}] recvSize[{}] needSize[{}] param[{}] type[{:#x}]"
+                                                                       , ses->GetID(), size, ses->_msgHead._size, (int64_t)ses->_msgHead._param, ses->_msgHead._type);
                                                            ses->OnError(ec);
                                                            return;
                                                    }
