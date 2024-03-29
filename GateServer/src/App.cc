@@ -57,18 +57,17 @@ bool App::Init()
                             || 0 != GetApp()->_clientRecvCnt - clientRecvCnt
                             || 0 != GetApp()->_serverRecvCnt - serverRecvCnt
                             || 0 != GetApp()->_gameRecvCnt - gameRecvCnt
-                            || 0 != GetApp()->_loginRecvCnt - loginRecvCnt,
-                            "cnt[{}] sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}] avg[{}]",
-                            GetApp()->_cnt,
-                            NetMgrImpl::GetInstance()->GetSessionCnt(),
-                            PlayerMgr::GetInstance()->GetPlayerCnt(),
-                            lobbyPlayerCnt,
-                            gamePlayerCnt,
-                            GetApp()->_clientRecvCnt - clientRecvCnt,
-                            GetApp()->_serverRecvCnt - serverRecvCnt,
-                            GetApp()->_gameRecvCnt - gameRecvCnt,
-                            GetApp()->_loginRecvCnt - loginRecvCnt,
-                            GetFrameController().GetAverageFrameCnt()
+                            || 0 != GetApp()->_loginRecvCnt - loginRecvCnt
+                            , "cnt[{}] sesCnt[{}] pCnt[{}] lpCnt[{}] gpCnt[{}] client[{}] lobby[{}] game[{}] login[{}]"
+                            , GetApp()->_cnt
+                            , NetMgrImpl::GetInstance()->GetSessionCnt()
+                            , PlayerMgr::GetInstance()->GetPlayerCnt()
+                            , lobbyPlayerCnt
+                            , gamePlayerCnt
+                            , GetApp()->_clientRecvCnt - clientRecvCnt
+                            , GetApp()->_serverRecvCnt - serverRecvCnt
+                            , GetApp()->_gameRecvCnt - gameRecvCnt
+                            , GetApp()->_loginRecvCnt - loginRecvCnt
                            );
 
                 oldCnt = GetApp()->_cnt;
@@ -123,8 +122,11 @@ bool App::Init()
 
 	// {{{ stop task
 	_stopPriorityTaskList->AddFinalTaskCallback([]() {
-                ::nl::net::client::ClientNetMgr::GetInstance()->Terminate();
-                ::nl::net::client::ClientNetMgr::GetInstance()->WaitForTerminate();
+                SERVICE_TERMINATE(PlayerMgr);
+                SERVICE_WAIT_FOR_TERMINATE(PlayerMgr);
+
+                SERVICE_TERMINATE(::nl::net::client::ClientNetMgr);
+                SERVICE_WAIT_FOR_TERMINATE(::nl::net::client::ClientNetMgr);
 	});
 	// }}}
 

@@ -21,7 +21,7 @@ bool App::Init()
 	LOG_FATAL_IF(!MySqlService::GetInstance()->Init(), "MySqlService proc mgr init fail!!!");
 	LOG_FATAL_IF(!GenGuidService::GetInstance()->Init(), "GenGuidService init fail!!!");
 
-        GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
+        ::nl::util::SteadyTimer::StartForever(1.0, [](double&) {
                 [[maybe_unused]] static int64_t loadVersionCnt = 0;
                 [[maybe_unused]] static int64_t loadVersionSize = 0;
                 [[maybe_unused]] static int64_t loadCnt = 0;
@@ -34,17 +34,16 @@ bool App::Init()
                 LOG_INFO_IF(0 != GetApp()->_loadVersionCnt - loadVersionCnt
                             || 0 != GetApp()->_loadCnt - loadCnt
                             || 0 != GetApp()->_saveCnt - saveCnt,
-                            "avg[{}] actorCnt[{}] lvc[{}] lvs[{:.9f}] lc[{}] ls[{:.9f}] sc[{}] ss[{:.9f} cc[{}] cs[{:.9f}]]",
-                            GetFrameController().GetAverageFrameCnt(),
-                            SpecialActorMgr::GetInstance()->GetActorCnt(),
-                            GetApp()->_loadVersionCnt - loadVersionCnt,
-                            (GetApp()->_loadVersionSize - loadVersionSize) / (1024.0 * 1024.0),
-                            GetApp()->_loadCnt - loadCnt,
-                            (GetApp()->_loadSize - loadSize) / (1024.0 * 1024.0),
-                            GetApp()->_saveCnt - saveCnt,
-                            (GetApp()->_saveSize - saveSize) / (1024.0 * 1024.0),
-                            GetApp()->_checkIDCnt - checkIDCnt,
-                            (GetApp()->_checkIDSize - checkIDSize) / (1024.0 * 1024.0)
+                            "actorCnt[{}] lvc[{}] lvs[{:.9f}] lc[{}] ls[{:.9f}] sc[{}] ss[{:.9f} cc[{}] cs[{:.9f}]]"
+                            , SpecialActorMgr::GetInstance()->GetActorCnt()
+                            , GetApp()->_loadVersionCnt - loadVersionCnt
+                            , (GetApp()->_loadVersionSize - loadVersionSize) / (1024.0 * 1024.0)
+                            , GetApp()->_loadCnt - loadCnt
+                            , (GetApp()->_loadSize - loadSize) / (1024.0 * 1024.0)
+                            , GetApp()->_saveCnt - saveCnt
+                            , (GetApp()->_saveSize - saveSize) / (1024.0 * 1024.0)
+                            , GetApp()->_checkIDCnt - checkIDCnt
+                            , (GetApp()->_checkIDSize - checkIDSize) / (1024.0 * 1024.0)
                            );
 
                 loadVersionCnt = GetApp()->_loadVersionCnt;
@@ -55,6 +54,8 @@ bool App::Init()
                 saveSize = GetApp()->_saveSize;
                 checkIDCnt = GetApp()->_checkIDCnt;
                 checkIDSize = GetApp()->_checkIDSize;
+
+                return true;
         });
         
 	_startPriorityTaskList->AddFinalTaskCallback([]() {

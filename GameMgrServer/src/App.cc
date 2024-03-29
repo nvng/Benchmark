@@ -74,20 +74,20 @@ bool App::Init()
         Test2ServiceServerType::GetInstance()->Start(9999);
         */
 
-	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
-                static int64_t oldCnt = 0;
-                (void)oldCnt;
-                static int64_t oldReqQueueCnt = 0;
+        ::nl::util::SteadyTimer::StartForever(1.0, [](double&) {
+                [[maybe_unused]] static int64_t oldCnt = 0;
+                [[maybe_unused]] static int64_t oldReqQueueCnt = 0;
 
-                LOG_INFO_IF(false, "reqQ[{}] cnt[{}] ses[{}] avg[{}]",
-                            GetApp()->_reqQueueCnt - oldReqQueueCnt,
-                            GetApp()->_cnt - oldCnt,
-                            NetMgr::GetInstance()->_sesList.Size(),
-                            GetFrameController().GetAverageFrameCnt()
+                LOG_INFO_IF(false, "reqQ[{}] cnt[{}] ses[{}]"
+                            , GetApp()->_reqQueueCnt - oldReqQueueCnt
+                            , GetApp()->_cnt - oldCnt
+                            , NetMgr::GetInstance()->_sesList.Size()
                            );
 
                 oldCnt = GetApp()->_cnt;
                 oldReqQueueCnt = GetApp()->_reqQueueCnt;
+
+                return true;
 	});
 
 	// {{{ start task

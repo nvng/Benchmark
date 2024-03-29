@@ -39,7 +39,7 @@ bool App::Init()
         LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "读取策划全局配置失败!!!");
         LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 
-        GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
+        ::nl::util::SteadyTimer::StartForever(1.0, [](double&) {
                 [[maybe_unused]] static int64_t oldRegionCreateCnt = 0;
                 [[maybe_unused]] static int64_t oldRegionDestroyCnt = 0;
                 [[maybe_unused]] static int64_t oldCnt = 0;
@@ -51,19 +51,20 @@ bool App::Init()
                                 clientCnt += ses->GetAgentCnt();
                 });
 
-                LOG_INFO_IF(true, "cnt[{}] client[{}] actorCnt[{}] rc[{}] rd[{}] avg[{}]",
-                            GetApp()->_cnt,
-                            clientCnt,
-                            // GetApp()->_cnt - oldCnt,
-                            RegionMgr::GetInstance()->GetActorCnt(),
-                            GetApp()->_regionCreateCnt - oldRegionCreateCnt,
-                            GetApp()->_regionDestroyCnt - oldRegionDestroyCnt,
-                            GetFrameController().GetAverageFrameCnt()
-                            );
+                LOG_INFO_IF(true, "cnt[{}] client[{}] actorCnt[{}] rc[{}] rd[{}]"
+                            , GetApp()->_cnt
+                            , clientCnt
+                            // , GetApp()->_cnt - oldCnt,
+                            , RegionMgr::GetInstance()->GetActorCnt()
+                            , GetApp()->_regionCreateCnt - oldRegionCreateCnt
+                            , GetApp()->_regionDestroyCnt - oldRegionDestroyCnt
+                           );
 
                 oldRegionCreateCnt = GetApp()->_regionCreateCnt;
                 oldRegionDestroyCnt = GetApp()->_regionDestroyCnt;
                 oldCnt = GetApp()->_cnt;
+
+                return true;
         });
 
         // {{{ start task
