@@ -126,15 +126,18 @@ bool TestActor::Init()
         }
         */
 
+        auto thisPtr = shared_from_this();
         while (true)
         {
-                RedisCmd("SET", "a", "123");
+                ::nl::db::RedisCmd(thisPtr, "SET", "a", "123");
                 ++GetApp()->_cnt;
                 // boost::this_fiber::sleep_for(std::chrono::seconds(1));
         }
 
         return true;
 }
+
+#include <boost/fiber/numa/all.hpp>
 
 bool App::Init()
 {
@@ -160,10 +163,10 @@ bool App::Init()
         Test2ServiceClientType::GetInstance()->Start(remoteServerInfo->_ip, 9999);
         */
 
-	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
+        ::nl::util::SteadyTimer::StartForever(1.0, [](double&) {
 		[[maybe_unused]] static int64_t oldCnt = 0;
 		[[maybe_unused]] static int64_t oldCnt_1 = 0;
-		std::size_t agentCnt = 0;
+		[[maybe_unused]] std::size_t agentCnt = 0;
 		GetApp()->_gateSesList.Foreach([&agentCnt](const auto& weakSes) {
 			auto ses = weakSes.lock();
 			if (ses)
@@ -172,26 +175,26 @@ bool App::Init()
 			}
 		});
 #ifdef ____BENCHMARK____
-		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] cnt_1[{}] flag[{}] avg[{}]",
-			 PlayerMgr::GetInstance()->GetActorCnt(),
-			 agentCnt,
-			 GetApp()->_cnt - oldCnt,
-			 GetApp()->_cnt_1,
-			 // TimedEventLoop::_timedEventItemCnt,
-			 PlayerBase::_playerFlag,
-			 GetFrameController().GetAverageFrameCnt()
+		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] cnt_1[{}] flag[{}]"
+			 , PlayerMgr::GetInstance()->GetActorCnt()
+			 , agentCnt
+			 , GetApp()->_cnt - oldCnt
+			 , GetApp()->_cnt_1
+			 // , TimedEventLoop::_timedEventItemCnt
+			 , PlayerBase::_playerFlag
 			 );
 #else
-		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] cnt_1[{}] avg[{}]",
-			 PlayerMgr::GetInstance()->GetActorCnt(),
-			 agentCnt,
-			 GetApp()->_cnt - oldCnt,
-			 GetApp()->_cnt_1,
-			 GetFrameController().GetAverageFrameCnt()
+		LOG_INFO_IF(true, "actorCnt[{}] agentCnt[{}] cnt[{}] cnt_1[{}]",
+			 , PlayerMgr::GetInstance()->GetActorCnt()
+			 , agentCnt
+			 , GetApp()->_cnt - oldCnt
+			 , GetApp()->_cnt_1
 			 );
 #endif
 		oldCnt = GetApp()->_cnt;
 		oldCnt_1 = GetApp()->_cnt_1;
+
+                return true;
 	});
 
 
@@ -239,7 +242,7 @@ bool App::Init()
 		GetApp()->_globalVarActor = std::make_shared<GlobalVarActor>();
 		GetApp()->_globalVarActor->Start();
 
-		GetApp()->PostTask([]() {
+		GetApp()->Post([]() {
 			auto calNextDayChangeTimeFunc = []()
 			{
 				time_t zero = Clock::TimeClear_Slow(GetClock().GetTimeStamp(), Clock::E_CTT_DAY);
@@ -248,7 +251,9 @@ bool App::Init()
 			};
                         // LOG_WARN("app next day change time:{}", Clock::GetTimeString_Slow(calNextDayChangeTimeFunc()));
                         ::nl::util::SystemTimer::StartForever(calNextDayChangeTimeFunc(), 0.0, [calNextDayChangeTimeFunc](time_t& overTime) {
-				GetApp()->OnDayChange();
+                                GetApp()->Post([]() {
+                                        GetApp()->OnDayChange();
+                                });
 
 				time_t zero = Clock::TimeClear_Slow(GetClock().GetTimeStamp(), Clock::E_CTT_DAY);
 				GetApp()->_globalVarActor->AddVar("appLastDayChangeTimeZero", zero);
@@ -268,7 +273,9 @@ bool App::Init()
 
                         // LOG_WARN("app next data reset time:{}", Clock::GetTimeString_Slow(calNextDataResetTimeFunc()));
                         ::nl::util::SystemTimer::StartForever(calNextDataResetTimeFunc(), 0.0, [calNextDataResetTimeFunc](time_t& overTime) {
-				GetApp()->OnDataReset();
+                                GetApp()->Post([]() {
+                                        GetApp()->OnDataReset();
+                                });
 
 				time_t zero = Clock::TimeClear_Slow(GetClock().GetTimeStamp(), Clock::E_CTT_DAY);
 				GetApp()->_globalVarActor->AddVar("appLastDataResetTimeNoneZero", zero);
@@ -347,24 +354,20 @@ bool App::Init()
         }
         */
 
-        // spdlog::set_level(spdlog::level::warn);
-        // spdlog::trace("7777777777777777 trace");
-        LOG_TRACE_M(E_LOG_MT_DBMySql, "888888888887");
-        LOG_TRACE("000000000000000000000 size[{}]", sizeof(LobbyGateSession::ActorAgentType));
-        LOG_INFO("111111111111111111111 size[{}]", sizeof(LobbyGateSession::ActorAgentType));
-        LOG_WARN("222222222222222222222 size[{}]", sizeof(boost::fibers::fiber::id));
-        LOG_ERROR("333333333333333333333 size[{}]", sizeof(boost::fibers::buffered_channel<IActorMailPtr>));
-        LOG_INFO("444444444444444444444 size[{}]", sizeof(TestActor));
-        LOG_INFO("555555555555555555555 size[{}]", sizeof(nl::util::SteadyTimer));
-        LOG_INFO("666666666666666666666 IActorMail[{}] ActorMail[{}] ActorCallMail[{}] ActorNetMail[{}]"
-                 , sizeof(::nl::af::IActorMail)
-                 , sizeof(::nl::af::ActorMail)
-                 , sizeof(::nl::af::ActorCallMail<::nl::af::ActorMail>)
-                 , sizeof(::nl::net::ActorNetMail<LobbyGateSession::MsgHandleType>));
-        LOG_INFO("777777777777777777777 size[{}]", sizeof(nl::util::SteadyTimer));
-        LOG_INFO("888888888888888888888 size[{}]", sizeof(intmax_t));
-        // LOG_INFO("666666666666666666666 from editor[{}]", CMAKE_FROM_EDITOR);
-        // LOG_INFO("666666666666666666666 from editor[{}]", CMAKE_CXX_COMPILER);
+        std::vector< boost::fibers::numa::node > topo = boost::fibers::numa::topology();
+        for ( auto n : topo) {
+                std::cout << "node: " << n.id << " | ";
+                std::cout << "cpus: ";
+                for ( auto cpu_id : n.logical_cpus) {
+                        std::cout << cpu_id << " ";
+                }
+                std::cout << "| distance: ";
+                for ( auto d : n.distance) {
+                        std::cout << d << " ";
+                }
+                std::cout << std::endl;
+        }
+        std::cout << "done" << std::endl;
 
 	return true;
 }
@@ -381,4 +384,4 @@ void App::OnDataReset()
 	PlayerMgr::GetInstance()->OnDataReset(GlobalSetup_CH::GetInstance()->_dataResetNonZero);
 }
 
-// vim: fenc=utf8:expandtab:ts=8
+// vim: fenc=utf7:expandtab:ts=8

@@ -4,7 +4,8 @@
 #include "Region/RegionMgr.h"
 
 Player::Player(uint64_t guid, const std::string& nickName, const std::string& icon)
-	: SuperType(guid, nickName, icon, 1 << 8)
+	// : SuperType(guid, nickName, icon, 1 << 15)
+	: SuperType(guid, nickName, icon)
 {
         DLOG_INFO("Player::Player() 构造!!!");
 
@@ -104,7 +105,7 @@ ACTOR_MAIL_HANDLE(Player, 0x7f, 0x3, MsgClientLogin)
         ++GetApp()->_cnt;
 
         auto perSize = LobbyGateSession::SerializeAndCompressNeedSize(msg);
-        stBufCache<LobbyGateSession> bufCache(160 * perSize * 2, [this](const VoidPtr& bufRef, ISession::BuffType buf, std::size_t bufSize, bool realSend) {
+        stBufCache bufCache(160 * perSize * 2, sizeof(LobbyGateSession::MsgHeaderType), [this](const VoidPtr& bufRef, ISession::BuffType buf, std::size_t bufSize, bool realSend) {
                 auto ses = _clientActor->GetSession();
                 ses->Send(bufRef, buf, bufSize);
         });
@@ -140,11 +141,13 @@ ACTOR_MAIL_HANDLE(Player, 0x7f, 0xd)
 
 ACTOR_MAIL_HANDLE(Player, 0x7f, 0xe, MsgClientLogin)
 {
+        ++GetApp()->_cnt;
         return nullptr;
 }
 
 ACTOR_MAIL_HANDLE(Player, 0x7f, 0xf)
 {
+        ++GetApp()->_cnt;
         return nullptr;
 }
 
