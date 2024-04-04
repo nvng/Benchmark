@@ -99,12 +99,12 @@ public :
         int64_t GetAddRatio(EBagBuffType t);
 
         int64_t GetCnt(int64_t id);
-        std::tuple<int64_t, int64_t, int64_t> Add(const std::shared_ptr<Player>& p, MsgPlayerChange& msg, int64_t id, int64_t cnt, int64_t type, ELogServiceOrigType logType, uint64_t logParam);
-        std::tuple<int64_t, int64_t, int64_t> Del(const std::shared_ptr<Player>& p, int64_t id, int64_t cnt, ELogServiceOrigType logType, uint64_t logParam);
+        std::tuple<int64_t, int64_t, int64_t> Add(const std::shared_ptr<Player>& p, MsgPlayerChange& msg, int64_t id, int64_t cnt, int64_t type, LOG_SERVICE_PARAM logParam);
+        std::tuple<int64_t, int64_t, int64_t> Del(const std::shared_ptr<Player>& p, int64_t id, int64_t cnt, LOG_SERVICE_PARAM logParam);
 
         bool Check(const std::vector<std::pair<int64_t, int64_t>>& costList);
-        std::vector<std::tuple<int64_t, int64_t, int64_t>> Del(const std::shared_ptr<Player>& p, const std::vector<std::pair<int64_t, int64_t>>& costList, ELogServiceOrigType logType, uint64_t logParam);
-        std::vector<std::tuple<int64_t, int64_t, int64_t>> CheckAndDel(const std::shared_ptr<Player>& p, const std::vector<std::pair<int64_t, int64_t>>& costList, ELogServiceOrigType logType, uint64_t logParam);
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> Del(const std::shared_ptr<Player>& p, const std::vector<std::pair<int64_t, int64_t>>& costList, LOG_SERVICE_PARAM logParam);
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> CheckAndDel(const std::shared_ptr<Player>& p, const std::vector<std::pair<int64_t, int64_t>>& costList, LOG_SERVICE_PARAM logParam);
 
         std::vector<int64_t> GetActiveBufList();
 
@@ -164,8 +164,7 @@ public :
         EClientErrorType DoDrop(const PlayerPtr& p,
                                 MsgPlayerChange& msg,
                                 const std::vector<std::pair<int64_t, int64_t>>& idList,
-                                ELogServiceOrigType logType,
-                                uint64_t logParam,
+                                LOG_SERVICE_PARAM logParam,
                                 int64_t r = 0);
 
 public :

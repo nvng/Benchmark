@@ -23,13 +23,13 @@ public:
 	RegionStateMgr() : FSMBase(ERegionStateType_ARRAYSIZE) {}
 	~RegionStateMgr() override {}
 
-	StateBaseType* CreateStateByType(int stateType) override;
+	StateBaseType* CreateStateByType(int64_t stateType) override;
 };
 
 class RegionStateBase : public StateBase<const RegionPtr, StateEventInfo>
 {
 public :
-	RegionStateBase(int32_t stateType)
+	RegionStateBase(int64_t stateType)
 		: StateBase(stateType)
 	{
 	}

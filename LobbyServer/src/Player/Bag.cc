@@ -78,7 +78,7 @@ int64_t Bag::GetCnt(int64_t id)
         return _goodsList.end()!=it ? std::get<0>(it->second) : 0;
 }
 
-std::tuple<int64_t, int64_t, int64_t> Bag::Add(const PlayerPtr& p, MsgPlayerChange& msg, int64_t id, int64_t cnt, int64_t type, ELogServiceOrigType logType, uint64_t logParam)
+std::tuple<int64_t, int64_t, int64_t> Bag::Add(const PlayerPtr& p, MsgPlayerChange& msg, int64_t id, int64_t cnt, int64_t type, LOG_SERVICE_PARAM logParam)
 {
         std::tuple<int64_t, int64_t, int64_t> ret;
         if (cnt <= 0)
@@ -92,7 +92,7 @@ std::tuple<int64_t, int64_t, int64_t> Bag::Add(const PlayerPtr& p, MsgPlayerChan
         if (_goodsList.end() != it)
         {
                 if (8 == cfg->_effectiveType && 1 == cfg->_param)
-                        p->AddMoney(msg, E_PAT_Coins, cnt * cfg->_param_1, logType, logParam);
+                        p->AddMoney(msg, E_PAT_Coins, cnt * cfg->_param_1, logParam);
                 else
                 {
                         auto old = std::get<0>(it->second);
@@ -100,7 +100,7 @@ std::tuple<int64_t, int64_t, int64_t> Bag::Add(const PlayerPtr& p, MsgPlayerChan
                         auto n = std::get<0>(it->second);
 
                         std::string str = fmt::format("{}\"old\":{},\"new\":{},\"diff\":{}{}", "{", old, n, n-old, "}");
-                        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Goods, id, logType, logParam);
+                        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Goods, id, logParam);
                 }
                 return std::make_tuple(id, std::get<0>(it->second), std::get<1>(it->second));
         }
@@ -115,19 +115,19 @@ std::tuple<int64_t, int64_t, int64_t> Bag::Add(const PlayerPtr& p, MsgPlayerChan
                         overTime = weekZero + WEEK_TO_SEC(1) + HOUR_TO_SEC(GlobalSetup_CH::GetInstance()->_dataResetNonZero);
                         if (1 == cfg->_param)
                         {
-                                p->AddMoney(msg, E_PAT_Coins, (cnt - 1) * cfg->_param_1, logType, logParam);
+                                p->AddMoney(msg, E_PAT_Coins, (cnt - 1) * cfg->_param_1, logParam);
                                 cnt = 1;
                         }
                 }
                 _goodsList.emplace(id, std::make_tuple(cnt, type, overTime));
 
                 std::string str = fmt::format("{}\"old\":{},\"new\":{},\"diff\":{}{}", "{", 0, cnt, cnt, "}");
-                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Goods, id, logType, logParam);
+                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Goods, id, logParam);
                 return std::make_tuple(id, cnt, type);
         }
 }
 
-std::tuple<int64_t, int64_t, int64_t> Bag::Del(const PlayerPtr& p, int64_t id, int64_t cnt, ELogServiceOrigType logType, uint64_t logParam)
+std::tuple<int64_t, int64_t, int64_t> Bag::Del(const PlayerPtr& p, int64_t id, int64_t cnt, LOG_SERVICE_PARAM logParam)
 {
         std::tuple<int64_t, int64_t, int64_t> ret;
         if (cnt <= 0)
@@ -147,7 +147,7 @@ std::tuple<int64_t, int64_t, int64_t> Bag::Del(const PlayerPtr& p, int64_t id, i
 
                 auto n = std::get<0>(it->second);
                 std::string str = fmt::format("{}\"old\":{},\"new\":{},\"diff\":{}{}", "{", old, n, n-old, "}");
-                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Goods, id, logType, logParam);
+                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Goods, id, logParam);
                 return ret;
         }
         return ret;
@@ -164,22 +164,22 @@ bool Bag::Check(const std::vector<std::pair<int64_t, int64_t>>& costList)
 }
 
 std::vector<std::tuple<int64_t, int64_t, int64_t>>
-Bag::Del(const PlayerPtr& p, const std::vector<std::pair<int64_t, int64_t>>& costList, ELogServiceOrigType logType, uint64_t logParam)
+Bag::Del(const PlayerPtr& p, const std::vector<std::pair<int64_t, int64_t>>& costList, LOG_SERVICE_PARAM logParam)
 {
         std::vector<std::tuple<int64_t, int64_t, int64_t>> retList;
         retList.reserve(costList.size());
         for (auto& val : costList)
-                retList.emplace_back(Del(p, val.first, val.second, logType, logParam));
+                retList.emplace_back(Del(p, val.first, val.second, logParam));
         return retList;
 }
 
 std::vector<std::tuple<int64_t, int64_t, int64_t>>
-Bag::CheckAndDel(const PlayerPtr& p, const std::vector<std::pair<int64_t, int64_t>>& costList, ELogServiceOrigType logType, uint64_t logParam)
+Bag::CheckAndDel(const PlayerPtr& p, const std::vector<std::pair<int64_t, int64_t>>& costList, LOG_SERVICE_PARAM logParam)
 {
         std::vector<std::tuple<int64_t, int64_t, int64_t>> retList;
         if (!Check(costList))
                 return std::vector<std::tuple<int64_t, int64_t, int64_t>>();
-        return Del(p, costList, logType, logParam);
+        return Del(p, costList, logParam);
 }
 
 std::vector<int64_t> Bag::GetActiveBufList()
@@ -400,8 +400,7 @@ EClientErrorType BagMgr::DoDropInternal(const std::vector<std::pair<int64_t, int
 EClientErrorType BagMgr::DoDrop(const PlayerPtr& p,
                                 MsgPlayerChange& msg,
                                 const std::vector<std::pair<int64_t, int64_t>>& idList,
-                                ELogServiceOrigType logType,
-                                uint64_t logParam,
+                                LOG_SERVICE_PARAM logParam,
                                 int64_t r/* = 0*/)
 {
         std::map<int64_t, std::pair<int64_t, int64_t>> tmpList;
@@ -410,7 +409,7 @@ EClientErrorType BagMgr::DoDrop(const PlayerPtr& p,
                 return errorType;
 
         for (auto& val : tmpList)
-                p->AddDrop(msg, val.second.second, val.first, val.second.first * (1.0 + r / 10000.0), logType, logParam);
+                p->AddDrop(msg, val.second.second, val.first, val.second.first * (1.0 + r / 10000.0), logParam);
 
         return E_CET_Success;
 }

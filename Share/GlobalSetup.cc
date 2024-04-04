@@ -10,7 +10,7 @@ bool GlobalSetup_CH::Init()
 
         std::string valStr;
         std::string tmpStr;
-        for (int i=0; i<15; ++i)
+        for (int64_t i=0; i<15; ++i)
                 ss >> tmpStr;
 
         // 开服时间。

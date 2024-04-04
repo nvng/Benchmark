@@ -8,6 +8,7 @@
 #include "Tools/LogHelper.h"
 #include "Tools/Util.h"
 #include "LogService.h"
+#include "PingPong.h"
 
 class Test1ServiceActor
 {
@@ -46,6 +47,7 @@ App::App(const std::string& appName)
 
         Test1ServiceClientType::CreateInstance();
         Test2ServiceClientType::CreateInstance();
+        PingPongService::CreateInstance();
 }
 
 App::~App()
@@ -65,6 +67,7 @@ App::~App()
 
         Test1ServiceClientType::DestroyInstance();
         Test2ServiceClientType::DestroyInstance();
+        PingPongService::DestroyInstance();
 }
 
 SPECIAL_ACTOR_DEFINE_BEGIN(TestActor, 0x777);
@@ -146,13 +149,14 @@ bool App::Init()
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "初始化策划全局配置失败!!!");
         LOG_FATAL_IF(!::nl::net::client::ClientNetMgr::GetInstance()->Init(1, "gate"), "ClientNetMgr init error!!!");
 	LOG_FATAL_IF(!RedisMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_redisCfg), "RedisMgr init error!!!");
-	// LOG_FATAL_IF(!PingPongBigService::GetInstance()->Init(), "PingPongBigService init error!!!");
-	// LOG_FATAL_IF(!PingPongBigService::GetInstance()->Init(), "PingPongBigService init error!!!");
+	// LOG_FATAL_IF(!PingPongService::GetInstance()->Init(), "PingPongService init error!!!");
+	// LOG_FATAL_IF(!PingPongService::GetInstance()->Init(), "PingPongService init error!!!");
         LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
 	LOG_FATAL_IF(!MySqlService::GetInstance()->Init(), "MySqlService init error!!!");
 	LOG_FATAL_IF(!GenGuidService::GetInstance()->Init(), "GenGuidService init error!!!");
 	LOG_FATAL_IF(!LogService::GetInstance()->Init(), "LogService init error!!!");
+        LOG_FATAL_IF(!PingPongService::GetInstance()->Init(), "");
 
         /*
 	LOG_FATAL_IF(!Test1ServiceClientType::GetInstance()->Init(), "Test1ServiceClientType init error!!!");
@@ -180,7 +184,6 @@ bool App::Init()
 			 , agentCnt
 			 , GetApp()->_cnt - oldCnt
 			 , GetApp()->_cnt_1
-			 // , TimedEventLoop::_timedEventItemCnt
 			 , PlayerBase::_playerFlag
 			 );
 #else
@@ -368,6 +371,14 @@ bool App::Init()
                 std::cout << std::endl;
         }
         std::cout << "done" << std::endl;
+
+        /*
+        boost::fibers::fiber r([]() { });
+        LOG_INFO("1111111111111111111111 boost::fibers::fiber[{}]", sizeof(r));
+        LOG_INFO("1111111111111111111111 boost::fibers::context[{}]", sizeof(boost::fibers::context));
+        */
+
+        LOG_INFO("111111111111111 LobbyGameSession::MsgHeaderType[{}]", sizeof(LobbyGameSession::ActorAgentType));
 
 	return true;
 }

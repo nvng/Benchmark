@@ -95,8 +95,8 @@ enum EMsgInternalGameCommonSubType
   E_MIGCST_RegionDestroy = 0x1;
   E_MIGCST_RegionKickout = 0x2;
 
-  E_MIGCST_SyncRegionEnterCond = 0xe;
-  E_MIGCST_SyncPlayerInfo2Region = 0xf;
+  E_MIGCST_SyncRegionEnterCond = 0x3;
+  E_MIGCST_SyncPlayerInfo2Region = 0x4;
 }
 
 enum EMsgInternalOfflineSubType

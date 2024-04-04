@@ -31,7 +31,7 @@ bool PlayerMgr::Init()
 	return ReadLevelUpCfg();
 }
 
-PlayerBasePtr PlayerMgr::CreatePlayer(uint64_t id, const std::string& nickName, const std::string& icon)
+PlayerBasePtr PlayerMgr::CreatePlayer(GUID_TYPE id, const std::string& nickName, const std::string& icon)
 {
         return std::make_shared<Player>(id, nickName, icon);
 }
@@ -43,7 +43,7 @@ bool PlayerMgr::ReadLevelUpCfg()
         if (!ReadFileToSS(ss, fileName))
                 return false;
 
-        std::vector<std::pair<int32_t, stPlayerLevelInfoPtr>> tmpList;
+        std::vector<std::pair<int64_t, stPlayerLevelInfoPtr>> tmpList;
         int64_t idx = 0;
         std::string tmpStr;
         while (ReadTo(ss, "#"))

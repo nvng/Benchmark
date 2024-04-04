@@ -12,8 +12,8 @@ public :
   bool Init() override;
 
 public :
-  std::atomic_int64_t _cnt;
-  std::atomic_int64_t _reqQueueCnt;
+  std::atomic_uint64_t _cnt;
+  std::atomic_uint64_t _reqQueueCnt;
 };
 
 extern App* GetApp();

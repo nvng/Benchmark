@@ -6,6 +6,7 @@ SET(SRC_DIR
         ActorFramework/Impl/GameMgr
         ActorFramework/Impl/Service/Robot
         ActorFramework/Impl/Service/Log
+        ActorFramework/Impl/Service/Benchmark
         )
 
 INCLUDE($ENV{HOME}/git/config/cmake/project.cmake)

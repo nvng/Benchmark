@@ -8,6 +8,7 @@
 #include "RegionMgr.h"
 #include "RequestActor.h"
 #include "Tools/Util.h"
+#include "PingPong.h"
 
 SPECIAL_ACTOR_DEFINE_BEGIN(Test1ServiceActor);
 public :
@@ -23,6 +24,7 @@ SERVICE_NET_HANDLE(Test1ServiceServerType::SessionType, 0xfff, 0x0)
 {
         LOG_INFO("aaaaaaaaaaaaaaaaaaa mt[{:#x}], st[{:#x}]", 0xfff, 0x0);
         Send(0xf3f, 0x0, MsgHeaderType::E_RMT_None, 0, 0, 0);
+        return nullptr;
 }
 
 SPECIAL_ACTOR_DEFINE_BEGIN(Test2ServiceActor);
@@ -47,6 +49,8 @@ App::App(const std::string& appName)
 
         Test1ServiceServerType::CreateInstance();
         Test2ServiceServerType::CreateInstance();
+
+        PingPongService::CreateInstance();
 }
 
 App::~App()
@@ -57,6 +61,8 @@ App::~App()
 
         Test1ServiceServerType::DestroyInstance();
         Test2ServiceServerType::DestroyInstance();
+
+        PingPongService::DestroyInstance();
 }
 
 bool App::Init()
@@ -65,6 +71,8 @@ bool App::Init()
 	LOG_FATAL_IF(!GlobalSetup_CH::GetInstance()->Init(), "GlobalSetup_CH init error!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!RobotService::GetInstance()->Init(), "RobotService init error!!!");
+
+        LOG_FATAL_IF(!PingPongService::GetInstance()->Init(), "");
 
         /*
 	LOG_FATAL_IF(!Test1ServiceServerType::GetInstance()->Init(), "Test1Service init error!!!");
@@ -75,10 +83,10 @@ bool App::Init()
         */
 
         ::nl::util::SteadyTimer::StartForever(1.0, [](double&) {
-                [[maybe_unused]] static int64_t oldCnt = 0;
-                [[maybe_unused]] static int64_t oldReqQueueCnt = 0;
+                [[maybe_unused]] static uint64_t oldCnt = 0;
+                [[maybe_unused]] static uint64_t oldReqQueueCnt = 0;
 
-                LOG_INFO_IF(false, "reqQ[{}] cnt[{}] ses[{}]"
+                LOG_INFO_IF(true, "reqQ[{}] cnt[{}] ses[{}]"
                             , GetApp()->_reqQueueCnt - oldReqQueueCnt
                             , GetApp()->_cnt - oldCnt
                             , NetMgr::GetInstance()->_sesList.Size()

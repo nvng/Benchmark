@@ -65,9 +65,6 @@ bool App::Init()
 	});
 
         _stopPriorityTaskList->AddFinalTaskCallback([]() {
-                NetMgr::GetInstance()->Terminate();
-                NetMgr::GetInstance()->WaitForTerminate();
-
                 GenGuidService::GetInstance()->Terminate();
                 GenGuidService::GetInstance()->WaitForTerminate();
 

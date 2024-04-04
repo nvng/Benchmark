@@ -47,7 +47,7 @@ public :
         std::unordered_set<std::string> _payIPLimitList;
 
         bool _whiteListSwitch = false;
-        std::unordered_set<uint64_t> _whiteList;
+        std::unordered_set<int64_t> _whiteList;
 };
 
 // vim: fenc=utf8:expandtab:ts=8

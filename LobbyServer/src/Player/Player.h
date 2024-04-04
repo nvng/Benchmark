@@ -10,7 +10,7 @@ class Player : public PlayerBase
 {
         typedef PlayerBase SuperType;
 public :
-        Player(uint64_t guid, const std::string& nickName, const std::string& icon);
+        Player(GUID_TYPE guid, const std::string& nickName, const std::string& icon);
         ~Player() override;
 
         bool Init() override;

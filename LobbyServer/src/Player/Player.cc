@@ -3,7 +3,7 @@
 #include "PlayerMgr.h"
 #include "Region/RegionMgr.h"
 
-Player::Player(uint64_t guid, const std::string& nickName, const std::string& icon)
+Player::Player(GUID_TYPE guid, const std::string& nickName, const std::string& icon)
 	// : SuperType(guid, nickName, icon, 1 << 15)
 	: SuperType(guid, nickName, icon)
 {

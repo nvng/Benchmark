@@ -5,7 +5,7 @@
 namespace Jump {
 
 FSMBase<const RegionPtr, StateEventInfo>::StateBaseType*
-RegionStateMgr::CreateStateByType(int stateType)
+RegionStateMgr::CreateStateByType(int64_t stateType)
 {
 	switch (stateType)
 	{
