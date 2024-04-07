@@ -35,7 +35,7 @@ bool App::Init()
                             || 0 != GetApp()->_loadCnt - loadCnt
                             || 0 != GetApp()->_saveCnt - saveCnt,
                             "actorCnt[{}] lvc[{}] lvs[{:.9f}] lc[{}] ls[{:.9f}] sc[{}] ss[{:.9f} cc[{}] cs[{:.9f}]]"
-                            , SpecialActorMgr::GetInstance()->GetActorCnt()
+                            , ::nl::af::SpecialActorMgr::GetInstance()->GetActorCnt()
                             , GetApp()->_loadVersionCnt - loadVersionCnt
                             , (GetApp()->_loadVersionSize - loadVersionSize) / (1024.0 * 1024.0)
                             , GetApp()->_loadCnt - loadCnt

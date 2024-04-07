@@ -11,11 +11,9 @@
 #include "PingPong.h"
 
 SPECIAL_ACTOR_DEFINE_BEGIN(Test1ServiceActor);
-public :
-        Test1ServiceActor() : SuperType(SpecialActorMgr::GetInstance()->GenActorID(), IActor::scMailQueueMaxSize) { }
 SPECIAL_ACTOR_DEFINE_END(Test1ServiceActor);
 
-DECLARE_SERVICE_BEGIN(Test1Service, SessionDistributeMod, ServiceSession, ServiceExtraWapper);
+DECLARE_SERVICE_BEGIN(Test1Service, ::nl::af::SessionDistributeMod, ::nl::af::ServiceSession, ::nl::af::ServiceExtraWapper);
 DECLARE_SERVICE_END(Test1Service);
 
 typedef Test1ServiceBase<nl::af::E_ServiceType_Server, stServerInfoBase> Test1ServiceServerType;
@@ -28,11 +26,9 @@ SERVICE_NET_HANDLE(Test1ServiceServerType::SessionType, 0xfff, 0x0)
 }
 
 SPECIAL_ACTOR_DEFINE_BEGIN(Test2ServiceActor);
-public :
-        Test2ServiceActor() : SuperType(SpecialActorMgr::GetInstance()->GenActorID(), IActor::scMailQueueMaxSize) { }
 SPECIAL_ACTOR_DEFINE_END(Test2ServiceActor);
 
-DECLARE_SERVICE_BEGIN(Test2Service, SessionDistributeMod, ServiceSession, ServiceExtraWapper);
+DECLARE_SERVICE_BEGIN(Test2Service, ::nl::af::SessionDistributeMod, ::nl::af::ServiceSession, ::nl::af::ServiceExtraWapper);
 DECLARE_SERVICE_END(Test2Service);
 
 typedef Test2ServiceBase<nl::af::E_ServiceType_Server, stServerInfoBase> Test2ServiceServerType;

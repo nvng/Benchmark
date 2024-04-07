@@ -17,7 +17,7 @@ public :
         typedef FighterImpl<MsgFighterInfo, MailSyncPlayerInfo2Region> SuperType;
         typedef Region RegionType;
 public :
-        Fighter(uint64_t id,
+        Fighter(GUID_TYPE id,
                 const RegionPtr& region,
                 const MailReqEnterRegion::MsgReqFighterInfo& info);
         ~Fighter() override;
@@ -38,8 +38,8 @@ public :
         FORCE_INLINE time_t GetScoreTime() const { return _posInfo.dst_time(); }
 
 public :
-        FORCE_INLINE bool HasBattleItem(uint64_t id) { return !_battleItemList.empty(); }
-        void RemoveBattleItem(uint64_t id)
+        FORCE_INLINE bool HasBattleItem(GUID_TYPE id) { return !_battleItemList.empty(); }
+        void RemoveBattleItem(GUID_TYPE id)
         {
                 auto it = _battleItemList.find(id);
                 if (_battleItemList.end() != it)
@@ -116,7 +116,7 @@ public :
                 return true;
         }
 
-        void Send2Client(uint64_t mainType, uint64_t subType, const ActorMailDataPtr& msg) override
+        void Send2Client(int64_t mainType, int64_t subType, const ::nl::af::ActorMailDataPtr& msg) override
         {
                 auto obj = _bindActor.lock();
                 if (obj)

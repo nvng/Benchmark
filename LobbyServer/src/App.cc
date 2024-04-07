@@ -14,7 +14,7 @@ class Test1ServiceActor
 {
 };
 
-DECLARE_SERVICE_BEGIN(Test1Service, SessionDistributeMod, ServiceSession, ServiceExtraWapper);
+DECLARE_SERVICE_BEGIN(Test1Service, ::nl::af::SessionDistributeMod, ::nl::af::ServiceSession, ::nl::af::ServiceExtraWapper);
 DECLARE_SERVICE_END(Test1Service);
 
 typedef Test1ServiceBase<nl::af::E_ServiceType_Client, stServerInfoBase> Test1ServiceClientType;
@@ -23,7 +23,7 @@ class Test2ServiceActor
 {
 };
 
-DECLARE_SERVICE_BEGIN(Test2Service, SessionDistributeMod, ServiceSession, ServiceExtraWapper);
+DECLARE_SERVICE_BEGIN(Test2Service, ::nl::af::SessionDistributeMod, ::nl::af::ServiceSession, ::nl::af::ServiceExtraWapper);
 DECLARE_SERVICE_END(Test2Service);
 
 typedef Test2ServiceBase<nl::af::E_ServiceType_Client, stServerInfoBase> Test2ServiceClientType;
@@ -72,9 +72,8 @@ App::~App()
 
 SPECIAL_ACTOR_DEFINE_BEGIN(TestActor, 0x777);
 
+        ENABLE_CALL;
 public :
-        TestActor() : SuperType(SpecialActorMgr::GenActorID(), IActor::scMailQueueMaxSize) { }
-
         bool Init() override;
 
 SPECIAL_ACTOR_DEFINE_END(TestActor);
