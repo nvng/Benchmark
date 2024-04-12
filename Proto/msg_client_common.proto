@@ -100,6 +100,13 @@ enum EPlayerAttrType
   E_PAT_LastLogoutTime = 20;
   E_PAT_LastDayChangeResetTime = 21;
   E_PAT_LastNotZeroResetTime = 22;
+  E_PAT_Version = 23;
+}
+
+enum EPlayerStrAttrType
+{
+        E_PSAT_NickName = 0;
+        E_PSAT_Icon = 1;
 }
 
 message MsgUpdatePlayerAttr
@@ -168,6 +175,8 @@ message MsgPlayerChange
         enum EPlayerChangeType
         {
                 E_PCT_Shop = 0x0;
+                E_PCT_PlayerAttr = 0x1;
+                E_PCT_Goods = 0x2;
         }
 
         message MsgPlayerChangeItem

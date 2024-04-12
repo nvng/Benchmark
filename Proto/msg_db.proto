@@ -42,6 +42,7 @@ message DBPlayerInfo
   repeated sint64 icon_idx_list = 60;
   repeated sint64 attr_list = 70;
   repeated sint64 cdkey_list = 80;
+  repeated string str_attr_list = 90;
 
   repeated MsgGoodsItem goods_list = 100;
   DBPlayerMailSys mail_sys = 110;

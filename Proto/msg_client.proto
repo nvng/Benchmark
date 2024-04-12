@@ -50,6 +50,7 @@ message MsgPlayerInfo
   repeated sint64 icon_idx_list = 5;
   repeated sint64 attr_list = 6;
   repeated sint64 cdkey_list = 7;
+  repeated string str_attr_list = 8;
 
   MsgQueueInfo queue_info = 10;
   MsgMatchInfo match_info = 11;

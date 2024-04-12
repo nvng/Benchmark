@@ -219,6 +219,9 @@ message MailSyncPlayerInfo2Region
   sint64 param = 5;
   sint64 param_1 = 6;
 
+  repeated sint64 param_list = 7;
+  repeated string str_param_list = 8;
+
   google.protobuf.Any extra = 10;
 }
 

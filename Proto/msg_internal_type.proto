@@ -25,22 +25,22 @@ enum EMsgInternalMainType
 {
   E_MIMT_Internal = 0x0; // 服务器间内部消息
 
-  E_MIMT_Offline = 0xfe5;
-  E_MIMT_GenGuid = 0xfe6;
-  E_MIMT_DB = 0xfe7;
-  E_MIMT_Log = 0xfe8;
+  E_MIMT_Offline = 0x3e5;
+  E_MIMT_GenGuid = 0x3e6;
+  E_MIMT_DB = 0x3e7;
+  E_MIMT_Log = 0x3e8;
 
-  E_MIMT_Robot = 0xfe9;
-  E_MIMT_QueueCommon = 0xfea;
-  E_MIMT_Queue = 0xfeb;
-  E_MIMT_GameCommon = 0xfec;
-  E_MIMT_Game = 0xfed;
-  E_MIMT_MatchCommon = 0xfee; // 比赛
-  E_MIMT_Match = 0xfef; // 比赛
+  E_MIMT_Robot = 0x3e9;
+  E_MIMT_QueueCommon = 0x3ea;
+  E_MIMT_Queue = 0x3eb;
+  E_MIMT_GameCommon = 0x3ec;
+  E_MIMT_Game = 0x3ed;
+  E_MIMT_MatchCommon = 0x3ee; // 比赛
+  E_MIMT_Match = 0x3ef; // 比赛
 
-  E_MIMT_ServiceCommon = 0xffd;
-  E_MIMT_GM = 0xffe;
-  E_MIMT_Local = 0xfff; // 本地消息。
+  E_MIMT_ServiceCommon = 0x3fd;
+  E_MIMT_GM = 0x3fe;
+  E_MIMT_Local = 0x3ff; // 本地消息。
 }
 
 enum EMsgInternalGMSubType

@@ -31,9 +31,9 @@ bool PlayerMgr::Init()
 	return ReadLevelUpCfg();
 }
 
-PlayerBasePtr PlayerMgr::CreatePlayer(GUID_TYPE id, const std::string& nickName, const std::string& icon)
+PlayerBasePtr PlayerMgr::CreatePlayer(GUID_TYPE id, const MsgClientLogin& msg)
 {
-        return std::make_shared<Player>(id, nickName, icon);
+        return std::make_shared<Player>(id, msg);
 }
 
 bool PlayerMgr::ReadLevelUpCfg()

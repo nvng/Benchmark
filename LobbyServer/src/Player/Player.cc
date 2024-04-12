@@ -3,9 +3,9 @@
 #include "PlayerMgr.h"
 #include "Region/RegionMgr.h"
 
-Player::Player(GUID_TYPE guid, const std::string& nickName, const std::string& icon)
-	// : SuperType(guid, nickName, icon, 1 << 15)
-	: SuperType(guid, nickName, icon)
+Player::Player(GUID_TYPE guid, const MsgClientLogin& msg)
+	// : SuperType(guid, 1 << 15)
+	: SuperType(guid)
 {
         DLOG_INFO("Player::Player() 构造!!!");
 
@@ -15,6 +15,9 @@ Player::Player(GUID_TYPE guid, const std::string& nickName, const std::string& i
         for (auto t : testList)
                 t->Run();
                 */
+
+        SetAttr(E_PSAT_NickName, msg.nick_name());
+        SetAttr(E_PSAT_Icon, msg.icon());
 }
 
 Player::~Player()
@@ -113,12 +116,12 @@ ACTOR_MAIL_HANDLE(Player, 0x7f, 0x3, MsgClientLogin)
         for (int64_t i=0; i<160; ++i)
         {
                 auto sendBuf = bufCache.Prepare(perSize);
-                auto [sendSize, _] = LobbyGateSession::Pack(sendBuf, msg, 0x7f, 0xf, LobbyGateSession::MsgHeaderType::E_RMT_Send, 0, GetID(), _clientActor->GetID());
+                auto [sendSize, _] = LobbyGateSession::Pack(sendBuf, msg, 0x7f, 0xf, LobbyGateSession::MsgHeaderType::E_RMT_Send, ActorCallGuidType(), GetID(), _clientActor->GetID());
                 bufCache.Commit(sendSize);
         }
 
         auto sendBuf = bufCache.Prepare(perSize);
-        auto[sendSize, _] = LobbyGateSession::Pack(sendBuf, msg, 0x7f, 0x3, LobbyGateSession::MsgHeaderType::E_RMT_Send, 0, GetID(), _clientActor->GetID());
+        auto[sendSize, _] = LobbyGateSession::Pack(sendBuf, msg, 0x7f, 0x3, LobbyGateSession::MsgHeaderType::E_RMT_Send, ActorCallGuidType(), GetID(), _clientActor->GetID());
         bufCache.Commit(sendSize);
 
         bufCache.Deal();

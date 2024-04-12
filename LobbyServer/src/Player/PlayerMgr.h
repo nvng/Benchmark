@@ -11,7 +11,7 @@ class PlayerMgr : public PlayerMgrBase, public Singleton<PlayerMgr>
 	typedef PlayerMgrBase SuperType;
 public :
 	bool Init() override;
-        std::shared_ptr<PlayerBase> CreatePlayer(GUID_TYPE id, const std::string& nickName, const std::string& icon) override;
+        std::shared_ptr<PlayerBase> CreatePlayer(GUID_TYPE id, const MsgClientLogin& msg) override;
 
 public :
 	bool ReadLevelUpCfg();

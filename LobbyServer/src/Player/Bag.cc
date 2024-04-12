@@ -92,7 +92,7 @@ std::tuple<int64_t, int64_t, int64_t> Bag::Add(const PlayerPtr& p, MsgPlayerChan
         if (_goodsList.end() != it)
         {
                 if (8 == cfg->_effectiveType && 1 == cfg->_param)
-                        p->AddMoney(msg, E_PAT_Coins, cnt * cfg->_param_1, logParam);
+                        p->AddAttr(msg, E_PAT_Coins, cnt * cfg->_param_1, logParam);
                 else
                 {
                         auto old = std::get<0>(it->second);
@@ -115,7 +115,7 @@ std::tuple<int64_t, int64_t, int64_t> Bag::Add(const PlayerPtr& p, MsgPlayerChan
                         overTime = weekZero + WEEK_TO_SEC(1) + HOUR_TO_SEC(GlobalSetup_CH::GetInstance()->_dataResetNonZero);
                         if (1 == cfg->_param)
                         {
-                                p->AddMoney(msg, E_PAT_Coins, (cnt - 1) * cfg->_param_1, logParam);
+                                p->AddAttr(msg, E_PAT_Coins, (cnt - 1) * cfg->_param_1, logParam);
                                 cnt = 1;
                         }
                 }

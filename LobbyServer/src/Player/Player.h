@@ -4,13 +4,11 @@
 #include "PlayerBase.h"
 #include "Activity.h"
 
-#define INVALID_MONEY_VAL INT64_MIN
-
 class Player : public PlayerBase
 {
         typedef PlayerBase SuperType;
 public :
-        Player(GUID_TYPE guid, const std::string& nickName, const std::string& icon);
+        Player(GUID_TYPE guid, const MsgClientLogin& msg);
         ~Player() override;
 
         bool Init() override;
