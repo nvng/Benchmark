@@ -10,7 +10,7 @@ class PVERegion : public Region
 public :
         PVERegion(const std::shared_ptr<MailRegionCreateInfo>& cInfo,
                   const std::shared_ptr<RegionCfg>& cfg,
-                  const GameMgrSession::ActorAgentTypePtr& agent)
+                  const GameMgrSession::ActorNetAgentTypePtr& agent)
                 : SuperType(cInfo, cfg, agent)
         {
         }

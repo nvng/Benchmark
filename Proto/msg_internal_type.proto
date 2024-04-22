@@ -23,24 +23,24 @@ option optimize_for = LITE_RUNTIME;
 
 enum EMsgInternalMainType
 {
-  E_MIMT_Internal = 0x0; // 服务器间内部消息
+        E_MIMT_Internal = 0x0; // 服务器间内部消息
 
-  E_MIMT_Offline = 0x3e5;
-  E_MIMT_GenGuid = 0x3e6;
-  E_MIMT_DB = 0x3e7;
-  E_MIMT_Log = 0x3e8;
+        E_MIMT_Offline = 0x3e5;
+        E_MIMT_GenGuid = 0x3e6;
+        E_MIMT_DB = 0x3e7;
+        E_MIMT_Log = 0x3e8;
 
-  E_MIMT_Robot = 0x3e9;
-  E_MIMT_QueueCommon = 0x3ea;
-  E_MIMT_Queue = 0x3eb;
-  E_MIMT_GameCommon = 0x3ec;
-  E_MIMT_Game = 0x3ed;
-  E_MIMT_MatchCommon = 0x3ee; // 比赛
-  E_MIMT_Match = 0x3ef; // 比赛
+        E_MIMT_Robot = 0x3e9;
+        E_MIMT_QueueCommon = 0x3ea;
+        E_MIMT_Queue = 0x3eb;
+        E_MIMT_GameCommon = 0x3ec;
+        E_MIMT_Game = 0x3ed;
+        E_MIMT_MatchCommon = 0x3ee; // 比赛
+        E_MIMT_Match = 0x3ef; // 比赛
 
-  E_MIMT_ServiceCommon = 0x3fd;
-  E_MIMT_GM = 0x3fe;
-  E_MIMT_Local = 0x3ff; // 本地消息。
+        E_MIMT_ServiceCommon = 0x3fd;
+        E_MIMT_GM = 0x3fe;
+        E_MIMT_Local = 0x3ff; // 本地消息。
 }
 
 enum EMsgInternalGMSubType
@@ -50,37 +50,37 @@ enum EMsgInternalGMSubType
 
 enum EMsgInternalLocalSubType
 {
-  E_MILST_Disconnect = 0x0;
-  E_MILST_Reconnect = 0x1;
-  E_MILST_Init = 0x2;
-  E_MILST_DayChange = 0x3;
-  E_MILST_DataResetNoneZero = 0x4;
-  E_MILST_Terminate = 0x5;
+        E_MILST_Disconnect = 0x0;
+        E_MILST_Reconnect = 0x1;
+        E_MILST_Init = 0x2;
+        E_MILST_DayChange = 0x3;
+        E_MILST_DataResetNoneZero = 0x4;
+        E_MILST_Terminate = 0x5;
 }
 
 enum EMsgInternalInternalSubType
 {
-  E_MIIST_HeartBeat = 0x0; // 心跳
-  E_MIIST_ServerInit = 0x1;
-  E_MIIST_MultiCast = 0x2;
-  E_MIIST_BroadCast = 0x3;
-  E_MIIST_BroadCastAll = 0x4;
-  E_MIIST_SyncRelation = 0x5;
+        E_MIIST_HeartBeat = 0x0; // 心跳
+        E_MIIST_ServerInit = 0x1;
+        E_MIIST_MultiCast = 0x2;
+        E_MIIST_BroadCast = 0x3;
+        E_MIIST_BroadCastAll = 0x4;
+        E_MIIST_SyncRelation = 0x5;
 
-  E_MIIST_Reconnect = 0xe;
-  E_MIIST_Result = 0xf;
+        E_MIIST_Reconnect = 0xe;
+        E_MIIST_Result = 0xf;
 }
 
 enum EMsgInternalRobotSubType
 {
-  E_MIRST_Req = 0x0;
-  E_MIRST_Back = 0x1;
+        E_MIRST_Req = 0x0;
+        E_MIRST_Back = 0x1;
 }
 
 enum EMsgInternalQueueCommonSubType
 {
-  E_MIQCST_ReqQueue = 0x0; // 请求排队。
-  E_MIQCST_ExitQueue = 0x1;
+        E_MIQCST_ReqQueue = 0x0; // 请求排队。
+        E_MIQCST_ExitQueue = 0x1;
 }
 
 enum EMsgInternalMatchCommonSubType
@@ -90,13 +90,13 @@ enum EMsgInternalMatchCommonSubType
 
 enum EMsgInternalGameCommonSubType
 {
-  // 约定：像排队一样异步，或不能在 E_MCMT_GameCommon 中的消息，才在这里。
-  E_MIGCST_RegionCreate = 0x0;
-  E_MIGCST_RegionDestroy = 0x1;
-  E_MIGCST_RegionKickout = 0x2;
+        // 约定：像排队一样异步，或不能在 E_MCMT_GameCommon 中的消息，才在这里。
+        E_MIGCST_RegionCreate = 0x0;
+        E_MIGCST_RegionDestroy = 0x1;
+        E_MIGCST_RegionKickout = 0x2;
 
-  E_MIGCST_SyncRegionEnterCond = 0x3;
-  E_MIGCST_SyncPlayerInfo2Region = 0x4;
+        E_MIGCST_SyncRegionEnterCond = 0x3;
+        E_MIGCST_SyncPlayerInfo2Region = 0x4;
 }
 
 enum EMsgInternalOfflineSubType

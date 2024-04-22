@@ -2,7 +2,7 @@
 
 #include "Player.h"
 
-PlayerMgrBase* nl::af::impl::GetPlayerMgrBase()
+PlayerMgrBase* nl::af::impl::_1::GetPlayerMgrBase()
 {
         return PlayerMgr::GetInstance();
 }
@@ -21,12 +21,6 @@ bool PlayerMgr::Init()
 {
 	if (!SuperType::Init())
 		return false;
-
-        for (int64_t i=0; i<scPlayerOfflineDataActorArrSize+1; ++i)
-        {
-                _playerOfflineDataActorArr[i] = std::make_shared<PlayerOfflineDataActor>();
-                _playerOfflineDataActorArr[i]->Start();
-        }
 
 	return ReadLevelUpCfg();
 }

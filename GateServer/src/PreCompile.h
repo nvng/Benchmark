@@ -8,31 +8,6 @@
 // #define ____CLIENT_USE_WS____
 // #define ____CLIENT_USE_WSS____
 
-#define BOOST_SP_DISABLE_THREADS
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/make_shared.hpp>
-
-#include <unordered_map>
-#include <algorithm>
-#include <cmath>
-
-#include <boost/program_options.hpp>
-#include <boost/fiber/all.hpp>
-
-/*
-// multi_index_container
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/hashed_index.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/mem_fun.hpp>
-#include <boost/multi_index/composite_key.hpp>
-*/
-
-#include <rapidjson/document.h>
-
 // 有些 pb 会在库中使用。
 #include "msg_login.pb.h"
 #include "msg_client_type.pb.h"
@@ -41,10 +16,6 @@
 #include "msg_internal.pb.h"
 
 #include "nvngLib.h"
-
-using namespace nl::util;
-using namespace nl::net;
-using namespace nl::net::server;
 
 #include "GlobalDef.h"
 #include "GateClientSession.h"
@@ -57,7 +28,10 @@ using namespace nl::net::server;
 
 #include "App.h"
 
-using namespace nl::af::impl;
+using namespace nl::util;
+using namespace nl::net;
+using namespace nl::net::server;
+using namespace nl::af::impl::_1;
 
 #endif // __PRE_COMPILE_H__
 

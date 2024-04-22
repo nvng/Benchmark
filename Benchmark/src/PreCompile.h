@@ -5,20 +5,6 @@
 #define ____BENCHMARK____
 #define USE_BENCHMARK_APP
 
-#define BOOST_SP_DISABLE_THREADS
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/make_shared.hpp>
-
-#include <unordered_map>
-#include <algorithm>
-#include <cmath>
-
-#include <boost/program_options.hpp>
-#include <boost/fiber/all.hpp>
-
-#include <rapidjson/document.h>
-
 // 有些 pb 会在库中使用。
 #include "msg_client_type.pb.h"
 #include "msg_client.pb.h"
@@ -33,10 +19,11 @@
 
 #include "App.h"
 
-using namespace nl::af::impl;
 using namespace nl::util;
 using namespace nl::net;
 using namespace nl::net::client;
+
+using namespace nl::af::impl::_1;
 
 #endif // __PRE_COMPILE_H__
 

@@ -2,7 +2,6 @@
 
 #include "PlayerMgr.h"
 #include "PlayerBase.h"
-#include "Activity.h"
 
 class Player : public PlayerBase
 {
@@ -21,8 +20,6 @@ public :
         }
 
 public :
-        ActivityMgr _activityMgr;
-
         EXTERN_ACTOR_MAIL_HANDLE();
         DECLARE_SHARED_FROM_THIS(Player);
 };

@@ -9,7 +9,7 @@ REGION_GAME_COMMON_HANDLE(Region);
 
 Region::Region(const std::shared_ptr<MailRegionCreateInfo>& cInfo,
                const std::shared_ptr<RegionCfg>& cfg,
-               const GameMgrSession::ActorAgentTypePtr& agent)
+               const GameMgrSession::ActorNetAgentTypePtr& agent)
         : SuperType(cInfo, cfg, agent, 1024)
 {
 }
@@ -38,8 +38,8 @@ bool Region::Init()
         return true;
 }
 
-Region::FighterPtr Region::CreateFighter(const GameLobbySession::ActorAgentTypePtr& p,
-                                         const GameGateSession::ActorAgentTypePtr& cli,
+Region::FighterPtr Region::CreateFighter(const GameLobbySession::ActorNetAgentTypePtr& p,
+                                         const GameGateSession::ActorNetAgentTypePtr& cli,
                                          const MailReqEnterRegion::MsgReqFighterInfo& info)
 {
         return std::make_shared<PlayerFighter<Fighter>>(shared_from_this(), p, cli, info);

@@ -7,7 +7,7 @@ AutoRelease ar_##rt([]() { \
         RegionMgr::GetInstance()->RegisterOpt(E_RT_##rt, []() { \
                 return PVERegion::InitOnce(); \
         }, \
-        [](const std::shared_ptr<MailRegionCreateInfo>& cInfo, const std::shared_ptr<RegionCfg>& cfg, const GameMgrSession::ActorAgentTypePtr& agent) { \
+        [](const std::shared_ptr<MailRegionCreateInfo>& cInfo, const std::shared_ptr<RegionCfg>& cfg, const GameMgrSession::ActorNetAgentTypePtr& agent) { \
                 auto ret = std::make_shared<PVERegion>(cInfo, cfg, agent); \
                 ret->Start(); \
                 return ret; \

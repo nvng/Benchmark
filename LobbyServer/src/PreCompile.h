@@ -5,6 +5,8 @@
 #define ____BENCHMARK____
 // #define ENABLE_MULTI_SEND_MUTEX
 
+#define USE_FESTIVAL_IMPL
+
 #define PING_PONG_SERVICE_CLIENT
 #define PING_PONG_BIG_SERVICE_CLIENT
 #define REDIS_SERVICE_CLIENT
@@ -12,29 +14,6 @@
 #define GEN_GUID_SERVICE_CLIENT
 #define MYSQL_SERVICE_CLIENT
 #define MYSQL_BENCHMARK_SERVICE_CLIENT
-
-#define BOOST_SP_DISABLE_THREADS
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/make_shared.hpp>
-
-#include <unordered_map>
-#include <algorithm>
-#include <cmath>
-
-#include <boost/program_options.hpp>
-#include <boost/fiber/all.hpp>
-
-// multi_index_container
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/hashed_index.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/mem_fun.hpp>
-#include <boost/multi_index/composite_key.hpp>
-
-#include <rapidjson/document.h>
 
 // 有些 pb 会在库中使用。
 #include "msg_internal_type.pb.h"
@@ -58,12 +37,13 @@ using namespace nl::net::server;
 #include "Share/GlobalDef.h"
 #include "Share/GlobalSetup.h"
 
-using namespace nl::af::impl;
-
-#include "App.h"
 #include "GenGuidService.h"
 #include "MySqlService.h"
 #include "LogService.h"
+
+using namespace nl::af::impl::_1;
+
+#include "App.h"
 
 #endif // __PRE_COMPILE_H__
 

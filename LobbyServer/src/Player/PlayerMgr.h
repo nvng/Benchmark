@@ -15,8 +15,4 @@ public :
 
 public :
 	bool ReadLevelUpCfg();
-
-public :
-        static constexpr int64_t scPlayerOfflineDataActorArrSize = 1;
-        PlayerOfflineDataActorPtr _playerOfflineDataActorArr[scPlayerOfflineDataActorArrSize];
 };

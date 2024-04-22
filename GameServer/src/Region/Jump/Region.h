@@ -9,15 +9,15 @@ namespace Jump {
 
 class Region : public RegionImpl<Region, Fighter, RegionCfg, MsgRegionInfo, MsgFighterEnter, MsgRegionStateInfo>
 {
-        typedef RegionImpl<Region, Fighter, RegionCfg, MsgRegionInfo, MsgFighterEnter, MsgRegionStateInfo> SuperType;
 public :
+        typedef RegionImpl<Region, Fighter, RegionCfg, MsgRegionInfo, MsgFighterEnter, MsgRegionStateInfo> SuperType;
         typedef Fighter FighterType;
         typedef std::shared_ptr<FighterType> FighterPtr;
 
 public :
         Region(const std::shared_ptr<MailRegionCreateInfo>& cInfo,
                const std::shared_ptr<RegionCfg>& cfg,
-               const GameMgrSession::ActorAgentTypePtr& agent);
+               const GameMgrSession::ActorNetAgentTypePtr& agent);
         ~Region() override;
 
 public :
@@ -26,8 +26,8 @@ public :
 public :
         bool Init() override;
 
-	FighterPtr CreateFighter(const GameLobbySession::ActorAgentTypePtr& p,
-                                 const GameGateSession::ActorAgentTypePtr& cli,
+	FighterPtr CreateFighter(const GameLobbySession::ActorNetAgentTypePtr& p,
+                                 const GameGateSession::ActorNetAgentTypePtr& cli,
                                  const MailReqEnterRegion::MsgReqFighterInfo& info) override;
         bool CheckStart() override;
         void OnFighterDisconnect(const FighterPtr& f) override
