@@ -4,10 +4,12 @@ export cmake_compiler="-DCMAKE_CXX_COMPILER=clang++"
 # export cmake_compiler="-DCMAKE_CXX_COMPILER=g++"
 if [[ "$1" == "d" || "$1" == "debug" ]]; then
         build_type=$1
-        export build_flag=-DCMAKE_BUILD_TYPE=Debug
+        export build_flag="-DCMAKE_BUILD_TYPE=Debug -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -Djemalloc_LIBRARIES=libjemalloc.a"
+        # export build_flag=-DCMAKE_BUILD_TYPE=Debug
 else
         build_type=9999
-        export build_flag=-DCMAKE_BUILD_TYPE=RelWithDebInfo
+        export build_flag="-DCMAKE_BUILD_TYPE=RelWithDebInfo -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -Djemalloc_LIBRARIES=libjemalloc.a"
+        # export build_flag=-DCMAKE_BUILD_TYPE=RelWithDebInfo
         ccache --clear
 fi
 
@@ -18,7 +20,7 @@ if [[ `uname` == 'Darwin' ]]; then
 elif [[ `uname` == 'Linux' ]]; then
     echo "Linux"
     cpus=`grep -c ^processor /proc/cpuinfo`
-    export build_jobs=$[ $cpus / 2 ]
+    export build_jobs=$[ $cpus / 4 ]
 fi
 
 dirs=`ls -d ../*Server ../Benchmark | awk -F/ '{print $2}'`
