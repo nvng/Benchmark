@@ -10,49 +10,7 @@ namespace nl::net
 #define NET_MODEL_NAME          E_LOG_MT_Net
 #define HTTP_NET_MODEL_NAME     E_LOG_MT_NetHttp
 
-struct stHttpReq
-{
-        stHttpReq() = default;
-
-        explicit stHttpReq(auto& ctx)
-                : _socket(std::make_shared<boost::asio::ip::tcp::socket>(ctx))
-        {
-        }
-
-        ~stHttpReq()
-        {
-                Reply("{}");
-        }
-
-        bool Reply(std::string_view data)
-        {
-                if (_socket)
-                {
-                        _response.set(boost::beast::http::field::content_type, "application/json;charset=UTF-8");
-                        _response.set(boost::beast::http::field::content_length, fmt::format_int(data.length()).str());
-                        boost::beast::ostream(_response.body()) << data;
-
-                        boost::beast::http::async_write(*_socket, _response, [s{std::move(_socket)}](auto ec, std::size_t size) mutable {
-                                // LOG_INFO("1111111 size:{} socket:{} ec[{}]", size, s->is_open(), ec.what());
-                                s->shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
-                                // LOG_INFO("333333333 ec[{}]", ec.what());
-                        });
-                        return true;
-                }
-                return false;
-        }
-
-        std::shared_ptr<boost::asio::ip::tcp::socket> _socket;
-        boost::beast::flat_buffer _buf;
-        boost::beast::http::request<boost::beast::http::string_body> _req;
-        boost::beast::http::response<boost::beast::http::dynamic_body> _response;
-};
-typedef std::shared_ptr<stHttpReq> stHttpReqPtr;
-
-struct stMailHttpReq : public stActorMailBase
-{
-        stHttpReqPtr _httpReq;
-};
+// {{{ ISession
 
 enum ESessionFlagType
 {
@@ -61,6 +19,7 @@ enum ESessionFlagType
         E_SFT_AutoRebind = 1L << 3,
         E_SFT_InSend = 1L << 4,
         E_SFT_Terminate = 1L << 5,
+        E_SFT_FirstPkg = 1L << 5,
 };
 
 #define DEFINE_SESSION_FLAG(flag) \
@@ -118,6 +77,7 @@ public :
         DEFINE_SESSION_FLAG(AutoRebind);
         DEFINE_SESSION_FLAG(InSend);
         DEFINE_SESSION_FLAG(Terminate);
+        DEFINE_SESSION_FLAG(FirstPkg);
 
         FORCE_INLINE bool IsCrash() const { return GetAppBase()->IsInitSuccess() ? false : GetAppBase()->IsCrash(); }
 
@@ -140,6 +100,55 @@ private :
 typedef std::shared_ptr<ISession> ISessionPtr;
 typedef std::weak_ptr<ISession> ISessionWeakPtr;
 
+// }}}
+
+// {{{ NetMgrBase
+
+struct stHttpReq
+{
+        stHttpReq() = default;
+
+        explicit stHttpReq(auto& ctx)
+                : _socket(std::make_shared<boost::asio::ip::tcp::socket>(ctx))
+                  , _response(std::make_shared<boost::beast::http::response<boost::beast::http::dynamic_body>>())
+        {
+        }
+
+        ~stHttpReq()
+        {
+                Reply("{}");
+        }
+
+        bool Reply(std::string_view data)
+        {
+                if (_socket)
+                {
+                        _response->set(boost::beast::http::field::content_type, "application/json;charset=UTF-8");
+                        _response->set(boost::beast::http::field::content_length, fmt::format_int(data.length()).str());
+                        boost::beast::ostream(_response->body()) << data;
+
+                        boost::beast::http::async_write(*_socket, *_response, [r{_response}, s{std::move(_socket)}](auto ec, std::size_t size) mutable {
+                                // LOG_INFO("1111111 size:{} socket:{} ec[{}]", size, s->is_open(), ec.what());
+                                s->shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+                                // LOG_INFO("333333333 ec[{}]", ec.what());
+                        });
+                        return true;
+                }
+                return false;
+        }
+
+        std::shared_ptr<boost::asio::ip::tcp::socket> _socket;
+        boost::beast::flat_buffer _buf;
+        boost::beast::http::request<boost::beast::http::string_body> _req;
+        std::shared_ptr<boost::beast::http::response<boost::beast::http::dynamic_body>> _response;
+};
+typedef std::shared_ptr<stHttpReq> stHttpReqPtr;
+
+struct stMailHttpReq : public stActorMailBase
+{
+        stHttpReqPtr _httpReq;
+};
+
 template <typename _Tag>
 class NetMgrBase : public Singleton<NetMgrBase<_Tag>>
 {
@@ -152,7 +161,7 @@ public :
         virtual ~NetMgrBase() = default;
 
         bool Init(int64_t threadCnt = 1
-                  , const std::string& flagName = "default"
+                  , const std::string& flagName = "def"
                   , const std::unordered_set<std::string>& ipList = {})
         {
                 _ipList = ipList;
@@ -336,14 +345,14 @@ public :
                 }
 
                 auto _resolver = std::make_shared<boost::asio::ip::tcp::resolver>(*DistCtx(++_distIOCtxIdx));
-                _resolver->async_resolve(host, port, [s, _resolver, _req, cb{std::move(cb)}](const auto& ec, const auto& results) {
+                _resolver->async_resolve(host, port, [s, _resolver, _req, cb{std::move(cb)}](const auto& ec, const auto& ep) {
                         if (ec)
                         {
                                 cb("", ec);
                                 return;
                         }
 
-                        s->async_connect(results, [s, _req, cb{std::move(cb)}](const auto& ec, auto) {
+                        s->async_connect(ep, [s, _req, cb{std::move(cb)}](const auto& ec, auto) {
                                 if (ec)
                                 {
                                         cb("", ec);
@@ -396,14 +405,14 @@ private :
                 auto req = std::make_shared<stHttpReq>(*DistCtx(++_distIOCtxIdx));
                 acceptor->async_accept(*req->_socket, [req, acceptor, cb](const auto& ec) {
                         boost::beast::http::async_read(*req->_socket, req->_buf, req->_req, [req, cb](const auto& ec, auto bytesTransferred) mutable {
-                                req->_response.version(req->_req.version());
-                                req->_response.keep_alive(false);
+                                req->_response->version(req->_req.version());
+                                req->_response->keep_alive(false);
 
                                 switch (req->_req.method())
                                 {
                                 case boost::beast::http::verb::get :
-                                        req->_response.result(boost::beast::http::status::ok);
-                                        req->_response.set(boost::beast::http::field::server, "Beast");
+                                        req->_response->result(boost::beast::http::status::ok);
+                                        req->_response->set(boost::beast::http::field::server, "Beast");
                                         break;
                                 case boost::beast::http::verb::post :
                                         break;
@@ -479,5 +488,7 @@ private :
 };
 
 typedef NetMgrBase<stDefaultTag> NetMgr;
+
+// }}}
 
 }; // end of namespace nl::net

@@ -5,6 +5,7 @@
 #if defined(GM_SERVICE_SERVER) || defined(GM_SERVICE_CLIENT)
 
 SPECIAL_ACTOR_DEFINE_BEGIN(GMActor, E_MIMT_GM);
+
 public :
         bool Init() override;
 

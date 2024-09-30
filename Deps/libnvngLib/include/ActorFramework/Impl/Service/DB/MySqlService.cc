@@ -7,7 +7,7 @@ bool MySqlService::Init()
                 return false;
 
 #ifdef MYSQL_SERVICE_SERVER
-        if (!MySqlMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_mysqlCfg))
+        if (!MySqlMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_dbCfg->_mysqlCfg))
                 return false;
 #endif
         return true;
@@ -67,9 +67,10 @@ SERVICE_NET_HANDLE(MySqlService::SessionType, E_MIMT_DB, E_MIDBST_ReqDBDataList,
                         IMySqlTaskPtr task;
                         switch (taskType)
                         {
-                        case E_MySql_TT_Version : task = std::make_shared<MySqlVersionTask>(); break;
-                        case E_MySql_TT_Load :    task = std::make_shared<MySqlLoadTask>(); break;
-                        case E_MySql_TT_Save :    task = std::make_shared<MySqlSaveTask>(); break;
+                        case E_MySql_TT_Version :               task = std::make_shared<MySqlVersionTask>(); break;
+                        case E_MySql_TT_Load :                  task = std::make_shared<MySqlLoadTask>(); break;
+                        case E_MySql_TT_Save :                  task = std::make_shared<MySqlSaveTask>(); break;
+                        case E_MySql_TT_CheckIDUsable :         task = std::make_shared<MySqlCheckIDUsableTask>(); break;
                         default : break;
                         }
 
@@ -155,6 +156,7 @@ void MySqlActor::InitDealTaskTimer()
 
 void MySqlActor::InitDelVersionTimer()
 {
+        CheckThreadSafe();
         auto& seq = _versionInfoList.get<by_overtime>();
         auto ie = seq.upper_bound(GetClock().GetSteadyTime());
         seq.erase(seq.begin(), ie);
@@ -169,6 +171,7 @@ void MySqlActor::InitDelVersionTimer()
 
 void MySqlActor::DealTask()
 {
+        CheckThreadSafe();
         auto thisPtr = shared_from_this();
         while (true)
         {
@@ -202,6 +205,7 @@ void MySqlActor::DealTask()
 
 void MySqlActor::InitTerminateTimer()
 {
+        CheckThreadSafe();
         bool allEmpty = true;
         for (int64_t i=E_MySql_TT_None+1; i<EMySqlTaskType_ARRAYSIZE; ++i)
         {
@@ -291,6 +295,7 @@ bool MySqlExecActor::Init()
 
 void MySqlExecActor::InitExecTimer()
 {
+        CheckThreadSafe();
         Exec();
 
         auto weakPtr = weak_from_this();
@@ -303,6 +308,7 @@ void MySqlExecActor::InitExecTimer()
 
 void MySqlExecActor::Exec()
 {
+        CheckThreadSafe();
         // LOG_INFO("2222222222222222 _idx[{}] taskType[{}]", _idx, _taskType);
         auto act = _mysqlAct.lock();
         if (!act)
@@ -626,6 +632,51 @@ void MySqlSaveTask::Exec(const std::shared_ptr<MySqlActor>& act
         }
 
         GetApp()->_saveCnt += reqList.size();
+}
+
+void MySqlCheckIDUsableTask::Exec(const std::shared_ptr<MySqlActor>& act
+                                  , const std::shared_ptr<MySqlExecActor>& execAct
+                                  , const std::unordered_map<uint64_t, std::shared_ptr<IMySqlTask>>& reqList)
+{
+        auto it = reqList.begin();
+        while (reqList.end() != it)
+        {
+                std::string sqlStr = fmt::format("SELECT id FROM data_{} WHERE id IN(", execAct->_idx);
+                sqlStr.reserve(MySqlService::scSqlStrInitSize);
+
+                auto now = GetClock().GetSteadyTime();
+                int64_t cnt = 0;
+                for (; reqList.end()!=it; ++it)
+                {
+                        auto task = it->second;
+                        if (now - task->_reqTime <= IActor::scCallRemoteTimeOut)
+                        {
+                                sqlStr += fmt::format("{},", task->_pb->guid());
+                                if (++cnt >= 1024 * 10)
+                                {
+                                        ++it;
+                                        break;
+                                }
+                        }
+                }
+                sqlStr.pop_back();
+                sqlStr += ");";
+
+                execAct->PauseCostTime();
+                auto result = MySqlMgr::GetInstance()->Exec(sqlStr);
+                for (auto row : result->rows())
+                {
+                        auto id = row.at(0).as_int64();
+                        auto it = reqList.find(id);
+                        if (reqList.end() != it)
+                                it->second->_pb->set_version(1);
+                }
+
+                execAct->ResumeCostTime();
+
+                GetApp()->_checkIDCnt += cnt;
+                GetApp()->_checkIDSize += sqlStr.size();
+        }
 }
 
 #endif

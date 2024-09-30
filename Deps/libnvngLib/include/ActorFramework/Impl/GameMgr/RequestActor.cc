@@ -3,7 +3,7 @@
 #include "GameMgrLobbySession.h"
 
 RequestActor::RequestActor(uint64_t id)
-        : SuperType(id, 1 << 13)
+        : SuperType(id, 1 << 10)
 {
 }
 

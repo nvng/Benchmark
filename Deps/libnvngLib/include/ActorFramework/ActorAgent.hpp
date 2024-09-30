@@ -8,6 +8,8 @@
 namespace nl::net
 {
 
+// {{{ MsgActorAgentHeader
+
 #pragma pack(push,1)
 template <uint8_t _Offset>
 struct MsgActorAgentHeader
@@ -100,6 +102,10 @@ static_assert(sizeof(MsgActorAgentHeader<8>) == sizeof(MsgActorAgentHeader<8>::M
 
 typedef MsgActorAgentHeader<12> MsgActorAgentHeaderType;
 
+// }}}
+
+// {{{ ActorNetMail
+
 template <typename _By, typename _Ay>
 class ActorNetMail: public _By
 {
@@ -158,6 +164,10 @@ public :
         ISession::BuffTypePtr::element_type* _buf = nullptr;
         const ISession::BuffTypePtr _bufRef;
 };
+
+// }}}
+
+// {{{ ActorAgent
 
 template <typename _Ty>
 class ActorAgent : public IActor, public std::enable_shared_from_this<ActorAgent<_Ty>>
@@ -336,7 +346,7 @@ public :
                 }
         }
 
-        ActorCallMailPtr AfterCallPush(boost::fibers::buffered_channel<ActorCallMailPtr>& ch,
+        ActorCallMailPtr AfterCallPush(::nl::af::channel_t<ActorCallMailPtr>& ch,
                                        uint64_t mt,
                                        uint64_t st,
                                        uint16_t& guid) override
@@ -425,6 +435,10 @@ private :
         const uint64_t _id = 0;
         uint32_t _sid = 0;
 };
+
+// }}}
+
+// {{{ ActorAgentSession
 
 template <template<typename, bool, typename, Compress::ECompressType, typename> typename _Ty,
          template <typename> typename _Ay,
@@ -786,6 +800,8 @@ template <template<typename, bool, typename, Compress::ECompressType, typename> 
          typename _Tag,
          uint8_t _Offset>
 std::unordered_map<int64_t, typename ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, _Tag, _Offset>::stAgentListInfoPtr> ActorAgentSession<_Ty, _Ay, _Iy, _Sy, _Ct, _Tag, _Offset>::_agentListBySID;
+
+// }}}
 
 }; // end of namespace nl::net
 

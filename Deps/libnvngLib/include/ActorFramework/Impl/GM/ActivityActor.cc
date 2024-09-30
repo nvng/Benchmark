@@ -149,7 +149,7 @@ void ActivityActor::LoadFromDB()
 
 }
 
-SPECIAL_ACTOR_MAIL_HANDLE(ActivityActor, 0xf, stMailHttpReq)
+SPECIAL_ACTOR_MAIL_HANDLE(ActivityActor, 0xf)
 {
         std::string sqlStr = fmt::format("CREATE TABLE IF NOT EXISTS `activity` ( \
                                          `id` bigint unsigned NOT NULL, \
@@ -250,7 +250,13 @@ void ActivityActor::PackActivity(MsgActivityFestivalCfg& msg)
                         {
                                 auto& paramArr = tmp["param_list"];
                                 for (int64_t j=0; j<paramArr.Size(); ++j)
-                                        msgReward->mutable_param_list()->emplace(paramArr[i].GetInt64(), false);
+                                {
+                                        auto& pItem = paramArr[j];
+                                        if (!pItem.HasMember("id") || !pItem.HasMember("cnt"))
+                                                continue;
+
+                                        msgReward->mutable_param_list()->emplace(pItem["id"].GetInt64(), pItem["cnt"].GetInt64());
+                                }
                         }
                         parseGoodsListFromJson(*msgReward->mutable_goods_list(), tmp["goods_list"]);
                 }

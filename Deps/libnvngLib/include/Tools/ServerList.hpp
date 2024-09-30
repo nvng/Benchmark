@@ -503,6 +503,7 @@ typedef std::shared_ptr<stDBGenGuidItem> stDBGenGuidItemPtr;
 struct stDBServerCfg
 {
         std::map<int64_t, stDBGenGuidItemPtr> _genGuidItemList;
+        stMySqlConfig _mysqlCfg;
 };
 typedef std::shared_ptr<stDBServerCfg> stDBServerCfgPtr;
 
@@ -611,6 +612,11 @@ public :
                                         LOG_FATAL_IF(!_dbCfg->_genGuidItemList.emplace(info->_idx, info).second, "gen_guid idx[{}] 重复!!!", info->_idx);
                                 }
                         }
+
+                        _dbCfg->_mysqlCfg = _mysqlCfg;
+                        _dbCfg->_mysqlCfg._connCnt = 64;
+                        if (dbCfg.HasMember("mysql_conn_cnt"))
+                                _dbCfg->_mysqlCfg._connCnt = dbCfg["mysql_conn_cnt"].GetInt64();
                 }
 
                 return true;

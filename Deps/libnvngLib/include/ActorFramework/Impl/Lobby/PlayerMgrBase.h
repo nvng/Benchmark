@@ -87,6 +87,7 @@ public :
         void Terminate() override;
 
         ::nl::util::SteadyTimer _flush2DBTimer;
+        bool _inGetTimer = false;
         ::nl::util::SteadyTimer _getTimer;
         PlayerOfflineDataListType _dataList;
         std::unordered_map<uint64_t, IActorWeakPtr> _getList;

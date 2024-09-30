@@ -7,6 +7,7 @@
 SPECIAL_ACTOR_DEFINE_BEGIN(AnnouncementActor, E_MCMT_Announcement);
 
 public :
+        AnnouncementActor() : SuperType(1 << 3) { }
         bool Init() override;
         void Sync();
 

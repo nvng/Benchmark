@@ -45,7 +45,8 @@ SPECIAL_ACTOR_DEFINE_BEGIN(MySqlActor, 0x1);
 
 public :
         explicit MySqlActor(int64_t idx)
-                : _idx(idx)
+                : SuperType(1 << 3)
+                  , _idx(idx)
         {
                 for (int64_t i=E_MySql_TT_None+1; i<EMySqlTaskType_ARRAYSIZE; ++i)
                 {
@@ -91,7 +92,7 @@ SPECIAL_ACTOR_DEFINE_BEGIN(MySqlExecActor, 0x2);
 
 public :
         MySqlExecActor(const std::shared_ptr<MySqlActor>& act, int64_t idx, EMySqlTaskType taskType)
-                : _mysqlAct(act), _idx(idx), _taskType(taskType)
+                : SuperType(1 << 3), _mysqlAct(act), _idx(idx), _taskType(taskType)
         {
         }
 
@@ -172,6 +173,8 @@ public :
                 E_MySqlS_Fail = 0x1,
                 E_MySqlS_Success = 0x2,
                 E_MySqlS_New = 0x3,
+                E_MySqlS_DistSesFail = 0x4,
+                E_MySqlS_Timeout = 0x5,
         };
 
 #if 0
@@ -395,7 +398,7 @@ public :
                         item->set_task_type(E_MySql_TT_Load);
                         item->set_guid(id);
                         auto loadRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, loadDBData);
-                        if (!loadRet && 1 != loadRet->list_size())
+                        if (!loadRet || 1 != loadRet->list_size())
                         {
                                 LOG_WARN("玩家[{}] load from mysql 时，超时!!!", id);
                                 return E_MySqlS_Fail;
@@ -521,6 +524,39 @@ public :
                 act->RedisCmd(std::move(cmdList));
 
                 return true;
+        }
+
+        template <typename _Ay>
+        EMySqlServiceStatus CheckIDUsable(const std::shared_ptr<_Ay>& act, uint64_t id)
+        {
+                auto ses = SuperType::DistSession(id);
+                if (!ses)
+                {
+                        int64_t cnt = 0;
+                        SuperType::ForeachSession([&cnt](const auto&) {
+                                ++cnt;
+                        });
+                        LOG_WARN("act[{}] 检查id[{}] 可用性时，db ses 分配失败!!! sesCnt[{}]", act->GetID(), id, cnt);
+                        return E_MySqlS_DistSesFail;
+                }
+
+                auto agent = std::make_shared<typename SessionType::ActorAgentType>(GenReqID(), ses);
+                agent->BindActor(act);
+                ses->AddAgent(agent);
+
+                auto dbData = std::make_shared<MailReqDBDataList>();
+                auto item = dbData->add_list();
+                item->set_task_type(E_MySql_TT_CheckIDUsable);
+                item->set_guid(id);
+
+                auto checkRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, dbData);
+                if (!checkRet)
+                {
+                        LOG_WARN("act[{}] 检查 id[{}] 可用性时，超时!!!", act->GetID(), id);
+                        return E_MySqlS_Timeout;
+                }
+
+                return 1 == checkRet->version() ? E_MySqlS_Fail : E_MySqlS_Success;
         }
 
         template <typename _Ay, typename _Dy>
@@ -680,7 +716,7 @@ public :
                         auto agent = val.first;
                         auto mail = val.second;
                         auto loadRet = Call(MailReqDBDataList, act, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, mail);
-                        if (!loadRet && mail->list_size() != loadRet->list_size())
+                        if (!loadRet || mail->list_size() != loadRet->list_size())
                         {
                                 LOG_WARN("玩家 load from mysql 时，超时!!!");
                                 return E_MySqlS_Fail;
@@ -895,6 +931,15 @@ public :
         MySqlSaveTask() : IMySqlTask(E_MySql_TT_Save) { }
 
         bool DealFromCache(const std::shared_ptr<MySqlActor>& act) override;
+        void Exec(const std::shared_ptr<MySqlActor>& act
+                  , const std::shared_ptr<MySqlExecActor>& execAct
+                  , const std::unordered_map<uint64_t, std::shared_ptr<IMySqlTask>>& reqList) override;
+};
+
+class MySqlCheckIDUsableTask : public IMySqlTask
+{
+public :
+        MySqlCheckIDUsableTask() : IMySqlTask(E_MySql_TT_CheckIDUsable) { }
         void Exec(const std::shared_ptr<MySqlActor>& act
                   , const std::shared_ptr<MySqlExecActor>& execAct
                   , const std::unordered_map<uint64_t, std::shared_ptr<IMySqlTask>>& reqList) override;

@@ -4,6 +4,10 @@
 #include "msg_pay.pb.h"
 
 SPECIAL_ACTOR_DEFINE_BEGIN(PayActor, E_MCMT_Pay);
+
+public :
+        PayActor() : SuperType(1 << 10) { }
+
 SPECIAL_ACTOR_DEFINE_END(PayActor);
 
 // #define PAY_SERVICE_SERVER

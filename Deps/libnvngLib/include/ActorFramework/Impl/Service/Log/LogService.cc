@@ -31,6 +31,7 @@ void LogActor::InitSaveTimer()
 
 void LogActor::DealTimeout()
 {
+        CheckThreadSafe();
         for (int64_t i=0; i<ELogServiceLogMainType_ARRAYSIZE; ++i)
         {
                 auto reg = _sqlPrefixArr[i];
@@ -112,6 +113,7 @@ SERVICE_NET_HANDLE(LogService::SessionType, E_MIMT_Log, E_MILOGST_Log, MsgLogSer
 
 std::shared_ptr<MsgLogServiceLog> LogActor::ResetCache()
 {
+        CheckThreadSafe();
         bool hasData = false;
         std::lock_guard l(_cacheMutex);
         if (_cache)
@@ -139,6 +141,7 @@ std::shared_ptr<MsgLogServiceLog> LogActor::ResetCache()
 
 void LogActor::DealTimeout()
 {
+        CheckThreadSafe();
         std::shared_ptr<MsgLogServiceLog> msg = ResetCache();
         auto ses = LogService::GetInstance()->DistSession(_sesIdx);
         if (msg && ses)

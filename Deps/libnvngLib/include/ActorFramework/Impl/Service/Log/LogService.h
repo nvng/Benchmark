@@ -23,11 +23,11 @@ public :
         void DealTimeout();
 
         const uint64_t _idx = 0;
+        ::nl::util::SteadyTimer _timer;
 
 #ifdef LOG_SERVICE_SERVER
         std::shared_ptr<MsgLogServiceRegisterItem> _sqlPrefixArr[ELogServiceLogMainType_ARRAYSIZE];
         std::vector<std::shared_ptr<MsgLogServiceLog>> _logList;
-        ::nl::util::SteadyTimer _timer;
 #endif
 
 #ifdef LOG_SERVICE_CLIENT

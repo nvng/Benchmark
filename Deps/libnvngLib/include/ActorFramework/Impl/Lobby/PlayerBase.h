@@ -44,7 +44,7 @@ public :
         }
 #endif
 
-        bool Start(std::size_t stackSize = 32 * 1024) override;
+        bool Start(std::size_t stackSize = 128 * 1024) override;
 
         virtual void Online();
         virtual void Offline();
@@ -174,9 +174,9 @@ public :
         // }}}
 
 public :
-        static void PackUpdateGoods(MsgPlayerChange& msg, int64_t t, int64_t id, int64_t num);
-        FORCE_INLINE static void PackUpdateGoods(MsgPlayerChange& msg, const std::tuple<int64_t, int64_t, int64_t>& val)
-        { PackUpdateGoods(msg, std::get<2>(val), std::get<0>(val), std::get<1>(val)); }
+        static void PackUpdateGoods(MsgPlayerChange& msg, int64_t t, int64_t id, int64_t num, int64_t endTime);
+        FORCE_INLINE static void PackUpdateGoods(MsgPlayerChange& msg, const std::tuple<int64_t, int64_t, int64_t, int64_t>& val)
+        { PackUpdateGoods(msg, std::get<2>(val), std::get<0>(val), std::get<1>(val), std::get<3>(val)); }
         FORCE_INLINE static void PackUpdateGoods(MsgPlayerChange& msg, const auto& tList)
         { for (auto& val : tList) PackUpdateGoods(msg, val); }
 

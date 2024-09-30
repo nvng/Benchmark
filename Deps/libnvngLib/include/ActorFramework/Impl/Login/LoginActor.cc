@@ -107,9 +107,23 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
                 uint64_t playerGuid = 0;
                 if (buf.empty())
                 {
-                        playerGuid = GenGuidService::GetInstance()->GenGuid<LoginActor, E_GGT_PlayerGuid>(thisPtr);
-                        if (GEN_GUID_SERVICE_INVALID_GUID == playerGuid)
-                                return;
+                        auto checkDBData = std::make_shared<MailReqDBDataList>();
+                        auto item = checkDBData->add_list();
+                        item->set_task_type(E_MySql_TT_CheckIDUsable);
+                        for (int64_t i=0; i<100; ++i)
+                        {
+                                playerGuid = GenGuidService::GetInstance()->GenGuid<LoginActor, E_GGT_PlayerGuid>(thisPtr);
+                                if (GEN_GUID_SERVICE_INVALID_GUID == playerGuid)
+                                        return;
+
+                                item->set_guid(playerGuid);
+                                auto checkRet = Call(MailReqDBDataList, thisPtr, agent, E_MIMT_DB, E_MIDBST_ReqDBDataList, checkDBData);
+                                if (!checkRet || 1 != checkRet->list_size())
+                                        return;
+
+                                if (1 != checkRet->list(0).version()) // success
+                                        break;
+                        }
 
                         dbInfo.set_app_id(pb->app_id());
                         dbInfo.set_user_id(pb->user_id());

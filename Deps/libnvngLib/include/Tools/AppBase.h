@@ -137,6 +137,10 @@ public :
 private :
         Clock _clock;
 
+private :
+        void Terminate() override;
+        void WaitForTerminate() override;
+
 protected :
 	DISABLE_COPY_AND_ASSIGN(AppBase);
 };

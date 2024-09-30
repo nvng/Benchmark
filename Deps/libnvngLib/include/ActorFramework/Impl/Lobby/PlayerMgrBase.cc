@@ -63,9 +63,9 @@ SPECIAL_ACTOR_MAIL_HANDLE(PlayerMgrActor, 0, MsgClientLogin)
                 p->_actorMgrID = GetID();
 #endif
                 std::weak_ptr<stLoginInfo> weakLoginInfo = loginInfo;
-                boost::fibers::fiber(std::allocator_arg,
+                boost::fibers::fiber(// std::allocator_arg,
                                      // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                                     boost::fibers::segmented_stack{},
+                                     // boost::fibers::segmented_stack{},
                                      [p, weakLoginInfo]() mutable {
                         do
                         {
@@ -89,6 +89,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(PlayerMgrActor, 0, MsgClientLogin)
                                                 break;
                                         }
 
+                                        p->_fiberID = boost::this_fiber::get_id();
                                         if (!p->Init() || !p->LoadFromDB(loginInfo->_pb))
                                         {
                                                 PLAYER_LOG_WARN(p->GetID(),
@@ -242,6 +243,7 @@ void PlayerMgrBase::DealReset(EMsgInternalLocalSubType t, int64_t param)
         for (int64_t i=0; i<_playerMgrActorArrSize+1; ++i)
         {
                 GetPlayerMgrActor(i)->SendPush([m, tl{std::move(tmpList[i])}]() {
+                        // TODO: 数据太大情况下，分时。
                         for (auto& wa : tl)
                         {
                                 auto act = std::dynamic_pointer_cast<PlayerBase>(wa.lock());
@@ -339,14 +341,14 @@ bool PlayerOfflineDataActor::Init()
                 return false;
 
         InitFlush2DBTimer();
-        InitGetTimer();
         return true;
 }
 
 void PlayerOfflineDataActor::InitFlush2DBTimer()
 {
+        CheckThreadSafe();
         auto weakPtr = weak_from_this();
-        _flush2DBTimer.Start(weakPtr, 1.0, [weakPtr]() {
+        _flush2DBTimer.Start(weakPtr, 30.0, [weakPtr]() {
                 auto thisPtr = weakPtr.lock();
                 if (thisPtr)
                 {
@@ -358,6 +360,7 @@ void PlayerOfflineDataActor::InitFlush2DBTimer()
 
 void PlayerOfflineDataActor::Flush2DB(bool isDelete/* = false*/)
 {
+        CheckThreadSafe();
         if (_dataList.empty())
                 return;
 
@@ -372,8 +375,7 @@ void PlayerOfflineDataActor::Flush2DB(bool isDelete/* = false*/)
         auto& seqGuid = _dataList.get<PlayerOfflineData::by_id>();
         auto& seq = _dataList.get<PlayerOfflineData::by_over_time>();
         auto it = seq.begin();
-        // const auto ie = seq.upper_bound(GetClock().GetSteadyTime());
-        const auto ie = seq.end();
+        const auto ie = seq.upper_bound(GetClock().GetSteadyTime());
         while (ie != it)
         {
                 dataList.clear();
@@ -467,19 +469,26 @@ SPECIAL_ACTOR_MAIL_HANDLE(PlayerOfflineDataActor, E_MIOST_Append, stMailPlayerOf
 
 void PlayerOfflineDataActor::InitGetTimer()
 {
-        auto weakPtr = weak_from_this();
-        _getTimer.Start(weakPtr, 0.01, [weakPtr]() {
-                auto thisPtr = weakPtr.lock();
-                if (thisPtr)
-                {
-                        thisPtr->DealGet();
-                        thisPtr->InitGetTimer();
-                }
-        });
+        CheckThreadSafe();
+        if (!_inGetTimer)
+        {
+                _inGetTimer = true;
+                auto weakPtr = weak_from_this();
+                _getTimer.Start(weakPtr, 0.01, [weakPtr]() {
+                        auto thisPtr = weakPtr.lock();
+                        if (thisPtr)
+                        {
+                                thisPtr->_inGetTimer = false;
+                                thisPtr->DealGet();
+                                thisPtr->InitGetTimer();
+                        }
+                });
+        }
 }
 
 void PlayerOfflineDataActor::DealGet()
 {
+        CheckThreadSafe();
         if (_getList.empty())
                 return;
 
@@ -567,6 +576,7 @@ void PlayerOfflineDataActor::DealGet()
 SPECIAL_ACTOR_MAIL_HANDLE(PlayerOfflineDataActor, E_MIOST_Get, stMailPlayerOfflineData)
 {
         _getList.emplace(MySqlMgr::GenDataKey(E_MIMT_Offline, msg->_guid), from);
+        InitGetTimer();
         return nullptr;
 }
 

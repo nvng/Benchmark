@@ -197,7 +197,7 @@ public :
         }
 
         using SuperType::Init;
-        bool Init(const stRedisCfg& cfg, const std::string& flagName = "default")
+        bool Init(const stRedisCfg& cfg, const std::string& flagName = "def")
         {
                 if (sRedisMgrInit.test_and_set())
                 {
@@ -216,15 +216,13 @@ public :
                 _cmdQueueArr[i] = std::make_shared<CmdQueueType>(1 << 15);
 
                 GetAppBase()->_mainChannel.push([idx{i}]() {
-                boost::fibers::fiber(
-                     std::allocator_arg,
-                     // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                     boost::fibers::segmented_stack{},
-                     [idx]() {
+                boost::fibers::fiber([idx]() {
+                        ++RedisMgrBase::GetInstance()->_initCnt;
+
                         std::vector<stReplayMailInfoPtr> mailList;
-                        mailList.reserve(1024);
+                        mailList.reserve(10240);
                         bredis::command_container_t cmdList;
-                        cmdList.reserve(1024);
+                        cmdList.reserve(10240);
                         auto runFunc = [&mailList, &cmdList]() {
                                 auto conn = RedisMgrBase::GetInstance()->GetConn();
                                 while (!RedisMgrBase::GetInstance()->IsTerminate())
@@ -233,29 +231,27 @@ public :
                                         rxBackend->reserve(1024 * 1024 * 8);
                                         Buffer txBuf(*rxBackend);
 
-                                        const int64_t cmdListSize = cmdList.size();
                                         boost::system::error_code ec;
-                                        conn->_conn->async_write(txBuf, std::move(cmdList), boost::fibers::asio::yield_t(ec));
+                                        conn->_conn->async_write(txBuf, cmdList, boost::fibers::asio::yield_t(ec));
                                         if (ec)
                                         {
-                                                LOG_ERROR("redis async_write error!!! ec[{}] mailCnt[{}]", ec.what(), cmdListSize);
+                                                LOG_ERROR("redis async_write error!!! ec[{}] mailCnt[{}]", ec.what(), cmdList.size());
                                                 conn->Reconnect();
                                                 continue;
                                         }
 
-                                        cmdList.reserve(1024);
                                         rxBackend->clear();
                                         Buffer rxBuf(*rxBackend);
-                                        auto [r, readSize] = conn->_conn->async_read(rxBuf, boost::fibers::asio::yield_t(ec), cmdListSize);
+                                        auto [r, readSize] = conn->_conn->async_read(rxBuf, boost::fibers::asio::yield_t(ec), cmdList.size());
                                         if (ec)
                                         {
-                                                LOG_ERROR("redis async_read error!!! ec[{}] mailCnt[{}]", ec.what(), cmdListSize);
+                                                LOG_ERROR("redis async_read error!!! ec[{}] mailCnt[{}]", ec.what(), cmdList.size());
                                                 conn->Reconnect();
                                                 continue;
                                         }
                                         LOG_ERROR_IF(rxBackend->size() != readSize, "rxBackend size[{}] readSize[{}]", rxBackend->size(), readSize);
 
-                                        if (1 != cmdListSize)
+                                        if (1 != cmdList.size())
                                         {
                                                 auto& arr = boost::get<bredis::markers::array_holder_t<Iterator>>(r);
                                                 int64_t idx = 0;
@@ -282,13 +278,15 @@ public :
                                                 }
                                         }
 
-                                        std::exchange(mailList, {});
+                                        CLEAR_AND_CHECK_SIZE(cmdList, 10240);
+                                        CLEAR_AND_CHECK_SIZE(mailList, 10240);
+
                                         break;
                                 }
                         };
 
                         stReplayMailInfoPtr cmdInfo;
-                        while (!FLAG_HAS(RedisMgrBase::GetInstance()->_internalFlag, 1 << E_DBMFT_Terminate))
+                        while (!RedisMgrBase::GetInstance()->IsTerminate())
                         {
                                 if (boost::fibers::channel_op_status::success == RedisMgrBase::GetInstance()->_cmdQueueArr[idx]->try_pop(cmdInfo))
                                 {
@@ -314,12 +312,17 @@ __direct_deal__ :
                                         }
                                 }
                         }
+
+                        if (--RedisMgrBase::GetInstance()->_initCnt <= 0)
+                                FLAG_ADD(RedisMgrBase::GetInstance()->_internalFlag, 1 << E_DBMFT_Terminated);
                 }).detach();
                 });
 
+                /*
                 if (!_cfg._pwd.empty())
                         _cmdQueueArr[i]->push(std::make_shared<stReplayMailInfo>(nullptr, "AUTH", _cfg._pwd));
                 _cmdQueueArr[i]->push(std::make_shared<stReplayMailInfo>(nullptr, "SELECT", _cfg._dbIdx));
+                */
                 }
 
                 return true;
@@ -327,26 +330,79 @@ __direct_deal__ :
 
         bool CreateConn() override
         {
-                boost::system::error_code ec;
                 auto ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(_cfg._ip), _cfg._port);
-
                 while (true)
                 {
+                        boost::system::error_code ec;
                         boost::asio::ip::tcp::socket s(*DistCtx());
-                        s.async_connect(ep, boost::fibers::asio::yield_t(ec));
-                        if (!ec)
+                        do
                         {
+                                s.async_connect(ep, boost::fibers::asio::yield_t(ec));
+                                if (ec)
+                                {
+                                        LOG_WARN("redis 连接失败!!! ec[{}]", ec.what());
+                                        break;
+                                }
+
                                 auto conn = std::make_shared<ConnType>(std::move(s));
+
+                                try
+                                {
+                                        if (!_cfg._pwd.empty())
+                                        {
+                                                if ("OK" != boost::get<std::string_view>(Exec(conn, {"AUTH", _cfg._pwd})))
+                                                        break;
+                                        }
+
+                                        // LOG_INFO("11111111111111111111 idx[{}]", _cfg._dbIdx);
+                                        if ("OK" != boost::get<std::string_view>(Exec(conn, {"SELECT", _cfg._dbIdx})))
+                                                break;
+                                }
+                                catch (...)
+                                {
+                                        break;
+                                }
+
                                 return boost::fibers::channel_op_status::success == SuperType::_connQueue->try_push(conn);
-                        }
-                        else
-                        {
-                                LOG_WARN("redis 连接失败!!! ec[{}]", ec.what());
-                                boost::this_fiber::sleep_for(std::chrono::milliseconds(100));
-                                ec.clear();
-                        }
+                        } while (0);
+
+                        boost::this_fiber::sleep_for(std::chrono::milliseconds(100));
                 }
                 return false;
+        }
+
+        FORCE_INLINE stReplayMailInfo::markers_result_t Exec(const bredis::single_command_t& cmd)
+        {
+                auto conn = RedisMgrBase::GetInstance()->GetConn();
+                return Exec(conn->_conn, cmd);
+        }
+
+        template <typename ... Args>
+        stReplayMailInfo::markers_result_t Exec(const auto& conn, const bredis::single_command_t& cmd)
+        {
+                try
+                {
+                        std::string rxBackend;
+                        Buffer txBuf(rxBackend);
+                        boost::system::error_code ec;
+                        conn->async_write(txBuf, cmd, boost::fibers::asio::yield_t(ec));
+                        if (ec)
+                        {
+                                return stReplayMailInfo::markers_result_t{};
+                        }
+
+                        rxBackend.clear();
+                        Buffer rxBuf(rxBackend);
+                        auto [r, readSize] = conn->async_read(rxBuf, boost::fibers::asio::yield_t(ec), 1);
+                        if (ec)
+                                return stReplayMailInfo::markers_result_t{};
+
+                        return boost::apply_visitor(OuterExtractor<Iterator>(), r);
+                }
+                catch (...)
+                {
+                        return stReplayMailInfo::markers_result_t{};
+                }
         }
 
         template <typename ... Args>
@@ -363,6 +419,13 @@ __direct_deal__ :
         }
 
         DEFINE_CONN_WAPPER(RedisMgrBase);
+
+        void Terminate() override
+        {
+                SuperType::Terminate();
+                for (int64_t i=0; i<_cfg._connCnt; ++i)
+                        _cmdQueueArr[i]->push(nullptr);
+        }
 
 private :
         stRedisCfg _cfg;

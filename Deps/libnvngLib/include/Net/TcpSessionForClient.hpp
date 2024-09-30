@@ -153,13 +153,15 @@ public :
         {
                 SuperType::OnConnect();
 
+#ifndef ____BENCHMARK____
                 // 简单预防 CC 攻击。
                 std::weak_ptr<ThisType> weakSes = shared_from_this();
                 ::nl::util::SteadyTimer::StaticStart(1, [weakSes]() {
                         auto ses = weakSes.lock();
-                        if (ses && 831975662 != ses->_msgHead._param)
+                        if (ses && !ses->IsFirstPkg())
                                 ses->Close(99999999);
                 });
+#endif
 
                 DoRecv();
         }
@@ -200,31 +202,26 @@ private :
                                         ses->OnError(ec);
                         });
 
-                        if (_bufList.capacity() <= 4)
-                        {
-                                _bufList.clear();
-                        }
-                        else
-                        {
-                                std::exchange(_bufList, decltype(_bufList){});
-                                _bufList.reserve(4);
-                        }
+                        CLEAR_AND_CHECK_SIZE(_bufList, 4);
                         _bufRefList.reserve(4);
                 }
         }
 
-        virtual void DoRecv()
+        virtual void DoRecv(int64_t readBufSize = 0)
         {
                 auto ses = shared_from_this();
                 if constexpr (!SocketType::IsWebsocket())
                 {
+#if 0
                         _socket.async_read(boost::asio::buffer((char*)&_msgHead, sizeof(_msgHead)),
                                            // boost::asio::transfer_at_least(sizeof(_msgHead)),
                                            [ses](const auto& ec, std::size_t size) {
                                                    // 客户端，大端 ((831975662<<2)+1)
                                                    if (!ec
                                                        && sizeof(ses->_msgHead) == size
+#ifndef ____BENCHMARK____
                                                        && 831975662 == ses->_msgHead._param
+#endif
                                                        && sizeof(MsgHeaderType) <= ses->_msgHead._size && ses->_msgHead._size <= UINT16_MAX)
                                                    {
                                                            auto buf = std::make_shared<char[]>(ses->_msgHead._size);
@@ -253,6 +250,88 @@ private :
                                                            return;
                                                    }
                                            });
+
+#else
+                        // LOG_INFO("ppppppppppppppppppppppppppp readBufSize[{}]", readBufSize);
+                        if (_buf.size() <= 0 // 已经处理完。
+                            && readBufSize <= 0 // socket 缓存没有可读。
+                            && _buf.capacity() > 1024)
+                        {
+                                boost::asio::streambuf tmp(1024); 
+                                _buf.swap(tmp);
+                        }
+
+                        _socket._socket.async_read_some(_buf.prepare(std::max<int64_t>(1024, readBufSize)),
+                                                        [ses](const auto& ec, std::size_t size) {
+                                                                if (!ec)
+                                                                {
+                                                                        ses->_buf.commit(size);
+                                                                        const int64_t totalSize = ses->_buf.size();
+                                                                        /*
+                                                                        LOG_INFO("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr totalSize[{}] size[{}] cap[{}]"
+                                                                                 , totalSize, size, ses->_buf.capacity());
+                                                                                 */
+                                                                        if (totalSize >= sizeof(MsgHeaderType))
+                                                                        {
+                                                                                auto recvBuf = std::make_shared<char[]>(totalSize);
+                                                                                // ses->_buf.sgetn(recvBuf.get(), totalSize);
+                                                                                // memcpy(recvBuf.get(), boost::asio::buffer_cast<const void*>(ses->_buf.data()), totalSize);
+                                                                                boost::asio::buffer_copy(boost::asio::buffer(recvBuf.get(), totalSize), ses->_buf.data());
+
+#ifndef ____BENCHMARK____
+                                                                                auto msgHead = reinterpret_cast<MsgHeaderType*>(recvBuf.get());
+                                                                                if (831975662 != msgHead->_param)
+                                                                                {
+                                                                                        LOG_WARN("客户端发送 param[{}] 不匹配!!!", (int64_t)(msgHead->_param));
+                                                                                        ses->OnError(ec);
+                                                                                        return;
+                                                                                }
+#endif
+
+                                                                                ses->SetFirstPkg();
+                                                                                auto buf = recvBuf.get();
+                                                                                int64_t leftSize = totalSize;
+                                                                                do
+                                                                                {
+                                                                                        auto msgHead = *reinterpret_cast<MsgHeaderType*>(buf);
+                                                                                        if (msgHead._size < sizeof(MsgHeaderType) || UINT16_MAX < msgHead._size)
+                                                                                        {
+                                                                                                LOG_WARN("客户端发送 size[{}] 不在许可范围[{},{}] 内!!! type[{:#x}]"
+                                                                                                         , msgHead._size, sizeof(MsgHeaderType), UINT16_MAX, msgHead._type);
+                                                                                                ses->OnError(ec);
+                                                                                                return;
+                                                                                        }
+
+                                                                                        if (leftSize < msgHead._size)
+                                                                                                break;
+
+                                                                                        buf += msgHead._size;
+                                                                                        ses->OnRecv(buf-msgHead._size, recvBuf);
+
+                                                                                        leftSize = totalSize - (int64_t)(buf-recvBuf.get());
+                                                                                } while (leftSize >= sizeof(MsgHeaderType));
+                                                                                ses->_buf.consume(buf-recvBuf.get());
+                                                                        }
+
+                                                                        boost::system::error_code tmpEC;
+                                                                        boost::asio::socket_base::bytes_readable cmd(true);
+                                                                        ses->_socket._socket.io_control(cmd, tmpEC);
+                                                                        if (!tmpEC)
+                                                                        {
+                                                                                ses->DoRecv(cmd.get());
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                                ses->OnError(tmpEC);
+                                                                                return;
+                                                                        }
+                                                                }
+                                                                else
+                                                                {
+                                                                        ses->OnError(ec);
+                                                                }
+                                                        });
+#endif
                 }
                 else
                 {
@@ -306,9 +385,7 @@ public :
         }
 
 private :
-        MsgHeaderType _msgHead;
         boost::asio::streambuf _buf;
-
         SpinLock _bufListMutex;
         std::vector<boost::asio::const_buffer> _bufList;
         std::vector<typename SuperType::BuffTypePtr> _bufRefList;

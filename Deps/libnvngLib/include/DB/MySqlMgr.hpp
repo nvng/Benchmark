@@ -385,6 +385,12 @@ public :
 
         DEFINE_CONN_WAPPER(MySqlMgrWapper<ConnType>);
 
+        void Terminate() override
+        {
+                SuperType::Terminate();
+                FLAG_ADD(SuperType::_internalFlag, 1 << E_DBMFT_Terminated);
+        }
+
 private :
         stMySqlConfig _cfg;
 };

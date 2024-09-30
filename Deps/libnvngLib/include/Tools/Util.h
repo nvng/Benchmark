@@ -49,9 +49,18 @@ constexpr static FORCE_INLINE uint64_t Next2N(uint64_t x)
         return ret;
 }
 
-extern thread_local std::mt19937_64 RandGen;
+#define CLEAR_AND_CHECK_SIZE(l, s) \
+        l.clear(); \
+        if (l.capacity() > s) { \
+                std::exchange(l, {}); \
+                l.reserve(s); \
+        }
 
 void PrintBit(const char* p, size_t size, int perLine = 10);
+
+// {{{ Rand
+
+extern thread_local std::mt19937_64 RandGen;
 
 inline bool DoubleEqual(double lhs, double rhs)
 { return fabs(lhs - rhs) < 0.00001; }
@@ -96,6 +105,8 @@ inline std::vector<_Ty> Random(std::vector<_Ty>& tList, int64_t x)
 }
 
 std::string GenRandStr(int64_t size);
+
+// }}}
 
 #define FLAG_ADD(val, flag) ((val) |= (flag))
 #define FLAG_SET(val, flag) ((val) = (flag))

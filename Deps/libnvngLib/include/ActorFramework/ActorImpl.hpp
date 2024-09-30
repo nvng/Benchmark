@@ -49,6 +49,7 @@ public :
 protected :
         virtual bool Init()
         {
+                CheckThreadSafe();
                 return true;
         }
 
@@ -64,7 +65,7 @@ public :
         uint64_t GetID() const override { return _id; }
         IService* GetService() override { return ServiceType::GetService(); }
 
-        virtual bool Start(std::size_t stackSize = 32 * 1024)
+        virtual bool Start(std::size_t stackSize = 128 * 1024)
         {
                 auto thisPtr = reinterpret_cast<ImplType*>(this)->shared_from_this();
                 if (!ServiceType::GetService()->AddActor(thisPtr))
@@ -74,10 +75,12 @@ public :
                 }
 
                 GetAppBase()->_mainChannel.push([thisPtr]() {
-                        boost::fibers::fiber(std::allocator_arg,
+                        boost::fibers::fiber(// std::allocator_arg,
                                              // boost::fibers::fixedsize_stack{ stackSize },
-                                             boost::fibers::segmented_stack{},
+                                             // boost::fibers::protected_fixedsize_stack{ stackSize },
+                                             // boost::fibers::segmented_stack{},
                                              [thisPtr]() {
+                                                     thisPtr->_fiberID = boost::this_fiber::get_id();
                                                      if (thisPtr->Init())
                                                      {
                                                              thisPtr->Run();
@@ -98,12 +101,12 @@ public :
         {
                 if (boost::fibers::channel_op_status::success != _msgQueue.try_push(m))
                 {
-                        LOG_ERROR("send 阻塞!!!");
+                        LOG_ERROR("send 阻塞!!! type[{:#x}]", m->Type());
                         if (!IsTerminate())
                                 _msgQueue.push(m);
                         else
-                                LOG_WARN("actor id:{} 已停止，mail 被丢弃!!!", GetID());
-                        LOG_WARN("send 阻塞结束!!!");
+                                LOG_WARN("actor id:{} 已停止，mail 被丢弃!!! type[{:#x}]", GetID(), m->Type());
+                        LOG_WARN("send 阻塞结束!!! type[{:#x}]", m->Type());
                 }
         }
 
@@ -130,7 +133,7 @@ public :
                 Push(m);
         }
 
-        ActorCallMailPtr AfterCallPush(boost::fibers::buffered_channel<ActorCallMailPtr>& ch,
+        ActorCallMailPtr AfterCallPush(channel_t<ActorCallMailPtr>& ch,
                                        uint64_t mt,
                                        uint64_t st,
                                        uint16_t& guid) override
@@ -285,24 +288,22 @@ public :
                 EMPTY_CALL_RET();
 
                 std::weak_ptr<ThisType> weakAct = thisPtr;
-                ::nl::net::NetMgrBase<_Tag>::GetInstance()->HttpReq(url, body, [weakAct, guid](std::string_view body, const auto& ec) {
-                        if (!ec)
+                ::nl::net::NetMgrBase<_Tag>::GetInstance()->HttpReq(url, body, [url, weakAct, guid](std::string_view body, const auto& ec) {
+                        auto act = weakAct.lock();
+                        if (act)
                         {
-                                auto act = weakAct.lock();
-                                if (act)
+                                std::shared_ptr<stHttpReqReply> msg;
+                                if (!ec)
                                 {
-                                        auto msg = std::make_shared<stHttpReqReply>();
+                                        msg = std::make_shared<stHttpReqReply>();
                                         msg->_body = std::move(body);
-                                        act->CallRet(msg, 0, 0, guid);
                                 }
-                        }
-                        else
-                        {
-                                if (boost::asio::error::timed_out == ec.value())
+                                else
                                 {
-                                        auto act = weakAct.lock();
-                                        LOG_WARN("http req time out id[{}]", act ? act->GetID() : 0);
+                                        LOG_WARN("http req time out id[{}] url[{}] ecc[{}], ecw[{}]"
+                                                 , act->GetID(), url, ec.value(), ec.what().substr(0, 128));
                                 }
+                                act->CallRet(msg, 0, 0, guid);
                         }
                 }, contentType);
 
@@ -333,7 +334,7 @@ protected :
                                 double diff = (double)(end-_clock)/CLOCKS_PER_SEC;
                                 double real = (double)(end-realClock)/CLOCKS_PER_SEC;
                                 auto type = mail->Type();
-                                LOG_WARN_IF(diff>=0.001 || real>=0.001,
+                                LOG_WARN_IF(diff>=0.001 || real>=0.1,
                                             "{}",fmt::sprintf("mail type[%#x] mt[%#x] st[%#x] cost[%lfs] real[%lfs]",
                                                               type,
                                                               ActorMailType::MsgMainType(type),
@@ -368,10 +369,18 @@ private :
         clock_t _clock = 0;
 #endif
 
+public :
+        FORCE_INLINE void CheckThreadSafe() const
+        {
+                LOG_FATAL_IF(boost::this_fiber::get_id() != _fiberID
+                             , "actor id[{}] 内部函数被多线程去年!!!", GetID());
+        }
+        boost::fibers::fiber::id _fiberID;
+
 protected :
         // 去重复，因超时，导致后面的原来的call返回造成不一致问题。
-        boost::fibers::buffered_channel<ActorCallMailPtr> _ch;
-        boost::fibers::buffered_channel<IActorMailPtr> _msgQueue;
+        channel_t<ActorCallMailPtr> _ch;
+        channel_t<IActorMailPtr> _msgQueue;
 
 public :
         FORCE_INLINE static void RegisterMailHandler(uint64_t mainType, uint64_t subType, typename ActorMailType::HandleType cb)

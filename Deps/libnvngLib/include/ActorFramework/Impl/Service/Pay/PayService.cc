@@ -299,7 +299,7 @@ bool PayService::Init()
                         }
 
                         LOG_INFO("7777777");
-                        if (E_IET_Success != reqRet->error_type())
+                        if (E_CET_Success != reqRet->error_type())
                         {
                                 code = reqRet->code();
                                 httpMsg = reqRet->msg();
@@ -470,14 +470,14 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_Gift, PayService::SessionType::stS
                 auto payCfg = PayService::GetInstance()->_payCfgListByPay.Get(pb->product_id());
                 if (!payCfg)
                 {
-                        pb->set_error_type(E_IET_Fail);
+                        pb->set_error_type(E_CET_Fail);
                         break;
                 }
 
                 auto mailCfg = MailSys::GetInstance()->_cfgList.Get(1216000001);
                 if (!mailCfg)
                 {
-                        pb->set_error_type(E_IET_Fail);
+                        pb->set_error_type(E_CET_Fail);
                         break;
                 }
 
@@ -485,7 +485,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_Gift, PayService::SessionType::stS
                 auto errorType = BagMgr::GetInstance()->DoDropInternal({{ payCfg->_goodsID, 1 }}, rewardList, 0);
                 if (E_CET_Success != errorType)
                 {
-                        pb->set_error_type(E_IET_Fail);
+                        pb->set_error_type(E_CET_Fail);
                         break;
                 }
 
@@ -499,7 +499,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_Gift, PayService::SessionType::stS
 
                 _mailSys.AddMail(mailCfg->_title, mailCfg->_from, mailCfg->_content, goodsList);
 
-                pb->set_error_type(E_IET_Success);
+                pb->set_error_type(E_CET_Success);
                 auto logGuid = LogService::GetInstance()->GenGuid();
                 std::string str = fmt::format("{}\"userid\":{},\"game_id\":{},\"server_id\":{},\"cp_role_id\":{},\"product_id\":{},\"timestamp\":{},\"sign\":{}{}"
                                               , "{", pb->userid(), pb->game_id(), pb->server_id(), pb->player_guid(), pb->product_id(), pb->timestamp(), pb->sign(), "}");

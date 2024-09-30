@@ -6,7 +6,7 @@ namespace nl::db
 #define DEFINE_CONN_WAPPER(mgr) \
         struct stDBConnWapper { \
                 stDBConnWapper() { mgr::GetInstance()->_connQueue->pop(_conn); } \
-                ~stDBConnWapper() { if (_conn) mgr::GetInstance()->_connQueue->push(_conn); } \
+                ~stDBConnWapper() { if (_conn) mgr::GetInstance()->_connQueue->try_push(_conn); } \
                 void Reconnect() { mgr::GetInstance()->CreateConn(); mgr::GetInstance()->_connQueue->pop(_conn); } \
                 std::shared_ptr<mgr::ConnType> _conn; \
         }; \
@@ -14,7 +14,8 @@ namespace nl::db
 
 enum EDBMgrFlagType
 {
-        E_DBMFT_Terminate = 0,
+        E_DBMFT_Terminate = 0x0,
+        E_DBMFT_Terminated = 0x1,
 };
 
 template <typename ConnType>
@@ -73,16 +74,23 @@ public :
         FORCE_INLINE static constexpr uint64_t GenDataKey(int64_t prefix, int64_t id = 0) { return prefix * 1000 * 1000 * 1000 * 1000LL + id; }
         virtual void Terminate()
         {
-                for (auto& ctx : _ioCtxArr)
-                {
-                        if (ctx && !ctx->stopped())
-                                ctx->stop();
-                }
                 FLAG_ADD(_internalFlag, 1 << E_DBMFT_Terminate);
         }
 
         virtual void WaitForTerminate()
         {
+                while (!FLAG_HAS(_internalFlag, 1 << E_DBMFT_Terminated))
+                {
+                        LOG_WARN("not terminated!!! left cnt[{}]", _initCnt);
+                        boost::this_fiber::sleep_for(std::chrono::milliseconds(100));
+                }
+
+                for (auto& ctx : _ioCtxArr)
+                {
+                        if (ctx && !ctx->stopped())
+                                ctx->stop();
+                }
+
                 for (auto& th : _threadList)
                 {
                         if (th.joinable())
@@ -102,6 +110,7 @@ protected :
         std::vector<std::shared_ptr<boost::asio::io_context>> _ioCtxArr;
         std::shared_ptr<ConnQueueType> _connQueue;
         std::atomic_uint64_t _internalFlag = 0;
+        std::atomic_int64_t _initCnt = 0;
         std::string _markString;
 
 private :

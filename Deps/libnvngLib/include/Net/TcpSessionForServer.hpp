@@ -90,11 +90,7 @@ public :
                 DoRecv();
                 auto ses = ThisType::shared_from_this();
                 GetAppBase()->_mainChannel.push([ses]() {
-                        boost::fibers::fiber(
-                             std::allocator_arg,
-                             // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                             boost::fibers::segmented_stack{},
-                             [ses]() {
+                        boost::fibers::fiber([ses]() {
                                 while (!ses->IsTerminate())
                                 {
                                         auto recvBuf = ses->_recvChannel.value_pop();
@@ -127,11 +123,7 @@ public :
                                 }
                         }).detach();
 
-                        boost::fibers::fiber(
-                             std::allocator_arg,
-                             // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                             boost::fibers::segmented_stack{},
-                             [ses]() {
+                        boost::fibers::fiber([ses]() {
                                 constexpr std::size_t cSendBufInitSize = 1024 * 1024;
                                 auto sendBufRef = std::make_shared<char[]>(cSendBufInitSize);
                                 auto sendBuf = sendBufRef.get() + sizeof(MsgTotalHeadType);
@@ -308,15 +300,7 @@ __end__ :
                                         ses->OnError(ec);
                         });
 
-                        if (_bufList.capacity() <= 4)
-                        {
-                                _bufList.clear();
-                        }
-                        else
-                        {
-                                std::exchange(_bufList, decltype(_bufList){});
-                                _bufList.reserve(4);
-                        }
+                        CLEAR_AND_CHECK_SIZE(_bufList, 4);
                         _bufRefList.reserve(4);
                 }
         }

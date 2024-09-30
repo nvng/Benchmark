@@ -20,12 +20,14 @@ EClientErrorType ConvertFromInternalErrorType(EInternalErrorType iet)
 
 bool PlayerBase::Start(std::size_t stackSize)
 {
+        CheckThreadSafe();
         Run();
         return true;
 }
 
 void PlayerBase::Online()
 {
+        CheckThreadSafe();
         SetAttr<E_PAT_LastLoginTime>(GetClock().GetTimeStamp());
 
         CheckDayChange();
@@ -36,6 +38,7 @@ void PlayerBase::Online()
 
 bool PlayerBase::Flush2DB(bool isDelete)
 {
+        CheckThreadSafe();
         DBPlayerInfo dbInfo;
         Pack2DB(dbInfo);
         return MySqlService::GetInstance()->Save(shared_from_this(), GetID(), dbInfo, "p", isDelete);
@@ -43,6 +46,7 @@ bool PlayerBase::Flush2DB(bool isDelete)
 
 void PlayerBase::Offline()
 {
+        CheckThreadSafe();
         SetAttr<E_PAT_LastLogoutTime>(GetClock().GetTimeStamp());
         Call(MailResult, GetRegion(), E_MCMT_ClientCommon, E_MCCCST_Disconnect, nullptr);
         _clientActor.reset();
@@ -51,14 +55,17 @@ void PlayerBase::Offline()
 
 void PlayerBase::KickOut(int64_t errorType)
 {
+        CheckThreadSafe();
         auto sendMsg = std::make_shared<MsgClientKickout>();
         sendMsg->set_error_type(static_cast<EClientErrorType>(errorType));
 
+        PLAYER_LOG_INFO(GetID(), "玩家[{}] 被踢，原因[{}]!!!", GetID(), errorType);
         Send2Client(E_MCMT_ClientCommon, E_MCCCST_Kickout, sendMsg);
 }
 
 void PlayerBase::OnClientReconnect(ERegionType oldRegionType)
 {
+        CheckThreadSafe();
         auto r = GetRegion();
         if (!r)
                 return;
@@ -98,6 +105,7 @@ void PlayerBase::OnClientReconnect(ERegionType oldRegionType)
 
 void PlayerBase::OnCreateAccount(const std::shared_ptr<MsgClientLogin>& msg)
 {
+        CheckThreadSafe();
         auto now = GetClock().GetTimeStamp();
         SetAttr<E_PAT_CreateTime>(now);
         SetAttr<E_PAT_LastLoginTime>(now);
@@ -113,6 +121,7 @@ void PlayerBase::OnCreateAccount(const std::shared_ptr<MsgClientLogin>& msg)
 
 bool PlayerBase::LoadFromDB(const std::shared_ptr<MsgClientLogin>& loginMsg)
 {
+        CheckThreadSafe();
         // 此时还未添加到 PlayerMgr，actor 也未开始运行，无法接收消息。
 
         DBPlayerInfo dbInfo;
@@ -137,11 +146,13 @@ bool PlayerBase::LoadFromDB(const std::shared_ptr<MsgClientLogin>& loginMsg)
 
 void PlayerBase::AfterInitFromDB()
 {
+        CheckThreadSafe();
         Save2DB();
 }
 
 void PlayerBase::InitFromDB(const DBPlayerInfo& dbInfo)
 {
+        CheckThreadSafe();
         for (int64_t i=0; i<EPlayerAttrType_ARRAYSIZE; ++i)
                 _attrArr[i] = 0;
         const int64_t attrCnt = std::min<int64_t>(EPlayerAttrType_ARRAYSIZE, dbInfo.attr_list_size());
@@ -162,6 +173,7 @@ void PlayerBase::InitFromDB(const DBPlayerInfo& dbInfo)
 
 void PlayerBase::Pack2Client(MsgPlayerInfo& msg)
 {
+        CheckThreadSafe();
         PACK_PLAYER_INFO(msg);
 
         if (_queue)
@@ -172,18 +184,21 @@ void PlayerBase::Pack2Client(MsgPlayerInfo& msg)
 
 void PlayerBase::Pack2DB(DBPlayerInfo& dbInfo)
 {
+        CheckThreadSafe();
         dbInfo.set_version(++_version);
         PACK_PLAYER_INFO(dbInfo);
 }
 
 void PlayerBase::Send2Client(uint64_t mainType, uint64_t subType, const std::shared_ptr<google::protobuf::MessageLite>& msg)
 {
+        CheckThreadSafe();
         if (_clientActor)
                 Send(_clientActor, mainType, subType, msg);
 }
 
 void PlayerBase::SetClient(const LobbyGateSession::ActorAgentTypePtr& client)
 {
+        CheckThreadSafe();
         if (!client)
         {
                 PLAYER_LOG_WARN(GetID(), "玩家[{}] 设置 clientAgent 时，client 为 nullptr!!!", GetID());
@@ -221,6 +236,7 @@ void PlayerBase::SetClient(const LobbyGateSession::ActorAgentTypePtr& client)
 
 int64_t PlayerBase::GetClientSID() const
 {
+        CheckThreadSafe();
         int64_t sid = -1;
         if (_clientActor)
         {
@@ -233,6 +249,7 @@ int64_t PlayerBase::GetClientSID() const
 
 void PlayerBase::InitSavePlayer2DBTimer()
 {
+        CheckThreadSafe();
         if (FLAG_HAS(_internalFlag, E_PIF_InSaveTimer))
                 return;
 
@@ -251,6 +268,7 @@ void PlayerBase::InitSavePlayer2DBTimer()
 
 bool PlayerBase::CheckDayChange()
 {
+        CheckThreadSafe();
         auto now = GetClock().GetTimeStamp();
         if (now - GetAttr<E_PAT_LastDayChangeResetTime>() < DAY_TO_SEC(1))
                 return false;
@@ -261,6 +279,7 @@ bool PlayerBase::CheckDayChange()
 
 void PlayerBase::OnDayChange(bool sync)
 {
+        CheckThreadSafe();
         auto now = GetClock().GetTimeStamp();
         SetAttr<E_PAT_LastDayChangeResetTime>(Clock::TimeClear_Slow(now, Clock::E_CTT_DAY));
 
@@ -271,6 +290,7 @@ void PlayerBase::OnDayChange(bool sync)
 
 bool PlayerBase::CheckDataReset(int64_t h)
 {
+        CheckThreadSafe();
         auto now = GetClock().GetTimeStamp();
         auto diff = now - GetAttr<E_PAT_LastNotZeroResetTime>();
         if (diff < DAY_TO_SEC(1) + HOUR_TO_SEC(h))
@@ -283,6 +303,7 @@ bool PlayerBase::CheckDataReset(int64_t h)
 
 void PlayerBase::OnDataReset(MsgDataResetNoneZero& msg, int64_t h)
 {
+        CheckThreadSafe();
         auto now = GetClock().GetTimeStamp();
         auto zero = Clock::TimeClear_Slow(now, Clock::E_CTT_DAY);
         SetAttr<E_PAT_LastNotZeroResetTime>((now < zero + HOUR_TO_SEC(h)) ? zero - DAY_TO_SEC(1) : zero);
@@ -294,6 +315,7 @@ void PlayerBase::OnDataReset(MsgDataResetNoneZero& msg, int64_t h)
 
 void PlayerBase::ReqEnterRegion(const std::shared_ptr<MsgReqEnterRegion>& msg)
 {
+        CheckThreadSafe();
         ERegionType regionType = msg->region_type();
         msg->set_error_type(E_CET_Success);
         do
@@ -325,6 +347,7 @@ void PlayerBase::ReqEnterRegion(const std::shared_ptr<MsgReqEnterRegion>& msg)
 
 void PlayerBase::Back2MainCity(ERegionType oldRegionType)
 {
+        CheckThreadSafe();
         auto retRegion = GetRegionMgrBase()->RequestEnterMainCity(shared_from_this());
         if (!retRegion)
         {
@@ -345,6 +368,7 @@ void PlayerBase::Back2MainCity(ERegionType oldRegionType)
 
 void PlayerBase::PackUpdatePlayerAttrExtra(EPlayerAttrType t, MsgUpdatePlayerAttr& msg)
 {
+        CheckThreadSafe();
         switch (t)
         {
         case E_PAT_Exp : msg.set_val_1(GetAttr<E_PAT_LV>()); break;
@@ -356,6 +380,7 @@ void PlayerBase::PackUpdatePlayerAttrExtra(EPlayerAttrType t, MsgUpdatePlayerAtt
 
 void PlayerBase::CheckTiLiRecovery()
 {
+        CheckThreadSafe();
         if (_attrArr[E_PAT_TiLiStartRecoverTime] <= 0)
                 return;
         const time_t now = GetClock().GetTimeStamp();
@@ -374,6 +399,7 @@ void PlayerBase::CheckTiLiRecovery()
 template <>
 int64_t PlayerBase::GetAttr<E_PAT_TiLi>()
 {
+        CheckThreadSafe();
         CheckTiLiRecovery();
         return _attrArr[E_PAT_TiLi];
 }
@@ -381,6 +407,7 @@ int64_t PlayerBase::GetAttr<E_PAT_TiLi>()
 template <>
 int64_t PlayerBase::AddAttr<E_PAT_TiLi>(int64_t cnt)
 {
+        CheckThreadSafe();
         CheckTiLiRecovery();
         if (cnt <= 0)
                 return _attrArr[E_PAT_TiLi];
@@ -394,6 +421,7 @@ int64_t PlayerBase::AddAttr<E_PAT_TiLi>(int64_t cnt)
 template <>
 int64_t PlayerBase::AddAttr<E_PAT_TiLi>(MsgPlayerChange& msg, int64_t cnt)
 {
+        CheckThreadSafe();
         auto ret = AddAttr<E_PAT_TiLi>(cnt);
         PackUpdatePlayerAttr<E_PAT_TiLi>(msg);
         return ret;
@@ -402,6 +430,7 @@ int64_t PlayerBase::AddAttr<E_PAT_TiLi>(MsgPlayerChange& msg, int64_t cnt)
 template <>
 bool PlayerBase::DelAttr<E_PAT_TiLi>(int64_t cnt)
 {
+        CheckThreadSafe();
         CheckTiLiRecovery();
         if (cnt <= 0 || _attrArr[E_PAT_TiLi] < cnt)
                 return false;
@@ -414,6 +443,7 @@ bool PlayerBase::DelAttr<E_PAT_TiLi>(int64_t cnt)
 template <>
 bool PlayerBase::DelAttr<E_PAT_TiLi>(MsgPlayerChange& msg, int64_t cnt)
 {
+        CheckThreadSafe();
         auto ret = DelAttr<E_PAT_TiLi>(cnt);
         PackUpdatePlayerAttr<E_PAT_TiLi>(msg);
         return ret;
@@ -421,6 +451,7 @@ bool PlayerBase::DelAttr<E_PAT_TiLi>(MsgPlayerChange& msg, int64_t cnt)
 
 int64_t PlayerBase::GetMoney(int64_t t)
 {
+        CheckThreadSafe();
         switch (t)
         {
         case E_PAT_Coins :      return GetAttr<E_PAT_Coins>();           break;
@@ -434,6 +465,7 @@ int64_t PlayerBase::GetMoney(int64_t t)
 
 int64_t PlayerBase::AddMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt, ELogServiceOrigType logType, uint64_t logParam)
 {
+        CheckThreadSafe();
         int64_t ret = 0;
         switch (t)
         {
@@ -449,6 +481,7 @@ int64_t PlayerBase::AddMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt, ELogS
 
 bool PlayerBase::CheckMoney(int64_t t, int64_t cnt)
 {
+        CheckThreadSafe();
         switch (t)
         {
         case E_PAT_Coins :      return GetAttr<E_PAT_Coins>() >= cnt;           break;
@@ -462,6 +495,7 @@ bool PlayerBase::CheckMoney(int64_t t, int64_t cnt)
 
 int64_t PlayerBase::DelMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt, ELogServiceOrigType logType, uint64_t logParam)
 {
+        CheckThreadSafe();
         int64_t ret = 0;
         switch (t)
         {
@@ -477,6 +511,7 @@ int64_t PlayerBase::DelMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt, ELogS
 
 bool PlayerBase::AddExp(int64_t exp, ELogServiceOrigType logType, uint64_t logParam)
 {
+        CheckThreadSafe();
         if (exp <= 0)
                 return false;
 
@@ -494,7 +529,7 @@ bool PlayerBase::AddExp(int64_t exp, ELogServiceOrigType logType, uint64_t logPa
         return GetAttr<E_PAT_LV>() != oldLV;
 }
 
-void PlayerBase::PackUpdateGoods(MsgPlayerChange& msg, int64_t t, int64_t id, int64_t num)
+void PlayerBase::PackUpdateGoods(MsgPlayerChange& msg, int64_t t, int64_t id, int64_t num, int64_t endTime)
 {
         if (0 != id)
         {
@@ -502,6 +537,7 @@ void PlayerBase::PackUpdateGoods(MsgPlayerChange& msg, int64_t t, int64_t id, in
                 info->set_type(t);
                 info->set_id(id);
                 info->set_num(num);
+                info->set_end_time(endTime);
         }
 }
 
@@ -512,6 +548,7 @@ void PlayerBase::Terminate()
 
 void PlayerBase::OnDisconnect(const IActorPtr& agent)
 {
+        CheckThreadSafe();
         if (!agent)
         {
                 PLAYER_LOG_WARN(GetID(), "玩家[{}] 本地离线，但 agent is nullptr!!!", GetID());
@@ -665,6 +702,7 @@ ACTOR_MAIL_HANDLE(PlayerBase, E_MCMT_ClientCommon, E_MCCCST_Login, stLoginInfo)
 
 void PlayerBase::InitDeletePlayerTimer(uint64_t deleteUniqueID, double internal/* = 30.0*/)
 {
+        CheckThreadSafe();
         if (FLAG_HAS(_internalFlag, E_PIF_InDeleteTimer))
                 return;
 
@@ -772,6 +810,7 @@ ACTOR_MAIL_HANDLE(PlayerBase, E_MCMT_GameCommon, E_MCGCST_GameDisconnect)
 
 std::shared_ptr<MsgReqQueue> PlayerBase::ReqQueue(const std::shared_ptr<MsgReqQueue>& msg)
 {
+        CheckThreadSafe();
         // PLAYER_DLOG_INFO(GetID(), "玩家[{}] 请求排队，type[{}]!!!", GetID(), msg->region_type());
         do
         {
@@ -820,6 +859,7 @@ std::shared_ptr<MsgReqQueue> PlayerBase::ReqQueue(const std::shared_ptr<MsgReqQu
 
 EInternalErrorType PlayerBase::QueueOpt(EQueueOptType opt, int64_t param)
 {
+        CheckThreadSafe();
         auto q = GetQueue();
         if (q && E_QT_Manual == q->_queueType)
         {
@@ -843,6 +883,7 @@ ACTOR_MAIL_HANDLE(PlayerBase, E_MCMT_QueueCommon, E_MCQCST_ReqQueue, MsgReqQueue
 
 std::shared_ptr<MsgExitQueue> PlayerBase::ExitQueueInternal()
 {
+        CheckThreadSafe();
         PLAYER_DLOG_INFO(GetID(), "玩家[{}] 请求退出排队!!!", GetID());
         auto sendMsg = std::make_shared<MsgExitQueue>();
         do
@@ -876,6 +917,7 @@ std::shared_ptr<MsgExitQueue> PlayerBase::ExitQueueInternal()
 
 void PlayerBase::ExitQueue()
 {
+        CheckThreadSafe();
         Send2Client(E_MCMT_QueueCommon, E_MCQCST_ExitQueue, ExitQueueInternal());
 }
 
@@ -1136,9 +1178,7 @@ ACTOR_MAIL_HANDLE(PlayerBase, E_MIMT_GameCommon, E_MIGCST_RegionKickout)
         auto r = GetRegion();
         if (r && E_RT_MainCity != r->GetType())
         {
-                auto msg = std::make_shared<MsgClientKickout>();
-                msg->set_error_type(E_CET_Success);
-                Send2Client(E_MCMT_ClientCommon, E_MCCCST_Kickout, msg);
+                KickOut(E_CET_Success);
 
                 ERegionType oldRegionType = static_cast<ERegionType>(r->GetType());
                 SetRegion(nullptr);

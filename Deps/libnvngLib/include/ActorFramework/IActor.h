@@ -6,6 +6,8 @@
 namespace nl::af
 {
 
+// {{{
+
 class IActor;
 typedef std::shared_ptr<IActor> IActorPtr;
 typedef std::weak_ptr<IActor> IActorWeakPtr;
@@ -78,6 +80,226 @@ public :
         CallbackType _cb;
 };
 
+// }}}
+
+// {{{ channel wapper
+
+template <typename _Ty>
+struct stChannelWapper
+{
+        typedef boost::fibers::channel_op_status channel_op_status;
+        typedef typename boost::fibers::buffered_channel<_Ty>::value_type value_type;
+
+        explicit stChannelWapper( std::size_t capacity)
+                : _ch(capacity)
+        {
+        }
+
+        stChannelWapper( stChannelWapper const& other) = delete;
+        stChannelWapper & operator=( stChannelWapper const& other) = delete;
+
+        void close() noexcept
+        {
+                try
+                {
+                        _ch.close();
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+        }
+
+        channel_op_status push( value_type const& va)
+        {
+                try
+                {
+                        return _ch.push(va);
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        channel_op_status push( value_type && va)
+        {
+                try
+                {
+                        return _ch.push(std::move(va));
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        template< typename Rep, typename Period >
+        channel_op_status push_wait_for(value_type const& va, std::chrono::duration< Rep, Period > const& timeout_duration)
+        {
+                try
+                {
+                        return _ch.push_wait_for(va, timeout_duration);
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        template< typename Rep, typename Period >
+        channel_op_status push_wait_for( value_type && va, std::chrono::duration< Rep, Period > const& timeout_duration)
+        {
+                try
+                {
+                        return _ch.push_wait_for(va, timeout_duration);
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        template< typename Clock, typename Duration >
+        channel_op_status push_wait_until(value_type const& va, std::chrono::time_point< Clock, Duration > const& timeout_time)
+        {
+                try
+                {
+                        return _ch.push_wait_until(va, timeout_time);
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        template< typename Clock, typename Duration >
+        channel_op_status push_wait_until(value_type && va, std::chrono::time_point< Clock, Duration > const& timeout_time)
+        {
+                try
+                {
+                        return _ch.push_wait_until(va, timeout_time);
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        channel_op_status try_push( value_type const& va)
+        {
+                try
+                {
+                        return _ch.try_push(va);
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        channel_op_status try_push( value_type && va)
+        {
+                try
+                {
+                        return _ch.try_push(std::move(va));
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        channel_op_status pop( value_type & va)
+        {
+                try
+                {
+                        return _ch.pop(va);
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        value_type value_pop()
+        {
+                try
+                {
+                        return _ch.value_pop();
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return value_type();
+        }
+
+        template< typename Rep, typename Period >
+        channel_op_status pop_wait_for(value_type & va, std::chrono::duration< Rep, Period > const& timeout_duration)
+        {
+                try
+                {
+                        return _ch.pop_wait_for(va, timeout_duration);
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        template< typename Clock, typename Duration >
+        channel_op_status pop_wait_until(value_type & va, std::chrono::time_point< Clock, Duration > const& timeout_time)
+        {
+                try
+                {
+                        return _ch.pop_wait_until(va, timeout_time);
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        channel_op_status try_pop( value_type & va)
+        {
+                try
+                {
+                        return _ch.try_pop(va);
+                }
+                catch(...)
+                {
+                        LOG_FATAL("");
+                }
+                return channel_op_status::success;
+        }
+
+        boost::fibers::buffered_channel<_Ty> _ch;
+};
+
+/*
+template <typename _Ty>
+using channel_t = stChannelWapper<_Ty>;
+*/
+
+template <typename _Ty>
+using channel_t = boost::fibers::buffered_channel<_Ty>;
+
+// }}}
+
+// {{{ IActor
+
 class ActorCallMail;
 typedef std::shared_ptr<ActorCallMail> ActorCallMailPtr;
 
@@ -131,7 +353,7 @@ public :
         }
 
         // 调用方式：target->AfterCallPush(_ch); 由 from 提供 _ch，target 提供等待方式。
-        virtual ActorCallMailPtr AfterCallPush(boost::fibers::buffered_channel<ActorCallMailPtr>& ch,
+        virtual ActorCallMailPtr AfterCallPush(channel_t<ActorCallMailPtr>& ch,
                                                uint64_t mt,
                                                uint64_t st,
                                                uint16_t& guid)
@@ -156,6 +378,10 @@ public :
 public :
         static constexpr time_t scCallRemoteTimeOut = 5;
 };
+
+// }}}
+
+// {{{ actor mail
 
 class ActorCallMail : public ActorMail
 {
@@ -197,6 +423,8 @@ public :
         const TimerGuidType _timerGuid = 0;
         std::function<void(TimerGuidType)> _cb;
 };
+
+// }}}
 
 }; // end of namespace nl::af
 
