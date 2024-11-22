@@ -188,10 +188,15 @@ public :
 
         void Connect(const std::string& ip, uint16_t port, const auto& cb)
         {
+                auto serverInfo = GetAppBase()->GetServerInfo<stServerInfoBase>();
+                auto dstIP = ip;
+                if (serverInfo->_ip == dstIP)
+                        dstIP = "127.0.0.1";
+
                 // auto ses = cb(boost::asio::ip::tcp::socket(boost::asio::make_strand(*DistCtx(++_distIOCtxIdx))));
                 auto ses = cb(boost::asio::ip::tcp::socket(*DistCtx(++_distIOCtxIdx)));
                 ses->_createSession = std::move(cb);
-                ses->_connectEndPoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(ip), port);
+                ses->_connectEndPoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(dstIP), port);
                 ses->_socket.async_connect(ses->_connectEndPoint, [ses](const auto& ec) {
                         if (ec
                             || !ses->Init()

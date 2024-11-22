@@ -34,6 +34,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(PlayerMgrActor, 0, MsgClientLogin)
                          playerGuid, GetID(), LobbyGateSession::ActorAgentType::GenUniqueID(ses, loginInfo->_from));
         auto clientActor = std::make_shared<LobbyGateSession::ActorAgentType>(loginInfo->_from, ses);
         loginInfo->_clientAgent = clientActor;
+        loginInfo->_pb = msg;
         auto p = std::dynamic_pointer_cast<PlayerBase>(GetPlayerMgrBase()->GetActor(playerGuid));
         if (p)
         {
@@ -64,8 +65,8 @@ SPECIAL_ACTOR_MAIL_HANDLE(PlayerMgrActor, 0, MsgClientLogin)
 #endif
                 std::weak_ptr<stLoginInfo> weakLoginInfo = loginInfo;
                 boost::fibers::fiber(std::allocator_arg,
-                                     // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                                     boost::fibers::segmented_stack{},
+                                     boost::fibers::protected_fixedsize_stack{ 32 * 1024 },
+                                     // boost::fibers::segmented_stack{},
                                      [p, weakLoginInfo]() mutable {
                         do
                         {
@@ -89,7 +90,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(PlayerMgrActor, 0, MsgClientLogin)
                                                 break;
                                         }
 
-                                        if (!p->Init())
+                                        if (!p->Init() || !p->LoadFromDB(loginInfo->_pb))
                                         {
                                                 PLAYER_LOG_WARN(p->GetID(),
                                                                 "玩家[{}] 登录时，init fail!!!",

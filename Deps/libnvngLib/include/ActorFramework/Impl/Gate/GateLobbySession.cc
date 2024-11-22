@@ -29,7 +29,6 @@ bool GateLobbySession::InitOnce()
 
 GateLobbySession::~GateLobbySession()
 {
-        NetMgrImpl::GetInstance()->RemoveSession(E_GST_Lobby, this);
 }
 
 void GateLobbySession::OnConnect()
@@ -61,6 +60,7 @@ void GateLobbySession::OnClose(int32_t reasonType)
         }
 
 	SuperType::OnClose(reasonType);
+        NetMgrImpl::GetInstance()->RemoveSession(E_GST_Lobby, this);
 }
 
 void GateLobbySession::MsgHandleServerInit(const ISessionPtr& ses, typename ISession::BuffTypePtr::element_type* buf, const ISession::BuffTypePtr& bufRef)

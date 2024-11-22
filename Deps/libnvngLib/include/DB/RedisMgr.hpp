@@ -179,8 +179,8 @@ public :
                 GetAppBase()->_mainChannel.push([idx{i}]() {
                 boost::fibers::fiber(
                      std::allocator_arg,
-                     // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                     boost::fibers::segmented_stack{},
+                     boost::fibers::protected_fixedsize_stack{ 32 * 1024 },
+                     // boost::fibers::segmented_stack{},
                      [idx]() {
                         std::vector<stReplayMailInfoPtr> mailList;
                         mailList.reserve(1024);
@@ -276,11 +276,12 @@ __direct_deal__ :
                         }
                 }).detach();
                 });
-                }
 
                 if (!_cfg._pwd.empty())
-                        Exec(nullptr, "AUTH", _cfg._pwd);
-                Exec(nullptr, "SELECT", _cfg._dbIdx);
+                        _cmdQueueArr[i]->push(std::make_shared<stReplayMailInfo>(nullptr, "AUTH", _cfg._pwd));
+                _cmdQueueArr[i]->push(std::make_shared<stReplayMailInfo>(nullptr, "SELECT", _cfg._dbIdx));
+                }
+
                 return true;
         }
 

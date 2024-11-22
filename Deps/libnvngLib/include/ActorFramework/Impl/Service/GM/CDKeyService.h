@@ -1,5 +1,7 @@
 #pragma once
 
+#if defined(CDKEY_SERVICE_SERVER) || defined(CDKEY_SERVICE_CLIENT) || defined(CDKEY_SERVICE_LOCAL)
+
 #include "ActorFramework/ServiceExtra.hpp"
 #include "msg_cdkey.pb.h"
 
@@ -8,7 +10,7 @@ SPECIAL_ACTOR_DEFINE_BEGIN(CDKeyActor, E_MCMT_CDKey);
 public :
         bool Init() override;
 
-        bool AddInfo(const std::shared_ptr<MsgCDKeyInfo>& info);
+        std::pair<bool, std::string> AddInfo(const std::shared_ptr<MsgCDKeyInfo>& info);
         std::string PackCDKeyInfo2Json(const MsgCDKeyInfo& msg);
         static std::shared_ptr<MsgCDKeyInfo> UnPackCDKeyInfoFromJson(const rapidjson::Value& data);
 
@@ -21,6 +23,7 @@ public :
         ::nl::util::SteadyTimer _saveTimer;
         bool _inTimer = false;
         UnorderedMap<std::string, int64_t> _cdkeyListByKey;
+        std::atomic_uint64_t _groupGuid = 0;
         UnorderedMap<int64_t, std::shared_ptr<MsgCDKeyInfo>> _cdkeyList;
 
 SPECIAL_ACTOR_DEFINE_END(CDKeyActor);
@@ -67,6 +70,8 @@ typedef CDKeyServiceBase<E_ServiceType_Client, stGMServerInfo> CDKeyService;
 
 #ifdef CDKEY_SERVICE_LOCAL
 typedef CDKeyServiceBase<E_ServiceType_Local, stServerInfoBase> CDKeyService;
+#endif
+
 #endif
 
 // vim: fenc=utf8:expandtab:ts=8

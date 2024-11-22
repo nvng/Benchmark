@@ -152,6 +152,15 @@ public :
         void OnConnect() override
         {
                 SuperType::OnConnect();
+
+                // 简单预防 CC 攻击。
+                std::weak_ptr<ThisType> weakSes = shared_from_this();
+                ::nl::util::SteadyTimer::StaticStart(1, [weakSes]() {
+                        auto ses = weakSes.lock();
+                        if (ses && 831975662 != ses->_msgHead._param)
+                                ses->Close(99999999);
+                });
+
                 DoRecv();
         }
 
@@ -166,7 +175,7 @@ public :
 private :
         void DoSend(const typename SuperType::BuffTypePtr& bufRef = nullptr, typename SuperType::BuffTypePtr::element_type* buf = nullptr, std::size_t size = 0)
         {
-                LOCK_GUARD(_bufListMutex, 0, "DoSend");
+                std::lock_guard l(_bufListMutex);
                 if (nullptr != buf || 0 != size)
                 {
                         _bufList.emplace_back(boost::asio::const_buffer{ buf, size });
@@ -212,7 +221,11 @@ private :
                         _socket.async_read(boost::asio::buffer((char*)&_msgHead, sizeof(_msgHead)),
                                            // boost::asio::transfer_at_least(sizeof(_msgHead)),
                                            [ses](const auto& ec, std::size_t size) {
-                                                   if (!ec && ses->_msgHead._size >= sizeof(MsgHeaderType))
+                                                   // 客户端，大端 ((831975662<<2)+1)
+                                                   if (!ec
+                                                       && sizeof(ses->_msgHead) == size
+                                                       && 831975662 == ses->_msgHead._param
+                                                       && sizeof(MsgHeaderType) <= ses->_msgHead._size && ses->_msgHead._size <= UINT16_MAX)
                                                    {
                                                            auto buf = std::make_shared<char[]>(ses->_msgHead._size);
                                                            *reinterpret_cast<MsgHeaderType*>(buf.get()) = ses->_msgHead;
@@ -226,13 +239,16 @@ private :
                                                                                            }
                                                                                            else
                                                                                            {
-                                                                                                   LOG_WARN("async read error ses id[{}] recvSize[{}] needSize[{}]", ses->GetID(), size, ses->_msgHead._size);
+                                                                                                   LOG_WARN_IF(size>0, "async read body error ses id[{}] recvSize[{}] needSize[{}]"
+                                                                                                               , ses->GetID(), size, ses->_msgHead._size);
                                                                                                    ses->OnError(ec);
                                                                                            }
                                                                                    });
                                                    }
                                                    else
                                                    {
+                                                           LOG_WARN_IF(size>0, "async read head error ses id[{}] recvSize[{}] needSize[{}] param[{}]"
+                                                                       , ses->GetID(), size, ses->_msgHead._size, (int64_t)ses->_msgHead._param);
                                                            ses->OnError(ec);
                                                            return;
                                                    }
@@ -241,7 +257,7 @@ private :
                 else
                 {
                         ThisType::_socket._socket.async_read(_buf, [ses](const auto& ec, std::size_t size) {
-                                if (!ec)
+                                if (!ec && size > 0)
                                 {
                                         auto buf = std::make_shared<char[]>(size);
                                         memcpy(buf.get(), ses->_buf.data().data(), size);

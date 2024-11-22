@@ -89,6 +89,7 @@ public :
         FORCE_INLINE std::shared_ptr<SessionType> DistSession(uint64_t id) { assert(false); }
         FORCE_INLINE bool AddSession(const std::shared_ptr<SessionType>& ses) { assert(false); return false; }
         FORCE_INLINE void RemoveSession(const std::shared_ptr<SessionType>& ses) { assert(false); }
+        FORCE_INLINE void ForeachSession(const auto& cb) { assert(false); }
 };
 
 template <typename ServiceType, typename SessionType, typename ServerInfoType>
@@ -124,6 +125,17 @@ public :
                         std::lock_guard l(_sesArrMutex);
                         if (!_sesArr.empty())
                                 _sesArr.erase(std::remove_if(_sesArr.begin(), _sesArr.end(), [ses](const auto& t) { return ses == t.lock(); }));
+                }
+        }
+
+        FORCE_INLINE void ForeachSession(const auto& cb)
+        {
+                std::lock_guard l(_sesArrMutex);
+                for (auto& ws : _sesArr)
+                {
+                        auto ses = ws.lock();
+                        if (ses)
+                                cb(ses);
                 }
         }
 
@@ -204,6 +216,17 @@ public :
                 return ret;
         }
 
+        FORCE_INLINE void ForeachSession(const auto& cb)
+        {
+                std::lock_guard l(_sesArrMutex);
+                for (auto& ws : _sesArr)
+                {
+                        auto ses = ws.lock();
+                        if (ses)
+                                cb(ses);
+                }
+        }
+
 private :
         SpinLock _sesArrMutex;
         std::vector<std::weak_ptr<SessionType>> _sesArr;
@@ -275,7 +298,7 @@ public :
                 if (_actorArr.empty())
                 {
                         auto serverInfo = GetAppBase()->GetServerInfo<stServerInfoBase>();
-                        reinterpret_cast<ImplType*>(this)->StartLocal(serverInfo->_workersCnt * 512, args...);
+                        reinterpret_cast<ImplType*>(this)->StartLocal(serverInfo->_workersCnt * serverInfo->_actorCntPerWorkers, args...);
                 }
 
                 ::nl::net::NetMgrBase<typename SessionType::Tag>::GetInstance()->Listen(port, [](auto&& s, const auto& sslCtx) {
@@ -343,6 +366,8 @@ public :
         { return _sesDistribute.AddSession(std::dynamic_pointer_cast<SessionType>(ses)); }
         FORCE_INLINE void RemoveSession(const ::nl::net::ISessionPtr& ses)
         { _sesDistribute.RemoveSession(std::dynamic_pointer_cast<SessionType>(ses)); }
+        FORCE_INLINE void ForeachSession(const auto& cb)
+        { _sesDistribute.ForeachSession(cb); }
 
 public :
         SessionDistributeType _sesDistribute;

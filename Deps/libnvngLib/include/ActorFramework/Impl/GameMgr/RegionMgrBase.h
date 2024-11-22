@@ -96,9 +96,8 @@ class CompetitionKnockoutRegionMgrActor : public RegionMgrActor
         typedef RegionMgrActor SuperType;
 public :
         explicit CompetitionKnockoutRegionMgrActor(const std::shared_ptr<RegionCfg>& cfg, EQueueType qt)
-                : SuperType(cfg), _queueType(qt), _guid(SnowflakeRegionGuid::Gen())
+                : SuperType(cfg), _queueType(qt)
         {
-                _regionGuidList.reserve(128);
         }
 
         ~CompetitionKnockoutRegionMgrActor()
@@ -113,6 +112,8 @@ public :
         void SyncMatchInfo(time_t nextRoundStartTime = 0);
 
 public :
+        int64_t _parentID = 0;
+        int64_t _guid = 0;
         int64_t _param = 0;
         int64_t _param_1 = 0;
         int64_t _roundCnt = 0;
@@ -127,9 +128,6 @@ public :
         std::vector<stPlayerInfoPtr> _nextRoundPlayerList;
         std::vector<std::shared_ptr<MailSyncPlayerInfo2Region>> _nextRoundRobotList;
         MultiCastWapper<GameMgrLobbySession> _multicastInfo;
-
-        const uint64_t _guid = 0;
-        std::vector<uint64_t> _regionGuidList;
 
         DECLARE_SHARED_FROM_THIS(CompetitionKnockoutRegionMgrActor);
 };
@@ -163,6 +161,7 @@ public :
         const uint64_t _id = 0;
         const ERegionType _regionType = E_RT_None;
         const EQueueType _queueType = E_QT_None;
+        uint64_t _parentID = 0;
         uint64_t _guid = 0;
         int64_t _rank = 0;
         time_t _time = 0;

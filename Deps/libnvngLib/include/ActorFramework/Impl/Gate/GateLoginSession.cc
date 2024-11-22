@@ -9,7 +9,6 @@ const std::string GateLoginSession::scPriorityTaskKey = "gate_login_load";
 
 GateLoginSession::~GateLoginSession()
 {
-	NetMgrImpl::GetInstance()->RemoveSession(E_GST_Login, this);
 }
 
 void GateLoginSession::OnConnect()
@@ -20,6 +19,7 @@ void GateLoginSession::OnConnect()
 void GateLoginSession::OnClose(int32_t reasonType)
 {
 	SuperType::OnClose(reasonType);
+	NetMgrImpl::GetInstance()->RemoveSession(E_GST_Login, this);
 }
 
 void GateLoginSession::MsgHandleServerInit(const ISessionPtr& ses, typename ISession::BuffTypePtr::element_type* buf, const ISession::BuffTypePtr& bufRef)

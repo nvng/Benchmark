@@ -92,13 +92,15 @@ public :
                _flag = msg.flag();
         }
 
-        virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t cnt, int64_t param);
+        virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
 
         virtual bool Reward(const PlayerPtr& p,
                             const std::shared_ptr<FestivalGroup>& group,
                             const std::shared_ptr<Festival>& fes,
                             MsgPlayerChange& msg,
-                            int64_t param);
+                            int64_t param,
+                            ELogServiceOrigType logType,
+                            uint64_t logParam);
 
         virtual void OnOffline(const PlayerPtr& p) { }
         virtual void OnDataReset(const PlayerPtr& p, MsgPlayerChange& msg) { }
@@ -114,7 +116,9 @@ public :
                     const std::shared_ptr<FestivalGroup>& group,
                     const std::shared_ptr<Festival>& fes,
                     MsgPlayerChange& msg,
-                    int64_t param) override;
+                    int64_t param,
+                    ELogServiceOrigType logType,
+                    uint64_t logParam) override;
 };
 // }}}
 
@@ -164,13 +168,15 @@ public :
 
         virtual void OnEvent(MsgPlayerChange& msg, const PlayerPtr& p, int64_t eventType, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
 
-        virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t taskID, int64_t cnt, int64_t param);
+        virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t taskID, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam);
 
         virtual bool Reward(const PlayerPtr& p,
                             const std::shared_ptr<FestivalGroup>& group,
                             int64_t taskID,
                             MsgPlayerChange& msg,
-                            int64_t param);
+                            int64_t param,
+                            ELogServiceOrigType logType,
+                            uint64_t logParam);
 
         int64_t _id = 0;
         int64_t _type = 1;
@@ -325,17 +331,22 @@ public :
                 }
         }
 
-        virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t taskID, int64_t cnt, int64_t param)
+        virtual void Mark(const PlayerPtr& p, MsgPlayerChange& msg, int64_t taskID, int64_t cnt, int64_t param, ELogServiceOrigType logType, uint64_t logParam)
         {
                 auto fes = _fesList.Get(FestivalTask::ParseFesID(taskID));
                 if (fes)
-                        fes->Mark(p, msg, taskID, cnt, param);
+                        fes->Mark(p, msg, taskID, cnt, param, logType, logParam);
         }
 
-        virtual bool Reward(const PlayerPtr& p, int64_t taskID, MsgPlayerChange& msg, int64_t param)
+        virtual bool Reward(const PlayerPtr& p
+                            , int64_t taskID
+                            , MsgPlayerChange& msg
+                            , int64_t param
+                            , ELogServiceOrigType logType
+                            , uint64_t logParam)
         {
                 auto fes = _fesList.Get(FestivalTask::ParseFesID(taskID));
-                return fes ? fes->Reward(p, shared_from_this(), taskID, msg, param) : false;
+                return fes ? fes->Reward(p, shared_from_this(), taskID, msg, param, logType, logParam) : false;
         }
 
         virtual void OnOffline(const PlayerPtr& p)

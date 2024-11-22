@@ -392,6 +392,7 @@ std::string RunPHPFile(const std::string& phpFileName, const std::vector<std::st
 bool BindThreadToCpuCore(int32_t i = -1);
 
 std::string GetIP(int32_t family, const std::string& name);
+std::string GetIPExtra(int32_t family, const std::string& name);
 
 class Proc;
 Proc*& GetCurProcRef();
@@ -738,6 +739,7 @@ enum EServerType
 	E_ST_GM,
         E_ST_Log,
 	E_ST_RobotMgr,
+        E_ST_PkgStatus,
 
 	EServerType_ARRAYSIZE,
         E_ST_None,
@@ -754,6 +756,7 @@ struct stServerInfoBase
 	std::string _faName;
 	std::string _ip;
 	int64_t _workersCnt = 1;
+        int64_t _actorCntPerWorkers = 1;
 	int64_t _netProcCnt = 1;
 	std::vector<uint16_t> _portList;
 };

@@ -202,7 +202,7 @@ PayService::ReqOrderGuid(const PlayerPtr& act)
         }
 }
 
-ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqOrderGuid)
+ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqOrderGuid, MsgPayOrderGuid)
 {
         auto ret = PayService::GetInstance()->ReqOrderGuid(shared_from_this());
         if (ret)
@@ -210,6 +210,10 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqOrderGuid)
                 SetAttr<E_PAT_OrderGuid>(ret->guid());
                 ret->set_error_type(E_CET_Success);
                 LOG_INFO("1111111111 order guid:{}", ret->guid());
+
+                auto logGuid = LogService::GetInstance()->GenGuid();
+                std::string str = fmt::format("{}\"guid\":{},\"cfg_id\":{}{}", "{", ret->guid(), msg->cfg_id(), "}");
+                LogService::GetInstance()->Log<E_LSLMT_Content>(GetID(), str, E_LSLST_Pay, 0, E_LSOT_PayReqOrderGuid, logGuid);
         }
         return ret;
 }
@@ -236,11 +240,15 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqShip, PayService::SessionType::
                         break;
                 }
 
+                auto logGuid = LogService::GetInstance()->GenGuid();
                 std::vector<std::pair<int64_t, int64_t>> rewardList;
                 rewardList.reserve(4);
                 rewardList.emplace_back(payCfg->_goodsID, 1);
                 uint64_t extraDropID = 0;
-                const auto firstBuyTime = GetAttr<E_PAT_FirstBuyTime>();
+                auto firstBuyTime = 0;
+                auto it = _shopMgr._payTimeList.find(payCfg->_id);
+                if (_shopMgr._payTimeList.end() != it)
+                        firstBuyTime = it->second;
                 if (0 == firstBuyTime && 0 != payCfg->_firstBuy)
                         extraDropID = payCfg->_firstBuy;
                 else
@@ -249,12 +257,12 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqShip, PayService::SessionType::
                 auto sendMsg = std::make_shared<MsgPayClientShip>();
                 sendMsg->set_cfg_id(pb->cfg_id());
                 auto playerChange = sendMsg->mutable_player_change();
-                _activityMgr.OnEvent(*playerChange, shared_from_this(), 0 == firstBuyTime ? E_AET_FirstRecharge : E_AET_Recharge, pb->order_amt() * 10000, 0, E_LSOT_Pay, pb->cfg_id());
+                _activityMgr.OnEvent(*playerChange, shared_from_this(), 0 == firstBuyTime ? E_AET_FirstRecharge : E_AET_Recharge, pb->order_amt() * 10000, 0, E_LSOT_PayReqShip, logGuid);
 
                 if (0 != extraDropID)
                         rewardList.emplace_back(extraDropID, 1);
 
-                auto dropRet = BagMgr::GetInstance()->DoDrop(shared_from_this(), *playerChange, rewardList, E_LSOT_Pay, pb->cfg_id());
+                auto dropRet = BagMgr::GetInstance()->DoDrop(shared_from_this(), *playerChange, rewardList, E_LSOT_PayReqShip, logGuid);
                 if (E_CET_Success != dropRet)
                 {
                         pb->set_error_type(E_CET_Fail);
@@ -263,11 +271,16 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqShip, PayService::SessionType::
 
                 pb->set_error_type(E_CET_Success);
                 if (0 == firstBuyTime)
-                        SetAttr<E_PAT_FirstBuyTime>(GetClock().GetTimeStamp());
+                        _shopMgr._payTimeList.emplace(payCfg->_id, GetClock().GetTimeStamp());
                 SetAttr<E_PAT_OrderGuid>(0);
                 
+                _shopMgr.PackPayTimeList(*playerChange);
                 sendMsg->set_error_type(E_CET_Success);
                 Send2Client(E_MCMT_Pay, E_MCPST_ClientShip, sendMsg);
+
+                std::string str = fmt::format("{}\"orderno\":\"{}\",\"orderno_cp\":\"{}\",\"userid\":{},\"game_id\":{},\"order_amt\":{},\"pay_amt\":{},\"pay_time\":{},\"player_guid\":{},\"cfg_id\":{},\"reward\":{},\"sign\":\"{}\",{}"
+                                              , "{", pb->orderno(), pb->orderno_cp(), pb->userid(), pb->game_id(), pb->order_amt(), pb->pay_amt(), pb->pay_time(), pb->player_guid(), pb->cfg_id(), pb->reward(), pb->sign(), "}");
+                LogService::GetInstance()->Log<E_LSLMT_Content>(GetID(), str, E_LSLST_Pay, 1, E_LSOT_PayReqShip, logGuid);
         } while (0);
 
         return pb;

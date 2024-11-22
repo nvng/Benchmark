@@ -107,19 +107,26 @@ void PlayerBase::OnClientReconnect(ERegionType oldRegionType)
         }
 }
 
-void PlayerBase::OnCreateAccount()
+void PlayerBase::OnCreateAccount(const std::shared_ptr<MsgClientLogin>& msg)
 {
         auto now = GetClock().GetTimeStamp();
         SetAttr<E_PAT_CreateTime>(now);
         SetAttr<E_PAT_LastLoginTime>(now);
         AddAttr<E_PAT_LV>(1);
+
+        if (msg)
+        {
+                SetAttr<E_PAT_AppID>(msg->app_id());
+                SetAttr<E_PAT_Platform>(msg->platform());
+                SetAttr<E_PAT_UserID>(msg->user_id());
+        }
 }
 
-bool PlayerBase::LoadFromDB()
+bool PlayerBase::LoadFromDB(const std::shared_ptr<MsgClientLogin>& loginMsg)
 {
         // 此时还未添加到 PlayerMgr，actor 也未开始运行，无法接收消息。
 
-        return DBMgr::GetInstance()->LoadPlayer(shared_from_this());
+        return DBMgr::GetInstance()->LoadPlayer(shared_from_this(), loginMsg);
 
         /*
         std::string cmd = fmt::format("GET p:{}", GetID());
@@ -482,7 +489,7 @@ int64_t PlayerBase::DelMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt, ELogS
         return ret;
 }
 
-bool PlayerBase::AddExp(int64_t exp)
+bool PlayerBase::AddExp(int64_t exp, ELogServiceOrigType logType, uint64_t logParam)
 {
         if (exp <= 0)
                 return false;

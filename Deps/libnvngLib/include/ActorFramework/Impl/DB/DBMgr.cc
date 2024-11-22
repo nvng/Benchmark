@@ -2,98 +2,6 @@
 
 #include "DBLobbySession.h"
 #include "DBLoginSession.h"
-#include "Tools/Util.h"
-
-// {{{
-
-SPECIAL_ACTOR_MAIL_HANDLE(DBGenGuidActor, 0x0)
-{
-        std::string sql = fmt::format("SELECT data FROM data_0 WHERE id={};", _idx);
-        auto result = MySqlMgr::GetInstance()->Exec(sql);
-        if (result->rows().empty())
-        {
-                auto sql = fmt::format("INSERT INTO data_0(id, v, data) VALUES({}, 0, \"\")", _idx);
-                MySqlMgr::GetInstance()->Exec(sql);
-        }
-        else
-        {
-                for (auto row : result->rows())
-                {
-                        auto data = row.at(0).as_string();
-
-                        DBGenGuid dbInfo;
-                        Compress::UnCompressAndParseAlloc<Compress::E_CT_Zstd>(dbInfo, Base64Decode(data));
-
-                        _itemList.reserve(dbInfo.item_list_size());
-                        for (auto& msgItem : dbInfo.item_list())
-                        {
-                                auto item = std::make_shared<stGenGuidItem>();
-                                item->UnPack(msgItem);
-                                _itemList.emplace_back(item);
-                        }
-                }
-        }
-
-        return nullptr;
-}
-
-SPECIAL_ACTOR_MAIL_HANDLE(DBGenGuidActor, 0x1)
-{
-        DBGenGuid dbInfo;
-        for (auto& item : _itemList)
-                item->Pack(*dbInfo.add_item_list());
-
-        auto [bufRef, bufSize] = Compress::SerializeAndCompress<Compress::E_CT_Zstd>(dbInfo);
-        std::string sql = fmt::format("UPDATE data_0 SET data=\"{}\" WHERE id={};", Base64Encode(bufRef.get(), bufSize), _idx);
-        MySqlMgr::GetInstance()->Exec(sql);
-
-        return nullptr;
-}
-
-struct stDBGenGuidActorMail : public stActorMailBase
-{
-        std::weak_ptr<DBLoginSession> _ses;
-        DBLoginSession::MsgHeaderType _msgHead;
-};
-
-SPECIAL_ACTOR_MAIL_HANDLE(DBGenGuidActor, 0x2, stDBGenGuidActorMail)
-{
-        auto ses = msg->_ses.lock();
-        if (!ses || _itemList.empty())
-                return nullptr;
-
-        int64_t idx = RandInRange(0, _itemList.size());
-        auto& info = _itemList[idx];
-        uint64_t guid = info->_cur++;
-        if (info->_cur >= std::max(_minGuid + (idx+1) * _step, _maxGuid))
-                _itemList.erase(std::remove_if(_itemList.begin(), _itemList.end(), [info](const auto& v) { return v == info; }), _itemList.end());
-
-        auto ret = std::make_shared<MsgDBGenGuid>();
-        ret->set_id(guid);
-        ses->SendPB(ret,
-                    E_MIMT_DB,
-                    E_MIDBST_GenGuid,
-                    DBLoginSession::MsgHeaderType::E_RMT_CallRet,
-                    msg->_msgHead._guid,
-                    msg->_msgHead._to,
-                    msg->_msgHead._from);
-
-        return nullptr;
-}
-
-#define GEN_GUID(sesType) \
-        NET_MSG_HANDLE(sesType, E_MIMT_DB, E_MIDBST_GenGuid) { \
-                auto m = std::make_shared<stDBGenGuidActorMail>(); \
-                m->_ses = shared_from_this(); \
-                m->_msgHead = msgHead; \
-                DBMgr::GetInstance()->_genGuidActor->SendPush(0x2, m); \
-                return; \
-        }
-
-GEN_GUID(DBLoginSession);
-
-// }}}
-
 
 // {{{ DBDataSaveActor
 
@@ -690,14 +598,6 @@ bool DBMgr::Init()
                 _dbMgrActorArr[i]->Start();
         }
 
-        const auto& dbCfg = ServerCfgMgr::GetInstance()->_dbCfg;
-        for (auto& item : dbCfg->_genGuidItemList)
-        {
-                _genGuidActor = std::make_shared<DBGenGuidActor>(item->_idx, item->_minGuid, item->_maxGuid);
-                _genGuidActor->SendPush(0, nullptr);
-                _genGuidActor->Start();
-        }
-
         return true;
 }
 
@@ -713,8 +613,6 @@ void DBMgr::Terminate()
                                 act->InitTerminateTimer();
                 });
         }
-
-        _genGuidActor->SendPush(0x1, nullptr);
 }
 
 void DBMgr::WaitForTerminate()

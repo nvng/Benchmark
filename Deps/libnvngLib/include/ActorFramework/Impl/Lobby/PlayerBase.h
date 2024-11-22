@@ -44,14 +44,6 @@ public :
         }
 #endif
 
-        bool Init() override
-        {
-                if (!SuperType::Init())
-                        return false;
-
-                return LoadFromDB();
-        }
-
         bool Start(std::size_t stackSize = 32 * 1024) override;
 
         virtual void Online();
@@ -61,8 +53,8 @@ public :
         void OnDisconnect(const IActorPtr& agent);
 
         virtual void Pack2Client(MsgPlayerInfo& msg);
-        virtual void OnCreateAccount();
-        virtual bool LoadFromDB();
+        virtual void OnCreateAccount(const std::shared_ptr<MsgClientLogin>& loginMsg);
+        virtual bool LoadFromDB(const std::shared_ptr<MsgClientLogin>& loginMsg);
         virtual void InitFromDB(const DBPlayerInfo& dbInfo);
         virtual void AfterInitFromDB();
         FORCE_INLINE void Save2DB() { InitSavePlayer2DBTimer(); }
@@ -151,7 +143,7 @@ public :
         virtual bool CheckMoney(int64_t t, int64_t cnt);
         virtual int64_t DelMoney(MsgPlayerChange& msg, int64_t t, int64_t cnt, ELogServiceOrigType logType, uint64_t logParam);
 
-        bool AddExp(int64_t exp);
+        virtual bool AddExp(int64_t exp, ELogServiceOrigType logType, uint64_t logParam);
 protected :
         void CheckTiLiRecovery();
         int64_t _attrArr[EPlayerAttrType_ARRAYSIZE] = { 0 };

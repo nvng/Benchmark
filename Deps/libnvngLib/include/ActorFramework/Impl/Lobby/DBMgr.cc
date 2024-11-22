@@ -11,7 +11,7 @@ bool DBMgr::Init()
 	return true;
 }
 
-bool DBMgr::LoadPlayer(const PlayerBasePtr& p)
+bool DBMgr::LoadPlayer(const PlayerBasePtr& p, const std::shared_ptr<MsgClientLogin>& loginMsg)
 {
 	auto ses = DistSession(p->GetID());
 	if (!ses)
@@ -40,7 +40,7 @@ bool DBMgr::LoadPlayer(const PlayerBasePtr& p)
                 return false;
         }
 
-        auto loadFromMysqlFunc = [p, agent, versionRet]() {
+        auto loadFromMysqlFunc = [p, agent, versionRet, loginMsg]() {
                 auto loadDBData = std::make_shared<MsgDBData>();
                 loadDBData->set_guid(p->GetID());
                 auto loadMailRet = p->CallInternal(agent, E_MIMT_DB, E_MIDBST_LoadDBData, loadDBData);
@@ -62,7 +62,7 @@ bool DBMgr::LoadPlayer(const PlayerBasePtr& p)
                 {
                         if (buf.empty())
                         {
-                                p->OnCreateAccount();
+                                p->OnCreateAccount(loginMsg);
                                 p->Flush2DB(false);
                         }
                         else
@@ -92,7 +92,7 @@ bool DBMgr::LoadPlayer(const PlayerBasePtr& p)
         {
                 if (0 == versionRet->version())
                 {
-                        p->OnCreateAccount();
+                        p->OnCreateAccount(loginMsg);
                         p->Flush2DB(false);
                 }
                 else

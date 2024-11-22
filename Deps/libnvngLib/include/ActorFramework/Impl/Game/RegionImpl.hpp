@@ -32,6 +32,8 @@ public :
                    const GameMgrSession::ActorAgentTypePtr& agent,
                    int64_t queueSize = 32)
                 : SuperType(cInfo->region_id(), queueSize)
+                  , _parentID(cInfo->parent_id())
+                  , _guid(cInfo->guid())
                   , _regionMgr(agent)
                   , _cfg(cfg)
         {
@@ -300,6 +302,8 @@ public :
         virtual void OnEvent(int64_t eventType) = 0;
 
 protected :
+        int64_t _parentID = 0;
+        int64_t _guid = 0;
 	std::unordered_map<uint64_t, FighterPtr> _loadFighterList;
 	std::unordered_map<uint64_t, FighterPtr> _fighterList;
 

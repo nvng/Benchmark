@@ -10,14 +10,17 @@
 
 ACTOR_MAIL_HANDLE(RedisActor, 0xfff, 0x0)
 {
+        static std::string str = GenRandStr(1024 * 10);
+        RedisCmd("SET", "a", str);
+
         while (true)
         {
                 int64_t i = 0;
                 for (; i<10; ++i)
                 {
-                        auto ret = RedisCmd("GET", "ybt.user:100071");
+                        auto ret = RedisCmd("GET", "a");
                         auto [data, err] = ret->GetStr();
-                        RedisCmd("SET", "ybt.user:100071", data);
+                        RedisCmd("SET", "a", data);
                 }
                 GetApp()->_cnt += i;
         }

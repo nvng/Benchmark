@@ -16,6 +16,7 @@ struct stLoginInfo : public stActorMailBase
 	std::weak_ptr<LobbyGateSession> _ses;
 	LobbyGateSession::ActorAgentTypePtr _clientAgent;
 	uint32_t _from = 0;
+        std::shared_ptr<MsgClientLogin> _pb;
 };
 
 struct stDisconnectInfo : public stActorMailBase

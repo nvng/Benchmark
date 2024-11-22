@@ -100,53 +100,6 @@ struct stDBDealList : public stActorMailBase
         std::vector<stVersionInfoPtr> _versionList;
 };
 
-struct stGenGuidItem
-{
-        uint64_t _idx = 0;
-        uint64_t _cur = 0;
-
-        void Pack(auto& msg)
-        {
-                msg.set_idx(_idx);
-                msg.set_cur(_cur);
-        }
-
-        void UnPack(const auto& msg)
-        {
-                _idx = msg.idx();
-                _cur = msg.cur();
-        }
-};
-typedef std::shared_ptr<stGenGuidItem> stGenGuidItemPtr;
-
-SPECIAL_ACTOR_DEFINE_BEGIN(DBGenGuidActor, 0xefd);
-
-public :
-        DBGenGuidActor(int64_t idx, uint64_t minGuid, uint64_t maxGuid)
-                : _idx(idx)
-                  , _minGuid(minGuid)
-                  , _maxGuid(maxGuid)
-                  , _step((maxGuid - minGuid + 1) / scInitArrSize)
-        {
-                for (int64_t i=0; i<scInitArrSize; ++i)
-                {
-                        auto item = std::make_shared<stGenGuidItem>();
-                        item->_idx = i;
-                        item->_cur = std::min(_minGuid + i*_step, _maxGuid);
-                        if (item->_cur < _maxGuid)
-                                _itemList.emplace_back(item);
-                }
-        }
-
-        const int64_t _idx = 0;
-        const uint64_t _minGuid = 0;
-        const uint64_t _maxGuid = 0;
-        const uint64_t _step = 0;
-        constexpr static int64_t scInitArrSize = 10000;
-        std::vector<stGenGuidItemPtr> _itemList;
-
-SPECIAL_ACTOR_DEFINE_END(DBGenGuidActor);
-
 class DBMgrActor;
 SPECIAL_ACTOR_DEFINE_BEGIN(DBDataSaveActor, 0xefe);
 
@@ -235,8 +188,6 @@ public :
 public :
         FORCE_INLINE std::shared_ptr<DBMgrActor> GetMgrActor(uint64_t id)
         { return _dbMgrActorArr[id & scMgrActorCnt]; }
-
-        DBGenGuidActorPtr _genGuidActor;
 public :
         constexpr static int64_t scSqlStrInitSize = 1024 * 1024;
 private :

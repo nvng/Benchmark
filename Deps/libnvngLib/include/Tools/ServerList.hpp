@@ -4,7 +4,6 @@
 #include <rapidjson/document.h>
 #include <vector>
 
-#include "Tools/Util.h"
 
 template <typename _Ty> inline EServerType CalServerType() { LOG_ERROR(""); return E_ST_None; }
 
@@ -63,6 +62,7 @@ struct stDBServerInfo : public stServerInfoBase
 {
 	uint16_t _lobby_port = 0;
         uint16_t _login_port = 0;
+        uint16_t _gen_guid_service_port = 0;
 };
 typedef std::shared_ptr<stDBServerInfo> stDBServerInfoPtr;
 typedef std::weak_ptr<stDBServerInfo> stDBServerInfoWeakPtr;
@@ -74,6 +74,8 @@ struct stGMServerInfo : public stServerInfoBase
 	uint16_t _http_gm_port = 0;
 	uint16_t _http_activity_port = 0;
         uint16_t _cdkey_port = 0;
+        uint16_t _gm_port = 0;
+        uint16_t _announcement_port = 0;
 };
 typedef std::shared_ptr<stGMServerInfo> stGMServerInfoPtr;
 template <> inline EServerType CalServerType<stGMServerInfo>() { return E_ST_GM; }
@@ -91,6 +93,13 @@ struct stRobotMgrServerInfo : public stServerInfoBase
 };
 typedef std::shared_ptr<stRobotMgrServerInfo> stRobotMgrServerInfoPtr;
 template <> inline EServerType CalServerType<stRobotMgrServerInfo>() { return E_ST_RobotMgr; }
+
+struct stPkgStatusServerInfo : public stServerInfoBase
+{
+        uint16_t _http_port = 0;
+};
+typedef std::shared_ptr<stPkgStatusServerInfo> stPkgStatusServerInfoPtr;
+template <> inline EServerType CalServerType<stPkgStatusServerInfo>() { return E_ST_PkgStatus; }
 
 class ServerListCfgMgr : public Singleton<ServerListCfgMgr>
 {
@@ -160,8 +169,8 @@ public :
 				serverInfo->_ip = item["ip"].GetString();
 				serverInfo->_gate_port = distPort(serverInfo->_sid, 0);
 				serverInfo->_game_port = distPort(serverInfo->_sid, 1);
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt();
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt();
+				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
+				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
 
                                 if (-1 == serverInfo->_workersCnt)
                                         serverInfo->_workersCnt = std::thread::hardware_concurrency();
@@ -186,10 +195,10 @@ public :
 				serverInfo->_sid = item["sid"].GetInt64();
 				serverInfo->_faName = item["fa_name"].GetString();
 				serverInfo->_ip = item["ip"].GetString();
-				serverInfo->_client_port = distPort(serverInfo->_sid, 0);
+				serverInfo->_client_port = item["client_port"].GetInt64();
 
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt();
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt();
+				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
+				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
 
 				checkIPPort(serverInfo, serverInfo->_client_port);
 				checkSID(serverInfo->_sid);
@@ -212,8 +221,9 @@ public :
 				serverInfo->_ip = item["ip"].GetString();
 				serverInfo->_gate_port = distPort(serverInfo->_sid, 0);
 
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt();
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt();
+				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
+				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
+				serverInfo->_actorCntPerWorkers = item["actor_cnt_per_workers"].GetInt64();
 
 				checkIPPort(serverInfo, serverInfo->_gate_port);
 				checkSID(serverInfo->_sid);
@@ -237,8 +247,9 @@ public :
 				serverInfo->_lobby_port = distPort(serverInfo->_sid, 0);
 				serverInfo->_web_port = item["http_port"].GetInt64();
 
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt();
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt();
+				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
+				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
+				serverInfo->_actorCntPerWorkers = item["actor_cnt_per_workers"].GetInt64();
 
 				checkIPPort(serverInfo, serverInfo->_lobby_port);
 				checkSID(serverInfo->_sid);
@@ -260,8 +271,8 @@ public :
 				serverInfo->_faName = item["fa_name"].GetString();
 				serverInfo->_ip = item["ip"].GetString();
 				serverInfo->_gate_port = distPort(serverInfo->_sid, 0);
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt();
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt();
+				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
+				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
 
                                 if (-1 == serverInfo->_workersCnt)
                                         serverInfo->_workersCnt = std::thread::hardware_concurrency();
@@ -282,8 +293,9 @@ public :
 			serverInfo->_ip = item["ip"].GetString();
 			serverInfo->_game_port = distPort(serverInfo->_sid, 0);
 			serverInfo->_lobby_port = distPort(serverInfo->_sid, 1);
-			serverInfo->_workersCnt = item["workers_cnt"].GetInt();
-			serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt();
+			serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
+			serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
+                        serverInfo->_actorCntPerWorkers = item["actor_cnt_per_workers"].GetInt64();
 
                         if (-1 == serverInfo->_workersCnt)
                                 serverInfo->_workersCnt = std::thread::hardware_concurrency();
@@ -308,13 +320,16 @@ public :
 				serverInfo->_ip = item["ip"].GetString();
 				serverInfo->_lobby_port = distPort(serverInfo->_sid, 0);
 				serverInfo->_login_port = distPort(serverInfo->_sid, 1);
-				serverInfo->_workersCnt = item["workers_cnt"].GetInt();
-				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt();
+				serverInfo->_gen_guid_service_port = item["gen_guid_service_port"].GetInt64();
+				serverInfo->_workersCnt = item["workers_cnt"].GetInt64();
+				serverInfo->_netProcCnt = item["net_proc_cnt"].GetInt64();
 
                                 if (-1 == serverInfo->_workersCnt)
                                         serverInfo->_workersCnt = std::thread::hardware_concurrency();
 
 				checkIPPort(serverInfo, serverInfo->_lobby_port);
+				checkIPPort(serverInfo, serverInfo->_login_port);
+				checkIPPort(serverInfo, serverInfo->_gen_guid_service_port);
 				checkSID(serverInfo->_sid);
 				if (!_serverInfoListByType[E_ST_DB].emplace(serverInfo->_sid, serverInfo).second)
 					LOG_FATAL("DBServer sid重复!!! sid[{}]", serverInfo->_sid);
@@ -356,10 +371,15 @@ public :
 			serverInfo->_http_gm_port = item["http_gm_port"].GetInt64();
 			serverInfo->_http_activity_port = item["http_activity_port"].GetInt64();
 			serverInfo->_cdkey_port = item["cdkey_port"].GetInt64();
+			serverInfo->_gm_port = item["gm_port"].GetInt64();
+			serverInfo->_announcement_port = item["announcement_port"].GetInt64();
 
 			checkIPPort(serverInfo, serverInfo->_lobby_port);
 			checkIPPort(serverInfo, serverInfo->_http_gm_port);
 			checkIPPort(serverInfo, serverInfo->_http_activity_port);
+			checkIPPort(serverInfo, serverInfo->_cdkey_port);
+			checkIPPort(serverInfo, serverInfo->_gm_port);
+			checkIPPort(serverInfo, serverInfo->_announcement_port);
 			checkSID(serverInfo->_sid);
 
 			if (!_serverInfoListByType[E_ST_GM].emplace(serverInfo->_sid, serverInfo).second)
@@ -380,6 +400,22 @@ public :
 
 			if (!_serverInfoListByType[E_ST_RobotMgr].emplace(serverInfo->_sid, serverInfo).second)
 				LOG_FATAL("RobotMgrServer sid重复!!! sid[{}]", serverInfo->_sid);
+                }
+
+                if (root.HasMember("pkg_status_server"))
+                {
+                        auto& item = root["pkg_status_server"];
+                        auto serverInfo = std::make_shared<stPkgStatusServerInfo>();
+                        serverInfo->_sid = item["sid"].GetInt64();
+                        serverInfo->_faName = item["fa_name"].GetString();
+                        serverInfo->_ip = item["ip"].GetString();
+                        serverInfo->_http_port = item["http_port"].GetInt64();
+
+                        checkIPPort(serverInfo, serverInfo->_http_port);
+                        checkSID(serverInfo->_sid);
+
+                        if (!_serverInfoListByType[E_ST_PkgStatus].emplace(serverInfo->_sid, serverInfo).second)
+                                LOG_FATAL("PkgStatusServer sid重复!!! sid[{}]", serverInfo->_sid);
                 }
 
 		return true;
@@ -558,6 +594,9 @@ public :
 
                         if (mysqlCfg.HasMember("game_log"))
                                 readMysqlCfgFunc(_mysqlLogCfg, mysqlCfg["game_log"], "game_log");
+
+                        if (mysqlCfg.HasMember("game_misc"))
+                                readMysqlCfgFunc(_mysqlMiscCfg, mysqlCfg["game_misc"], "game_misc");
                 }
 
 		if (_baseCfgDir.empty())
@@ -576,8 +615,11 @@ public :
 
 public :
 	stRedisCfg _redisCfg;
+
 	stMySqlConfig _mysqlCfg;
 	stMySqlConfig _mysqlLogCfg;
+	stMySqlConfig _mysqlMiscCfg;
+
 	stGateServerCfgPtr _gateCfg;
         stDBServerCfgPtr _dbCfg;
 	std::string _baseCfgDir;

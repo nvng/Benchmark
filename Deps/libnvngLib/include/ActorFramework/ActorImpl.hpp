@@ -73,10 +73,10 @@ public :
                         return false;
                 }
 
-                GetAppBase()->_mainChannel.push([thisPtr]() {
+                GetAppBase()->_mainChannel.push([thisPtr, stackSize]() {
                         boost::fibers::fiber(std::allocator_arg,
-                                             // boost::fibers::fixedsize_stack{ stackSize },
-                                             boost::fibers::segmented_stack{},
+                                             boost::fibers::protected_fixedsize_stack{ stackSize },
+                                             // boost::fibers::segmented_stack{},
                                              [thisPtr]() {
                                                      if (thisPtr->Init())
                                                      {

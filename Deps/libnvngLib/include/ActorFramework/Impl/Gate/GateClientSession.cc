@@ -3,6 +3,10 @@
 #include "NetMgrImpl.h"
 #include "Player.h"
 
+#ifdef ANNOUNCEMENT_SERVICE_CLIENT
+#include "AnnouncementService.h"
+#endif
+
 namespace nl::af::impl {
 
 GateClientSession::GateClientSession(typename SuperType::SocketType&& s)
@@ -70,7 +74,15 @@ void GateClientSession::OnRecv(SuperType::BuffTypePtr::element_type* buf, const 
         CheckMsgRecvTimeIllegal(this, mainType, subType);
 
 	switch (mainType)
-	{
+        {
+#ifdef ANNOUNCEMENT_SERVICE_CLIENT
+        case E_MCMT_Announcement :
+                {
+                        auto cache = AnnouncementService::GetInstance()->_cache;
+                        SendPB(cache, E_MCMT_Announcement, E_MCANNST_Sync);
+                }
+                break;
+#endif
 	case E_MCMT_Login :
 		{
 			MsgClientLoginCheck msg;

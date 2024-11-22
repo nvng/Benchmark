@@ -4,6 +4,12 @@
 
 #include "msg_log.pb.h"
 
+/*
+ * MySql:
+ * 1亿条数据，data 10G，index 10G，共20G。
+ * 1亿条数据后插入速率基本不影响。
+ */
+
 SPECIAL_ACTOR_DEFINE_BEGIN(LogActor, E_MIMT_Log);
 
 public :
@@ -44,27 +50,29 @@ consteval const char* LogServiceFmt() { return ""; }
 template <>
 consteval const char* LogServiceTableCreate<E_LSLMT_Content>()
 {
-        return "CREATE TABLE IF NOT EXISTS `log_content_0` ( \
+        return "CREATE TABLE IF NOT EXISTS `log_cont_{}_{}` ( \
                 `id` bigint(0) NOT NULL AUTO_INCREMENT COMMENT '唯一ID', \
-                `guid` bigint(0) NULL DEFAULT NULL COMMENT '玩家ID', \
+                `pid` bigint(0) NULL DEFAULT NULL COMMENT '玩家ID', \
                 `t` bigint(0) NULL DEFAULT NULL COMMENT '类型', \
                 `p` bigint(0) NULL DEFAULT NULL COMMENT '参数', \
-                `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '内容', \
+                `cont` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '内容', \
                 `time` bigint(0) NULL DEFAULT NULL COMMENT '操作时间', \
                 `lt` bigint(0) NULL DEFAULT NULL COMMENT '操作原因', \
-                `group` bigint(0) NULL DEFAULT NULL COMMENT '组ID', \
+                `gid` bigint(0) NULL DEFAULT NULL COMMENT '组ID', \
                 PRIMARY KEY (`id`) USING BTREE, \
-                INDEX `idx_guid`(`guid`) USING BTREE, \
-                INDEX `idx_guid_t`(`guid`, `t`) USING BTREE, \
-                INDEX `idx_lt`(`lt`) USING BTREE, \
-                INDEX `idx_guid_t_p`(`guid`, `t`, `p`) USING BTREE, \
-                INDEX `idx_lt_time`(`guid`, `lt`, `time`) USING BTREE, \
-                INDEX `idx_group`(`group`) USING BTREE \
-                ) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;";
+                INDEX `idx_t`(`t`) USING BTREE, \
+                INDEX `idx_p`(`p`) USING BTREE, \
+                INDEX `idx_time`(`time`) USING BTREE, \
+                INDEX `idx_gid`(`gid`) USING BTREE, \
+                INDEX `idx_pid`(`pid`) USING BTREE \
+                ) ENGINE = InnoDB AUTO_INCREMENT = 0 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;"; \
 }
 
 template <>
-consteval const char* LogServiceSqlPrefix<E_LSLMT_Content>() { return "INSERT INTO log_content_{}(guid, content, t, p, time, lt, group) VALUES"; }
+consteval const char* LogServiceSqlPrefix<E_LSLMT_Content>() { return "INSERT INTO log_cont_{}_{}(pid, cont, t, p, lt, gid, time) VALUES"; }
+
+template <>
+consteval const char* LogServiceFmt<E_LSLMT_Content>() { return "({},'{}',{},{},{},{},{}),"; }
 
 #ifdef LOG_SERVICE_CLIENT
 struct stSnowflakeLogGuidTag;
@@ -148,26 +156,17 @@ public :
         { return SnowflakeLogGuid::Gen(); }
 
         template <ELogServiceLogMainType LogType, typename ... Args>
-        void Log(uint64_t playerGuid, Args ... args)
+        void Log(uint64_t playerGuid, const std::string& cont, Args ... args)
         {
+                static_assert(sizeof...(args) == 4);
                 auto act = GetActor(playerGuid);
                 if (ELogServiceLogMainType_IsValid(LogType) && act)
                 {
                         std::lock_guard l(act->_cacheMutex);
-                        fmt::format_to(std::back_inserter(const_cast<std::string&>(act->_cache->data_list(LogType))), fmt::runtime(LogServiceFmt<LogType>()), playerGuid, std::forward<Args>(args)...);
-                }
-        }
-
-        template <>
-        void Log<E_LSLMT_Content, const std::string&, uint64_t, uint64_t, time_t, ELogServiceOrigType, uint64_t>(uint64_t playerGuid, const std::string& content, uint64_t t, uint64_t p, time_t time, ELogServiceOrigType ot, uint64_t group)
-        {
-                auto act = GetActor(playerGuid);
-                if (act)
-                {
-                        std::lock_guard l(act->_cacheMutex);
-                        fmt::format_to(std::back_inserter(const_cast<std::string&>(act->_cache->data_list(E_LSLMT_Content)))
-                                       , "({}, '{}', {}, {}, {}, {}, {}),"
-                                       , playerGuid, content, t, p, time, ot, group);
+                        fmt::format_to(std::back_inserter(const_cast<std::string&>(act->_cache->data_list(LogType)))
+                                       , fmt::runtime(LogServiceFmt<LogType>())
+                                       , playerGuid, Base64Encode(cont), std::forward<Args>(args)...
+                                       , GetClock().GetTimeStamp());
                 }
         }
 

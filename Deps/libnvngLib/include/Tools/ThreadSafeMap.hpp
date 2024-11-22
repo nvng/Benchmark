@@ -71,6 +71,7 @@ public :
         }
 
         FORCE_INLINE void Clear() { _list.clear(); }
+        FORCE_INLINE std::size_t Empty() { return _list.empty(); }
         FORCE_INLINE std::size_t Size() { return _list.size(); }
 
         FORCE_INLINE void ForeachClear(const auto& cb)

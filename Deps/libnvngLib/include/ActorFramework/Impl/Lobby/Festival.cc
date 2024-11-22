@@ -396,7 +396,8 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Mark, MsgActivityMark)
                                 break;
                         }
 
-                        group->Mark(shared_from_this(), *msg->mutable_player_change(), taskID, commonItem.cnt(), item.param());
+                        auto logGuid = LogService::GetInstance()->GenGuid();
+                        group->Mark(shared_from_this(), *msg->mutable_player_change(), taskID, commonItem.cnt(), item.param(), E_LSOT_FestivalMark, logGuid);
                 }
                 msg->set_error_type(E_CET_Success);
                 Save2DB();
@@ -426,7 +427,8 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Activity, E_MCATST_Reward, MsgActivityReward)
                         break;
                 }
 
-                if (!group->Reward(shared_from_this(), taskID, *msg->mutable_player_change(), msg->param()))
+                auto logGuid = LogService::GetInstance()->GenGuid();
+                if (!group->Reward(shared_from_this(), taskID, *msg->mutable_player_change(), msg->param(), E_LSOT_FestivalReward, logGuid))
                 {
                         LOG_INFO("玩家[{}] Activity Reward id[{}] 时，g[{}] f[{}] t[{}] 失败!!!",
                                  GetID(),
@@ -615,30 +617,39 @@ void Festival::OnEvent(MsgPlayerChange& msg,
         auto& seq = _taskList.get<by_task_event_type>();
         auto range = seq.equal_range(eventType);
         for (auto it=range.first; range.second!=it; ++it)
+        {
                 (*it)->_cnt += cnt;
+
+                std::string str = fmt::format("{}\"id\":{},\"type\":{},\"eventType\":{},\"cnt\":{},\"new_cnt\":{},\"param\":{}{}", "{", _id, _type, eventType, cnt, (*it)->_cnt, param, "}");
+                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 1, logType, logParam);
+        }
 }
 
 void Festival::Mark(const PlayerPtr& p,
                     MsgPlayerChange& msg,
                     int64_t taskID,
                     int64_t cnt,
-                    int64_t param)
+                    int64_t param,
+                    ELogServiceOrigType logType,
+                    uint64_t logParam)
 {
         auto& seq = _taskList.get<by_id>();
         auto it = seq.find(taskID);
         if (seq.end() != it)
-                (*it)->Mark(p, msg, cnt, param);
+                (*it)->Mark(p, msg, cnt, param, logType, logParam);
 }
 
 bool Festival::Reward(const PlayerPtr& p,
                       const std::shared_ptr<FestivalGroup>& group,
                       int64_t taskID, MsgPlayerChange& msg,
-                      int64_t param)
+                      int64_t param,
+                      ELogServiceOrigType logType,
+                      uint64_t logParam)
 {
         auto& seq = _taskList.get<by_id>();
         auto it = seq.find(taskID);
         if (seq.end() != it)
-                return (*it)->Reward(p, group, shared_from_this(), msg, param);
+                return (*it)->Reward(p, group, shared_from_this(), msg, param, logType, logParam);
         return false;
 }
 // }}}
@@ -647,18 +658,24 @@ bool Festival::Reward(const PlayerPtr& p,
 void FestivalTask::Mark(const PlayerPtr& p,
                         MsgPlayerChange& msg,
                         int64_t cnt,
-                        int64_t param)
+                        int64_t param,
+                        ELogServiceOrigType logType,
+                        uint64_t logParam)
 {
         _cnt += cnt;
-        LOG_INFO("id:{} _cnt:{} cnt:{}", _id, _cnt, cnt);
         p->Save2DB();
+
+        std::string str = fmt::format("{}\"id\":{},\"cnt\":{},\"param\":{}{}", "{", _id, cnt, param, "}");
+        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 0, logType, logParam);
 }
 
 bool FestivalTask::Reward(const PlayerPtr& p,
                           const std::shared_ptr<FestivalGroup>& group,
                           const std::shared_ptr<Festival>& fes,
                           MsgPlayerChange& msg,
-                          int64_t param)
+                          int64_t param,
+                          ELogServiceOrigType logType,
+                          uint64_t logParam)
 {
         auto cfg = ActivityMgrBase::_cfgList.Get(_id);
         if (!cfg || FLAG_HAS(_flag, 1))
@@ -667,8 +684,8 @@ bool FestivalTask::Reward(const PlayerPtr& p,
         auto logGuid = LogService::GetInstance()->GenGuid();
         BagMgr::GetInstance()->DoDrop(p, msg, cfg->_rewardList, E_LSOT_Festival, logGuid);
 
-        std::string str = fmt::format("{}\"id\":{}{}", "{", _id, "}");
-        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), Base64Encode(str), E_LSLST_Festival, fes->_type, GetClock().GetTimeStamp(), E_LSOT_Festival, logGuid);
+        std::string str = fmt::format("{}\"id\":{},\"param\":{}{}", "{", _id, param, "}");
+        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 2, logType, logParam);
 
         FLAG_ADD(_flag, 1);
         p->Save2DB();
@@ -677,11 +694,14 @@ bool FestivalTask::Reward(const PlayerPtr& p,
 // }}}
 
 // {{{ FestivalTaskImpl
+
 bool FestivalTaskImpl::Reward(const PlayerPtr& p,
                               const std::shared_ptr<FestivalGroup>& group,
                               const std::shared_ptr<Festival>& fes,
                               MsgPlayerChange& msg,
-                              int64_t param)
+                              int64_t param,
+                              ELogServiceOrigType logType,
+                              uint64_t logParam)
 {
         if (FLAG_HAS(_flag, 1))
                 return false;
@@ -702,14 +722,13 @@ bool FestivalTaskImpl::Reward(const PlayerPtr& p,
                 return false;
         }
 
-        auto logGuid = LogService::GetInstance()->GenGuid();
-        std::string str = fmt::format("{}\"id\":{}{}", "{", _id, "}");
-        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), Base64Encode(str), E_LSLST_Festival, fes->_type, GetClock().GetTimeStamp(), E_LSOT_Festival, logGuid);
+        std::string str = fmt::format("{}\"id\":{},\"param\":{}{}", "{", _id, param, "}");
+        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Festival, 2, logType, logParam);
 
         for (auto& reward : rewardItem->goods_list())
         {
                 auto& item = reward.goods_item();
-                p->AddDrop(msg, item.type(), item.id(), item.num(), E_LSOT_Festival, logGuid);
+                p->AddDrop(msg, item.type(), item.id(), item.num(), logType, logParam);
         }
 
         FLAG_ADD(_flag, 1);

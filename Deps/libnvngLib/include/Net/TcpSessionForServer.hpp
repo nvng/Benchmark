@@ -92,8 +92,8 @@ public :
                 GetAppBase()->_mainChannel.push([ses]() {
                         boost::fibers::fiber(
                              std::allocator_arg,
-                             // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                             boost::fibers::segmented_stack{},
+                             boost::fibers::protected_fixedsize_stack{ 32 * 1024 },
+                             // boost::fibers::segmented_stack{},
                              [ses]() {
                                 while (!ses->IsTerminate())
                                 {
@@ -129,8 +129,8 @@ public :
 
                         boost::fibers::fiber(
                              std::allocator_arg,
-                             // boost::fibers::fixedsize_stack{ 32 * 1024 },
-                             boost::fibers::segmented_stack{},
+                             boost::fibers::protected_fixedsize_stack{ 32 * 1024 },
+                             // boost::fibers::segmented_stack{},
                              [ses]() {
                                 constexpr std::size_t cSendBufInitSize = 1024 * 1024;
                                 auto sendBufRef = std::make_shared<char[]>(cSendBufInitSize);
@@ -282,7 +282,7 @@ __end__ :
 
         void DoSend(const typename SuperType::BuffTypePtr& bufRef = nullptr, typename SuperType::BuffTypePtr::element_type* buf = nullptr, std::size_t size = 0)
         {
-                LOCK_GUARD(_bufListMutex, 0, "DoSend");
+                std::lock_guard l(_bufListMutex);
                 if (nullptr != buf && 0 != size)
                 {
                         _bufList.emplace_back(boost::asio::const_buffer{ buf, size });
@@ -327,7 +327,7 @@ __end__ :
                 boost::asio::async_read(_socket, boost::asio::buffer((char*)&_msgTotalHead, sizeof(_msgTotalHead)),
                                         // boost::asio::transfer_at_least(sizeof(_totalMsgHead)),
                                         [ses](const auto& ec, std::size_t size) {
-                                                if (!ec && ses->_msgTotalHead._size >= sizeof(MsgTotalHeadType))
+                                                if (!ec && sizeof(ses->_msgTotalHead) == size && ses->_msgTotalHead._size >= sizeof(MsgTotalHeadType))
                                                 {
                                                         auto buf = std::make_shared<char[]>(ses->_msgTotalHead._size);
                                                         *reinterpret_cast<MsgTotalHeadType*>(buf.get()) = ses->_msgTotalHead;
@@ -345,13 +345,16 @@ __end__ :
                                                                                         }
                                                                                         else
                                                                                         {
-                                                                                                LOG_WARN("async read error ses id[{}] recvSize[{}] needSize[{}]", ses->GetID(), size, ses->_msgTotalHead._size);
+                                                                                                LOG_WARN_IF(size>0, "async read body error ses id[{}] recvSize[{}] needSize[{}]"
+                                                                                                            , ses->GetID(), size, ses->_msgTotalHead._size);
                                                                                                 ses->OnError(ec);
                                                                                         }
                                                                                 });
                                                 }
                                                 else
                                                 {
+                                                        LOG_WARN_IF(size>0, "async read head error ses id[{}] recvSize[{}] needSize[{}]"
+                                                                    , ses->GetID(), size, ses->_msgTotalHead._size);
                                                         ses->OnError(ec);
                                                 }
                                         });

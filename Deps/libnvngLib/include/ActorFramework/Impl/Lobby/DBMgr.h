@@ -14,7 +14,7 @@ class DBMgr : public Singleton<DBMgr>
 
 public :
 	bool Init();
-	bool LoadPlayer(const PlayerBasePtr& p);
+	bool LoadPlayer(const PlayerBasePtr& p, const std::shared_ptr<MsgClientLogin>& loginMsg);
 	bool SavePlayer(const PlayerBasePtr& p, bool isDelete);
 	FORCE_INLINE static uint64_t GenReqID() { static uint64_t id=-1; return ++id; }
 

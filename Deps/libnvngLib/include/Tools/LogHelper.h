@@ -48,8 +48,8 @@ template <> constexpr const char* GetLogModuleName<E_LOG_MT_Net>() { return "net
 template <> constexpr const char* GetLogModuleName<E_LOG_MT_NetHttp>() { return "http"; }
 template <> constexpr const char* GetLogModuleName<E_LOG_MT_DBMySql>() { return "mysql"; }
 template <> constexpr const char* GetLogModuleName<E_LOG_MT_DBRedis>() { return "redis"; }
-template <> constexpr const char* GetLogModuleName<E_LOG_MT_Player>() { return "player"; }
-template <> constexpr const char* GetLogModuleName<E_LOG_MT_Region>() { return "region"; }
+template <> constexpr const char* GetLogModuleName<E_LOG_MT_Player>() { return "p"; }
+template <> constexpr const char* GetLogModuleName<E_LOG_MT_Region>() { return "r"; }
 
 template <size_t lv> constexpr uint64_t GetLogModuleFilterLevel() { return 0; }
 template <> constexpr uint64_t GetLogModuleFilterLevel<E_LOG_MT_None>() { return 1<<E_LOG_MT_None; }

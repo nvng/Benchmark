@@ -220,6 +220,7 @@ ActorMailDataPtr RegionMgrActor::CreateRegion(const IActorPtr& from, const std::
         auto mail = std::make_shared<MailRegionCreateInfo>();
         mail->set_region_type(msg->_regionType);
         mail->set_region_id(GenGuid(_regionList, GetRegionType(), idList));
+        mail->set_parent_id(msg->_parentID);
         mail->set_guid(msg->_guid);
         mail->set_param(msg->_param);
         mail->set_param_1(msg->_param_1);
@@ -441,10 +442,12 @@ void CompetitionKnockoutRegionMgrActor::StartRound(std::vector<stPlayerInfoPtr>&
         _robotList.clear();
         auto backRobotMsg = std::make_shared<MailBackRobot>();
 
+        std::vector<uint64_t> regionGuidList;
         const int64_t mapID = GetValueOrLast(_mapList, _roundCnt);
         ++_roundCnt;
         auto thisPtr = shared_from_this();
         _lastRoundRegionCnt = std::ceil((playerList.size() + robotList.size()) / (double)_cfg->player_limit_max());
+        regionGuidList.reserve(_lastRoundRegionCnt);
         _rank = _lastRoundRegionCnt * _cfg->player_limit_max();
         const auto playerCntPer = playerList.size() / _lastRoundRegionCnt;
         int64_t moreIdx = playerList.size() % _lastRoundRegionCnt;
@@ -460,8 +463,9 @@ void CompetitionKnockoutRegionMgrActor::StartRound(std::vector<stPlayerInfoPtr>&
                         tmpInfo->_param_1 = _param_1;
                         tmpInfo->_param_2 = _roundCnt;
 
-                        tmpInfo->_guid = SnowflakeRegionGuid::Gen();
-                        _regionGuidList.emplace_back(tmpInfo->_guid);
+                        tmpInfo->_parentID = _guid;
+                        tmpInfo->_guid = LogService::GetInstance()->GenGuid();
+                        regionGuidList.emplace_back(tmpInfo->_guid);
 
                         for (auto& p : Random(playerList, tmpPlayerCnt))
                                 tmpInfo->_playerList.emplace(p->GetID(), p);
@@ -495,6 +499,14 @@ void CompetitionKnockoutRegionMgrActor::StartRound(std::vector<stPlayerInfoPtr>&
 
         if (backRobotMsg->robot_list_size() > 0)
                 RobotService::GetInstance()->BackRobot(thisPtr, backRobotMsg);
+
+        std::string idListStr;
+        for (auto id : regionGuidList)
+                idListStr += fmt::format("{},", id);
+        if (!idListStr.empty())
+                idListStr.pop_back();
+        std::string str = fmt::format("{}\"id_list\":[{}],\"round\":{},\"parent_id\":{}{}", "{", idListStr, _roundCnt, _parentID, "}");
+        LogService::GetInstance()->Log<E_LSLMT_Content>(_guid, str, E_LSLST_Competition, _queueType, E_LSOT_CompetitionRoundStart, _guid);
 }
 
 void CompetitionKnockoutRegionMgrActor::SyncMatchInfo(time_t nextRoundStartTime/* = 0*/)
@@ -566,7 +578,7 @@ bool RegionMgrBase::Init()
         }
 
         auto gameMgrInfo = ServerListCfgMgr::GetInstance()->GetFirst<stGameMgrServerInfo>();
-        for (int32_t i=0; i<gameMgrInfo->_workersCnt * 512; ++i)
+        for (int32_t i=0; i<gameMgrInfo->_workersCnt * gameMgrInfo->_actorCntPerWorkers /*512*/; ++i)
         {
                 auto req = std::make_shared<RequestActor>(GetApp()->GetSID() * 1000 * 1000 + i);
                 req->Start();
@@ -842,6 +854,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(QueueMgrActor, E_MCQCST_ExitQueue, MsgExitQueue)
                         break;
                 }
 
+                retMsg->set_guid(msg->guid());
                 retMsg->set_error_type(ExitQueue(msg, true));
         } while (0);
 
@@ -876,7 +889,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(QueueMgrActor, E_MCQCST_Opt, MsgQueueOpt)
                                         if (reqAgent)
                                         {
                                                 qInfo->_regionMgr = GetRegionMgrBase()->GetRegionMgrActor(qInfo->_regionType);
-                                                qInfo->_guid = SnowflakeRegionGuid::Gen();
+                                                qInfo->_guid = LogService::GetInstance()->GenGuid();
                                                 Send(reqAgent->GetBindActor(), E_MIMT_QueueCommon, E_MIQCST_ReqQueue, qInfo);
                                         }
                                 }
@@ -1108,7 +1121,7 @@ void NormalQueueMgrActor::InitCheckTimer()
                         {
                                 auto reqActor = GetRegionMgrBase()->DistReqActor(qInfo->GetID());
                                 qInfo->_regionMgr = GetRegionMgrBase()->GetRegionMgrActor(qInfo->_regionType);
-                                qInfo->_guid = SnowflakeRegionGuid::Gen();
+                                qInfo->_guid = LogService::GetInstance()->GenGuid();
                                 Send(reqActor, E_MIMT_QueueCommon, E_MIQCST_ReqQueue, qInfo);
 
                                 idList.emplace_back(qInfo->GetID());
@@ -1211,7 +1224,7 @@ void NormalQueueMgrActor::ReqQueue(const std::shared_ptr<stMailReqQueue>& msg)
         if (MatchQueue(otherQueueInfoList, qInfo, false))
         {
                 qInfo->_regionMgr = GetRegionMgrBase()->GetRegionMgrActor(qInfo->_regionType);
-                qInfo->_guid = SnowflakeRegionGuid::Gen();
+                qInfo->_guid = LogService::GetInstance()->GenGuid();
                 Send(reqActor, E_MIMT_QueueCommon, E_MIQCST_ReqQueue, qInfo);
                 for (auto& info : otherQueueInfoList)
                         seq.erase(info->GetID());
@@ -1236,6 +1249,7 @@ EInternalErrorType NormalQueueMgrActor::ExitQueue(const std::shared_ptr<MsgExitQ
         if (!qInfo || qInfo->_matched || !qInfo->Equal(msg->base_info()))
                 return E_IET_QueueStateError;
 
+        msg->set_guid(qInfo->_guid);
         auto& playerList = qInfo->_playerList;
         auto it_ = playerList.find(msg->player_guid());
         if (playerList.end() != it_)
@@ -1374,6 +1388,7 @@ EInternalErrorType ManualQueueMgrActor::ExitQueue(const std::shared_ptr<MsgExitQ
                 if (playerList.empty())
                         seq.erase(it);
         }
+        msg->set_guid(qInfo->_guid);
         return E_IET_Success;
 }
 
@@ -1552,6 +1567,7 @@ void CompetitionKnockoutQueueMgrActor::ReqQueue(const std::shared_ptr<stMailReqQ
                         qInfo = std::make_shared<stQueueInfo>(queueGuid, queueBaseInfo.region_type(), queueBaseInfo.queue_type());
                         qInfo->_rank = pb->player_list(0).rank();
                         qInfo->_time = GetClock().GetTimeStamp();
+                        qInfo->_guid = LogService::GetInstance()->GenGuid();
                         qInfo->_param = pb->param();
                         qInfo->_param_1 = pb->param_1();
                         _queueList.emplace(qInfo);
@@ -1595,13 +1611,20 @@ void CompetitionKnockoutQueueMgrActor::ReqQueue(const std::shared_ptr<stMailReqQ
                 pb->set_param_2(qInfo->_playerList.size());
         } while (0);
 
+        if (qInfo)
+        {
+                if (E_IET_Success == pb->error_type())
+                        qInfo->Sync2Lobby();
+
+                pb->set_guid(qInfo->_guid);
+                LogService::GetInstance()->Log<E_LSLMT_Content>(pb->player_guid(), "", E_LSLST_Queue, qInfo->_queueType, E_LSOT_ReqQueue, qInfo->_guid);
+        }
+
         if (ses)
         {
                 ses->SendPB(pb, E_MCMT_QueueCommon, E_MCQCST_ReqQueue,
                             GameMgrLobbySession::MsgHeaderType::E_RMT_CallRet, msg->_msgHead._guid, msg->_msgHead._to, msg->_msgHead._from);
         }
-        if (qInfo && E_IET_Success == pb->error_type())
-                qInfo->Sync2Lobby();
 
         return;
 }
@@ -1624,6 +1647,9 @@ EInternalErrorType CompetitionKnockoutQueueMgrActor::ExitQueue(const std::shared
         playerList.erase(msg->player_guid());
         if (playerList.empty())
                 seq.erase(it);
+
+        msg->set_guid(qInfo->_guid);
+        LogService::GetInstance()->Log<E_LSLMT_Content>(msg->player_guid(), "", E_LSLST_Queue, qInfo->_queueType, E_LSOT_ExitQueue, qInfo->_guid);
         return E_IET_Success;
 }
 
@@ -1655,18 +1681,23 @@ void CompetitionKnockoutQueueMgrActor::StartCompetition(const stQueueInfoPtr& qI
         for (auto& rs : competitionCfg->_mapIDSelectorList)
                 mapList.emplace_back(rs->Get()._v);
 
+        std::vector<uint64_t> competitionGuidList;
+        competitionGuidList.reserve(competitionCnt);
         auto thisPtr = shared_from_this();
         const auto playerCntPer = playerList.size() / competitionCnt;
         int64_t moreIdx = playerList.size() % competitionCnt;
         for (int64_t i=0; i<competitionCnt; ++i)
         {
                 auto regionMgr = std::make_shared<CompetitionKnockoutRegionMgrActor>(regionCfg, qInfo->_queueType);
+                regionMgr->_parentID = qInfo->_guid;
+                regionMgr->_guid = LogService::GetInstance()->GenGuid();
                 regionMgr->_param = qInfo->_param;
                 regionMgr->_param_1 = qInfo->_param_1;
                 regionMgr->_mapList = mapList;
                 regionMgr->_roundCnt = 0;
                 regionMgr->_qInfo = qInfo;
                 regionMgr->Start();
+                competitionGuidList.emplace_back(regionMgr->_guid);
 
                 const auto tmpPlayerCnt = playerCntPer + (moreIdx--<=0 ? 0 : 1);
 
@@ -1706,6 +1737,14 @@ void CompetitionKnockoutQueueMgrActor::StartCompetition(const stQueueInfoPtr& qI
                 }
                 regionMgr->StartRound(Random(playerList, tmpPlayerCnt), std::move(robotList));
         }
+
+        std::string idListStr;
+        for (auto id : competitionGuidList)
+                idListStr += fmt::format("{},", id);
+        if (!idListStr.empty())
+                idListStr.pop_back();
+        std::string str = fmt::format("{}\"id_list\":[{}]{}", "{", idListStr, "}");
+        LogService::GetInstance()->Log<E_LSLMT_Content>(qInfo->_guid, str, E_LSLST_Competition, qInfo->_queueType, E_LSOT_CompetitionStart, qInfo->_guid);
 }
 
 // }}}

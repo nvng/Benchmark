@@ -41,7 +41,7 @@ void LogActor::DealTimeout()
 
                         std::string sqlStr;
                         sqlStr.reserve(1024 * 1024);
-                        fmt::format_to(std::back_inserter(sqlStr), fmt::runtime(reg->sql_prefix()), _idx);
+                        fmt::format_to(std::back_inserter(sqlStr), fmt::runtime(reg->sql_prefix()), 0, _idx);
 
                         auto oldSize = sqlStr.size();
                         for (auto& msg : _logList)
@@ -71,12 +71,12 @@ SPECIAL_ACTOR_MAIL_HANDLE(LogActor, E_MILOGST_Register, MsgLogServiceRegister)
                         _sqlPrefixArr[tmp->type()] = tmp;
                         std::string sqlStr;
                         sqlStr.reserve(1024 * 1024);
-                        fmt::format_to(std::back_inserter(sqlStr), fmt::runtime(tmp->sql_table_create()), _idx);
+                        fmt::format_to(std::back_inserter(sqlStr), fmt::runtime(tmp->sql_table_create()), 0, _idx);
                         MySqlMgr::GetInstance()->Exec(sqlStr);
                 }
                 else
                 {
-                        LOG_ERROR("tttttt");
+                        // LOG_ERROR("tttttt");
                 }
         }
         return nullptr;
@@ -104,7 +104,7 @@ SERVICE_NET_HANDLE(LogService::SessionType, E_MIMT_Log, E_MILOGST_Log, MsgLogSer
 {
         auto act = LogService::GetInstance()->GetActor(msg->idx());
         if (act)
-                act->SendPush(nullptr, E_MILOGST_Register, msg);
+                act->SendPush(nullptr, E_MILOGST_Log, msg);
 }
 
 #endif
