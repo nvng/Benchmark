@@ -6,11 +6,13 @@ bool GenGuidActor::Init()
 {
         if (!SuperType::Init())
                 return false;
-        std::string sql = fmt::format("SELECT data FROM data_0 WHERE id={};", _idx);
+
+        const auto dbGuid = MySqlMgr::GetInstance()->GenDataKey(E_MIMT_GenGuid) + _idx;
+        std::string sql = fmt::format("SELECT data FROM data_0 WHERE id={};", dbGuid);
         auto result = MySqlMgr::GetInstance()->Exec(sql);
         if (result->rows().empty())
         {
-                auto sql = fmt::format("INSERT INTO data_0(id, v, data) VALUES({}, 0, \"\")", _idx);
+                auto sql = fmt::format("INSERT INTO data_0(id, v, data) VALUES({}, 0, \"\")", dbGuid);
                 MySqlMgr::GetInstance()->Exec(sql);
         }
         else
@@ -45,7 +47,10 @@ void GenGuidActor::Save2DB()
         _timer.Start(weakThis, 30.0, [weakThis]() {
                 auto thisPtr = weakThis.lock();
                 if (thisPtr)
+                {
+                        thisPtr->_inTimer = false;
                         thisPtr->Flush2DB();
+                }
         });
 }
 
@@ -55,8 +60,9 @@ void GenGuidActor::Flush2DB()
         for (auto& item : _itemList)
                 item->Pack(*dbInfo.add_item_list());
 
+        const auto dbGuid = MySqlMgr::GetInstance()->GenDataKey(E_MIMT_GenGuid) + _idx;
         auto [bufRef, bufSize] = Compress::SerializeAndCompress<Compress::E_CT_Zstd>(dbInfo);
-        std::string sql = fmt::format("UPDATE data_0 SET data=\"{}\" WHERE id={};", Base64Encode(bufRef.get(), bufSize), _idx);
+        std::string sql = fmt::format("UPDATE data_0 SET data=\"{}\" WHERE id={};", Base64Encode(bufRef.get(), bufSize), dbGuid);
         MySqlMgr::GetInstance()->Exec(sql);
 }
 
@@ -78,6 +84,19 @@ uint64_t GenGuidActor::GenGuid()
         return guid;
 }
 
+void GenGuidActor::Terminate()
+{
+        std::weak_ptr<GenGuidActor> weakThis = shared_from_this();
+        SendPush([weakThis]() {
+                auto thisPtr = weakThis.lock();
+                if (thisPtr)
+                {
+                        thisPtr->Flush2DB();
+                        thisPtr->SuperType::Terminate();
+                }
+        });
+}
+
 SPECIAL_ACTOR_MAIL_HANDLE(GenGuidActor, E_MIGGST_Req, GenGuidService::SessionType::stServiceMessageWapper)
 {
         auto ses = msg->_agent->GetSession();
@@ -94,13 +113,6 @@ SPECIAL_ACTOR_MAIL_HANDLE(GenGuidActor, E_MIGGST_Req, GenGuidService::SessionTyp
                     msg->_msgHead._to,
                     msg->_msgHead._from);
 
-        return nullptr;
-}
-
-SPECIAL_ACTOR_MAIL_HANDLE(GenGuidActor, 0xf)
-{
-        Flush2DB();
-        SuperType::Terminate();
         return nullptr;
 }
 

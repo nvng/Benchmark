@@ -501,7 +501,7 @@ typedef std::shared_ptr<stDBGenGuidItem> stDBGenGuidItemPtr;
 
 struct stDBServerCfg
 {
-        std::vector<stDBGenGuidItemPtr> _genGuidItemList;
+        std::map<int64_t, stDBGenGuidItemPtr> _genGuidItemList;
 };
 typedef std::shared_ptr<stDBServerCfg> stDBServerCfgPtr;
 
@@ -552,7 +552,7 @@ public :
                                         info->_idx = item["idx"].GetInt64();
                                         info->_minGuid = item["min_guid"].GetUint64();
                                         info->_maxGuid = item["max_guid"].GetUint64();
-                                        _dbCfg->_genGuidItemList.emplace_back(info);
+                                        _dbCfg->_genGuidItemList.emplace(info->_idx, info);
                                 }
                         }
                 }

@@ -10,22 +10,21 @@
 
 struct stGenGuidItem
 {
-        uint64_t _idx = 0;
-        uint64_t _cur = 0;
-        uint64_t _max = 0;
+        int64_t _cur = 0;
+        int64_t _max = 0;
 
         void Pack(auto& msg)
         {
-                msg.set_idx(_idx);
                 msg.set_cur(_cur);
                 msg.set_max(_max);
+                // LOG_INFO("22222222 Pack idx[{}] cur[{}] max[{}]", msg.idx(), msg.cur(), msg.max());
         }
 
         void UnPack(const auto& msg)
         {
-                _idx = msg.idx();
                 _cur = msg.cur();
                 _max = msg.max();
+                // LOG_INFO("33333333 UnPack idx[{}] cur[{}] max[{}]", _idx, _cur, _max);
         }
 };
 typedef std::shared_ptr<stGenGuidItem> stGenGuidItemPtr;
@@ -39,25 +38,22 @@ SPECIAL_ACTOR_DEFINE_BEGIN(GenGuidActor, E_MIMT_GenGuid);
 public :
         GenGuidActor(int64_t idx, uint64_t minGuid, uint64_t maxGuid)
                 : _idx(idx)
-                  , _minGuid(minGuid)
-                  , _maxGuid(maxGuid)
         {
-                const uint64_t step = (maxGuid - minGuid + 1) / scInitArrSize;
+                const int64_t step = (maxGuid - minGuid + 1) / scInitArrSize;
                 for (int64_t i=0; i<scInitArrSize; ++i)
                 {
                         auto item = std::make_shared<stGenGuidItem>();
-                        item->_idx = i;
-                        item->_cur = std::min(_minGuid + i*step, _maxGuid);
+                        item->_cur = std::min(minGuid + i*step, maxGuid);
                         if (scInitArrSize - 1 == i)
-                                item->_max = _maxGuid;
+                                item->_max = maxGuid;
                         else
-                                item->_max = std::min(_minGuid + (i+1)*step, _maxGuid+1) - 1;
-                        if (item->_cur < _maxGuid)
+                                item->_max = std::min(minGuid + (i+1)*step, maxGuid+1) - 1;
+                        if (item->_cur < maxGuid)
                         {
                                 _itemList.emplace_back(item);
                                 /*
                                 LOG_INFO("1111111111 i[{}] idx[{}] _cur[{}] _max[{}] next[{}]"
-                                         , i, item->_idx, item->_cur, item->_max, _minGuid+(i+1)*step);
+                                         , i, item->_idx, item->_cur, item->_max, minGuid+(i+1)*step);
                                          */
                         }
 
@@ -87,12 +83,12 @@ public :
         void Flush2DB();
         uint64_t GenGuid();
 
-        const int64_t _idx = 0;
-        const uint64_t _minGuid = 0;
-        const uint64_t _maxGuid = 0;
+        void Terminate() override;
+
         bool _inTimer = false;
+        int64_t _idx = 0;
         ::nl::util::SteadyTimer _timer;
-        constexpr static int64_t scInitArrSize = 19;
+        constexpr static int64_t scInitArrSize = 127;
         std::vector<stGenGuidItemPtr> _itemList;
 
 #endif
@@ -114,8 +110,9 @@ public :
         bool StartLocal(int64_t actCnt, Args ... args)
         {
                 const auto& dbCfg = ServerCfgMgr::GetInstance()->_dbCfg;
-                for (auto& item : dbCfg->_genGuidItemList)
+                for (auto& val : dbCfg->_genGuidItemList)
                 {
+                        auto item = val.second;
                         auto act = std::make_shared<typename SuperType::ActorType>(item->_idx, item->_minGuid, item->_maxGuid);
                         SuperType::_actorArr.emplace_back(act);
                         act->Start();
