@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.25)
 
 set(SRC_DIR
         ../Deps/libnvngLib/include/ActorFramework/Impl/DB
+        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Guid
+        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/DB
         )
 
 include_directories(../Deps/libnvngLib/include/DB)

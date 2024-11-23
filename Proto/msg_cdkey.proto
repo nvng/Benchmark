@@ -30,6 +30,9 @@ message MsgCDKeyRewardInfo
         sint64 reward_id = 1;
         sint64 reward_type = 2;
         sint64 num = 3;
+        string icon_name = 4;
+        string name = 5;
+        string desc = 6;
 }
 
 message MsgCDKeyInfo
@@ -37,15 +40,17 @@ message MsgCDKeyInfo
         sint64 end_time = 1;
         map<sint64, sint64> platform_list = 2;
         sint64 group_id = 3;
-        sint64 max_use_count_limit = 4;
-        sint64 cur_use_count = 5;
-        repeated string cdkey_list = 6;
-        repeated MsgCDKeyRewardInfo reward_list = 7;
+        string name = 4;
+        sint64 max_use_count_limit = 5;
+        sint64 cur_use_count = 6;
+        repeated string cdkey_list = 7;
+        repeated MsgCDKeyRewardInfo reward_list = 8;
 }
 
 message MsgCDKeyInfoList
 {
-        repeated MsgCDKeyInfo info_list = 1;
+        sint64 group_guid = 1;
+        repeated MsgCDKeyInfo info_list = 2;
 }
 
 message MsgCDKeyReqUse
@@ -55,6 +60,8 @@ message MsgCDKeyReqUse
         string cdkey = 3;
         sint64 platform = 4;
         repeated MsgCDKeyRewardInfo reward_list = 5;
+        map<sint64, bool> already_use_list = 6;
+        sint64 group = 7;
 
         MsgPlayerChange player_change = 10;
 }

@@ -30,7 +30,8 @@ enum EMsgClientPaySubType
 message MsgPayOrderGuid
 {
         EClientErrorType error_type = 1;
-        uint64 guid = 2;
+        sint64 cfg_id = 2;
+        uint64 guid = 3;
 }
 
 message MsgPayReqShip

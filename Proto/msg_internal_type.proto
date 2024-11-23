@@ -25,6 +25,7 @@ enum EMsgInternalMainType
 {
   E_MIMT_Internal = 0x0; // 服务器间内部消息
 
+  E_MIMT_GenGuid = 0xfe6;
   E_MIMT_DB = 0xfe7;
   E_MIMT_Log = 0xfe8;
 
@@ -36,7 +37,13 @@ enum EMsgInternalMainType
   E_MIMT_MatchCommon = 0xfee; // 比赛
   E_MIMT_Match = 0xfef; // 比赛
 
+  E_MIMT_GM = 0xffe;
   E_MIMT_Local = 0xfff; // 本地消息。
+}
+
+enum EMsgInternalGMSubType
+{
+        E_MIGMST_Sync = 0x0;
 }
 
 enum EMsgInternalLocalSubType

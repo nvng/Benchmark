@@ -100,7 +100,7 @@ std::tuple<int64_t, int64_t, int64_t> Bag::Add(const PlayerPtr& p, MsgPlayerChan
                         auto n = std::get<0>(it->second);
 
                         std::string str = fmt::format("{}\"old\":{},\"new\":{},\"diff\":{}{}", "{", old, n, n-old, "}");
-                        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), Base64Encode(str), E_LSLST_Goods, id, GetClock().GetTimeStamp(), logType, logParam);
+                        LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Goods, id, logType, logParam);
                 }
                 return std::make_tuple(id, std::get<0>(it->second), std::get<1>(it->second));
         }
@@ -122,7 +122,7 @@ std::tuple<int64_t, int64_t, int64_t> Bag::Add(const PlayerPtr& p, MsgPlayerChan
                 _goodsList.emplace(id, std::make_tuple(cnt, type, overTime));
 
                 std::string str = fmt::format("{}\"old\":{},\"new\":{},\"diff\":{}{}", "{", 0, cnt, cnt, "}");
-                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), Base64Encode(str), E_LSLST_Goods, id, GetClock().GetTimeStamp(), logType, logParam);
+                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Goods, id, logType, logParam);
                 return std::make_tuple(id, cnt, type);
         }
 }
@@ -147,7 +147,7 @@ std::tuple<int64_t, int64_t, int64_t> Bag::Del(const PlayerPtr& p, int64_t id, i
 
                 auto n = std::get<0>(it->second);
                 std::string str = fmt::format("{}\"old\":{},\"new\":{},\"diff\":{}{}", "{", old, n, n-old, "}");
-                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), Base64Encode(str), E_LSLST_Goods, id, GetClock().GetTimeStamp(), logType, logParam);
+                LogService::GetInstance()->Log<E_LSLMT_Content>(p->GetID(), str, E_LSLST_Goods, id, logType, logParam);
                 return ret;
         }
         return ret;

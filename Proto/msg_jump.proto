@@ -150,16 +150,17 @@ message MsgConcludeFighterInfo
         sint64 di_kang_gan_rao_cnt = 7;
         sint64 add_coins = 8;
         sint64 param = 9;
+        sint64 enter_time = 10;
 
         message MsgBattleItemInfo
         {
                 sint64 id = 10;
                 sint64 cnt = 20;
         }
-        repeated MsgBattleItemInfo battle_item_use_list = 10;
-        repeated MsgBattleItemInfo battle_item_hit_list = 11;
+        repeated MsgBattleItemInfo battle_item_use_list = 20;
+        repeated MsgBattleItemInfo battle_item_hit_list = 21;
 
-        repeated MsgConcludeFighterInfo robot_list = 20;
+        repeated MsgConcludeFighterInfo robot_list = 30;
 }
 
 message MsgConcludeInfo

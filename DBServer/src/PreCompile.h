@@ -5,6 +5,9 @@
 
 #define ____BENCHMARK____
 
+#define GEN_GUID_SERVICE_SERVER
+#define MYSQL_SERVICE_SERVER
+
 #define BOOST_SP_DISABLE_THREADS
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -44,6 +47,8 @@ using namespace nl::net::server;
 using namespace nl::util;
 
 #include "App.h"
+#include "GenGuidService.h"
+#include "MySqlService.h"
 
 #endif // __PRE_COMPILE_H__
 

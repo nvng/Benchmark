@@ -37,6 +37,7 @@ enum EMsgClientMainType
   E_MCMT_Activity = 0xb;
   E_MCMT_CDKey = 0xc;
 
+  E_MCMT_Announcement = 0xd;
   E_MCMT_Pay = 0xf9;
   E_MCMT_QueueCommon = 0xfa;
   E_MCMT_Queue = 0xfb;
@@ -114,6 +115,11 @@ enum EMsgClientMatchCommonSubType
         E_MCMCST_SetGameZone = 0x1;
         E_MCMCST_ReqRank = 0x2;
         E_MCMCST_ReqQueueInfo = 0x3;
+}
+
+enum EMsgClientAnnouncementSubType
+{
+        E_MCANNST_Sync = 0x0;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

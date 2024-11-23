@@ -35,6 +35,10 @@ message MsgClientLogin
   sint64 player_guid = 1;
   string nick_name = 2;
   string icon = 3;
+
+  sint64 app_id = 10;
+  sint64 platform = 11;
+  sint64 user_id = 12;
 }
 
 message MsgPlayerInfo
@@ -46,6 +50,7 @@ message MsgPlayerInfo
   repeated sint64 icon_idx_list = 5;
   repeated sint64 icon_frame_idx_list = 6;
   repeated sint64 attr_list = 7;
+  repeated sint64 cdkey_list = 8;
 
   MsgQueueInfo queue_info = 10;
   MsgMatchInfo match_info = 11;
@@ -160,6 +165,7 @@ message MsgReqQueue
   MsgQueueBaseInfo base_info = 2;
   sint64 param = 3;
   sint64 param_1 = 4;
+  sint64 guid = 5;
 
   MsgPlayerChange player_change = 10;
 }
@@ -169,6 +175,7 @@ message MsgExitQueue
   EClientErrorType error_type = 1;
   MsgQueueBaseInfo base_info = 2;
   sint64 player_guid = 3;
+  sint64 guid = 4;
 
   MsgPlayerChange player_change = 10;
 }
@@ -358,6 +365,18 @@ message MsgTestTime
 {
   sint64 client_time = 1;
   sint64 server_time = 2;
+}
+
+message MsgAnnouncementList
+{
+        EClientErrorType error_type = 10;
+
+        message MsgAnnouncementItem
+        {
+                sint64 guid = 10;
+                string data = 20;
+        }
+        map<sint64, MsgAnnouncementItem> item_list = 20;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

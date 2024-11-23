@@ -1,11 +1,5 @@
 #include "App.h"
 
-#include "DBLobbySession.h"
-#include "DBMgr.h"
-
-#include "Tools/LogHelper.h"
-#include "Tools/ServerList.hpp"
-
 AppBase* GetAppBase()
 {
 	return App::GetInstance();
@@ -19,18 +13,21 @@ App* GetApp()
 App::App(const std::string& appName)
 	: SuperType(appName, E_ST_DB)
 {
-	DBMgr::CreateInstance();
+        GenGuidService::CreateInstance();
+	MySqlService::CreateInstance();
 }
 
 App::~App()
 {
-	DBMgr::DestroyInstance();
+        GenGuidService::DestroyInstance();
+	MySqlService::DestroyInstance();
 }
 
 bool App::Init()
 {
 	LOG_FATAL_IF(!SuperType::Init(), "super init fail!!!");
-	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "dbmgr proc mgr init fail!!!");
+	// LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "dbmgr proc mgr init fail!!!");
+	LOG_FATAL_IF(!GenGuidService::GetInstance()->Init(), "GenGuidService init fail!!!");
 
         GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
                 static int64_t loadVersionCnt = 0;
@@ -47,7 +44,10 @@ bool App::Init()
                 (void)saveCnt;
                 (void)saveSize;
 
-                LOG_INFO_IF(true, "avg[{}] actorCnt[{}] lvc[{}] lvs[{:.6f}] lc[{}] ls[{:.6f}] sc[{}] ss[{:.6f}]",
+                LOG_INFO_IF(0 != GetApp()->_loadVersionCnt - loadVersionCnt
+                            || 0 != GetApp()->_loadCnt - loadCnt
+                            || 0 != GetApp()->_saveCnt - saveCnt,
+                            "avg[{}] actorCnt[{}] lvc[{}] lvs[{}] lc[{}] ls[{}] sc[{}] ss[{}]",
                             GetFrameController().GetAverageFrameCnt(),
                             SpecialActorMgr::GetInstance()->GetActorCnt(),
                             GetApp()->_loadVersionCnt - loadVersionCnt,
@@ -67,24 +67,27 @@ bool App::Init()
         });
         
 	_startPriorityTaskList->AddFinalTaskCallback([]() {
-                nl::net::NetMgr::GetInstance()->Listen(GetAppBase()->GetServerInfo<stDBServerInfo>()->_lobby_port, [](auto&& s, auto& ioCtx) {
-                        return std::make_shared<DBLobbySession>(std::move(s));
-                });
+                auto dbInfo = GetAppBase()->GetServerInfo<stDBServerInfo>();
+                MySqlService::GetInstance()->Start(dbInfo->_lobby_port);
+                GenGuidService::GetInstance()->Start(dbInfo->_gen_guid_service_port);
 	});
 
         _stopPriorityTaskList->AddFinalTaskCallback([]() {
-                DBMgr::GetInstance()->Terminate();
-                DBMgr::GetInstance()->WaitForTerminate();
+                GenGuidService::GetInstance()->Terminate();
+                GenGuidService::GetInstance()->WaitForTerminate();
+
+                LOG_INFO("111111111111111111");
+                MySqlService::GetInstance()->Terminate();
+                LOG_INFO("111111111111111111");
+                MySqlService::GetInstance()->WaitForTerminate();
+                LOG_INFO("111111111111111111");
+        });
+
+        ::nl::util::SteadyTimer::StaticStart(10.0, []() {
+                GetApp()->PostTask([]() { GetApp()->Stop(); });
         });
 
 	return true;
-}
-
-#include "msg_client_type.pb.h"
-#include "msg_client.pb.h"
-NET_MSG_HANDLE(DBLobbySession, E_MCMT_ClientCommon, E_MCCCST_Login, MsgClientLogin)
-{
-        SendPB(msg, E_MCMT_ClientCommon, E_MCCCST_Login, MsgHeaderType::ERemoteMailType::E_RMT_Send, 0, 0, 0);
 }
 
 int main(int argc, char* argv[])

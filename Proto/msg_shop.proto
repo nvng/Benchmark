@@ -139,6 +139,13 @@ message MsgShopMgr
     sint64 cnt = 30;
   }
   repeated MsgBuyOtherLimitItem buy_other_item_list = 100;
+
+  message MsgPayTimeItem
+  {
+        sint64 cfg_id = 10;
+        sint64 time = 20;
+  }
+  repeated MsgPayTimeItem pay_time_list = 110;
 }
 
 message DBShopMgr

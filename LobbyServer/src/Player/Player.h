@@ -14,7 +14,7 @@ public :
         ~Player() override;
 
         bool Init() override;
-        void OnCreateAccount() override;
+        void OnCreateAccount(const std::shared_ptr<MsgClientLogin>& msg) override;
 
         void Online() override;
         using SuperType::Push;

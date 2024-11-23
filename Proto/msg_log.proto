@@ -41,14 +41,28 @@ enum ELogServiceOrigType
         E_LSOT_ChangeNickName = 0xc;
         E_LSOT_BagUse = 0xd;
         E_LSOT_GM = 0xe;
+        E_LSOT_FestivalReward = 0xf;
+        E_LSOT_FestivalMark = 0x21;
+        E_LSOT_AchievementReward = 0x22;
+        E_LSOT_PayReqOrderGuid = 0x23;
+        E_LSOT_PayReqShip = 0x24;
+        E_LSOT_PiFuSet = 0x25;
+        E_LSOT_MailReward = 0x26;
 
         E_LSOT_Pay = 0x10;
-        E_LSOT_Shop = 0x11;
-        E_LSOT_VIP = 0x12;
+        E_LSOT_ShopBuy = 0x11;
+        E_LSOT_VIPReward = 0x12;
+        E_LSOT_SetGameZone = 0x13;
+        E_LSOT_ShopRefesh = 0x14;
+        E_LSOT_ShopChouKa = 0x15;
+        E_LSOT_ShopBuyOther = 0x16;
+        E_LSOT_ShopSell = 0x17;
 
-        E_LSOT_PVP = 0x20;
-        E_LSOT_PVE = 0x21;
-        E_LSOT_CompetitionKnockout = 0x22;
+        E_LSOT_GameConclude = 0x20;
+
+        E_LSOT_CompetitionStart = 0x40;
+        E_LSOT_CompetitionRoundStart = 0x41;
+        E_LSOT_CompetitionReqQueue = 0x42;
 }
 
 enum ELogServiceLogMainType
@@ -70,6 +84,16 @@ enum ELogServiceLogSubType
         E_LSLST_CDKey = 0x10;
         E_LSLST_Festival = 0x11;
         E_LSLST_Mail = 0x12;
+        E_LSLST_PlayerInfo = 0x13;
+        E_LSLST_PlayerAttr = 0x14;
+        E_LSLST_Game = 0x15;
+        E_LSLST_Competition = 0x16;
+        E_LSLST_Queue = 0x17;
+        E_LSLST_Achievement = 0x18;
+        E_LSLST_Pay = 0x19;
+        E_LSLST_VIP = 0x1a;
+        E_LSLST_Shop = 0x1b;
+        E_LSLST_AD = 0x1c;
 }
 
 enum ELogServiceLogRatationType

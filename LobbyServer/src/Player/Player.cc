@@ -29,9 +29,9 @@ bool Player::Init()
 	return true;
 }
 
-void Player::OnCreateAccount()
+void Player::OnCreateAccount(const std::shared_ptr<MsgClientLogin>& msg)
 {
-        SuperType::OnCreateAccount();
+        SuperType::OnCreateAccount(msg);
 
         /*
         for (int64_t i=0; i<1000; ++i)

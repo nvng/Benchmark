@@ -8,6 +8,8 @@
 #define PING_PONG_BIG_SERVICE_CLIENT
 #define REDIS_SERVICE_CLIENT
 #define LOG_SERVICE_CLIENT
+#define GEN_GUID_SERVICE_CLIENT
+#define MYSQL_SERVICE_CLIENT
 
 #define BOOST_SP_DISABLE_THREADS
 #include <boost/shared_ptr.hpp>
@@ -50,7 +52,6 @@ using namespace nl::net::server;
 #include "GlobalDef.h"
 #include "GlobalVarActor.h"
 #include "LobbyGateSession.h"
-#include "LobbyDBSession.h"
 #include "LogService.h"
 
 #include "Share/GlobalDef.h"
@@ -59,6 +60,8 @@ using namespace nl::net::server;
 using namespace nl::af::impl;
 
 #include "App.h"
+#include "GenGuidService.h"
+#include "MySqlService.h"
 
 #endif // __PRE_COMPILE_H__
 

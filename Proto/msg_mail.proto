@@ -89,12 +89,24 @@ message DBPlayerSysMailInfo
 
 message DBPlayerMailSys
 {
-  repeated DBPlayerSysMailInfo sys_mail_list = 110;
+        sint64 guid = 100;
+        repeated DBPlayerSysMailInfo sys_mail_list = 110;
+        repeated MsgSysMailInfo player_mail_list = 120;
 }
 
 message DBSysMail
 {
-  repeated MsgSysMailInfo sys_mail_list = 10;
+        sint64 guid = 10;
+        repeated MsgSysMailInfo sys_mail_list = 20;
+
+        message MsgPlayerMailList
+        {
+                sint64 player_guid = 10;
+                repeated MsgSysMailInfo mail_list = 20;
+        }
+        repeated MsgPlayerMailList player_mail_list = 30;
+
+        repeated sint64 remove_mail_guid_list = 40;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

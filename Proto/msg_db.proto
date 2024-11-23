@@ -24,6 +24,7 @@ import "msg_mail.proto";
 import "msg_shop.proto";
 import "msg_achievement.proto";
 import "msg_activity.proto";
+import "google/protobuf/any.proto";
 
 enum EMsgInternalDBSubType
 {
@@ -45,6 +46,7 @@ message DBPlayerInfo
   repeated sint64 icon_idx_list = 60;
   repeated sint64 icon_frame_idx_list = 70;
   repeated sint64 attr_list = 80;
+  repeated sint64 cdkey_list = 90;
 
   repeated MsgGoodsItem goods_list = 100;
   DBPlayerMailSys mail_sys = 110;
@@ -90,19 +92,38 @@ message MsgDBData
   bytes data = 5;
 }
 
+message DBDataWapper
+{
+        sint64 version = 1;
+        google.protobuf.Any data = 2;
+}
+
+enum EMsgInternalGenGuidSubType
+{
+        E_MIGGST_Req = 0x0;
+}
+
 message DBGenGuid
 {
         message DBGenGuidItem
         {
-                sint64 idx = 1;
-                sint64 cur = 2;
+                sint64 idx = 10;
+                sint64 cur = 20;
+                sint64 max = 30;
         }
-        repeated DBGenGuidItem item_list = 1;
+        repeated DBGenGuidItem item_list = 10;
 }
 
-message MsgDBGenGuid
+enum EGenGuidType
 {
-        sint64 id = 1;
+        E_GGT_PlayerGuid = 0x0;
+}
+
+message MsgGenGuid
+{
+        EInternalErrorType error_type = 1;
+        EGenGuidType type = 2;
+        sint64 id = 3;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

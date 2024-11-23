@@ -2,9 +2,6 @@
 
 #ifdef MYSQL_SERVICE_SERVER
 
-#include "DBLobbySession.h"
-#include "DBLoginSession.h"
-
 // {{{ DBDataSaveActor
 
 bool DBDataSaveActor::Init()
