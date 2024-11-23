@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 namespace nl::af::impl {
 
 class LobbyDBSession : public ActorAgentSession<TcpSession, ActorAgent, LobbyDBSession, false, Compress::ECompressType::E_CT_Zstd>
@@ -28,5 +29,7 @@ public :
 };
 
 }; // end of namespace nl::af::impl;
+
+#endif
 
 // vim: fenc=utf8:expandtab:ts=8

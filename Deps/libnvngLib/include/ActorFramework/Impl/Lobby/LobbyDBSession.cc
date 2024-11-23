@@ -1,5 +1,7 @@
 #include "LobbyDBSession.h"
 
+#if 0
+
 #include "DBMgr.h"
 
 namespace nl::af::impl {
@@ -63,5 +65,7 @@ void LobbyDBSession::MsgHandleServerInit(const ISessionPtr& ses, typename ISessi
 }
 
 }; // end of namespace nl::af::impl;
+
+#endif
 
 // vim: fenc=utf8:expandtab:ts=8

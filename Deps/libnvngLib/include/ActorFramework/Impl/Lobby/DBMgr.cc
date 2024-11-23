@@ -1,5 +1,7 @@
 #include "DBMgr.h"
 
+#if 0
+
 #include "PlayerBase.h"
 #include "LobbyDBSession.h"
 
@@ -199,5 +201,7 @@ std::shared_ptr<LobbyDBSession> DBMgr::RemoveSession(int64_t sid)
 }
 
 }; // end of namespace nl::af::impl;
+
+#endif
 
 // vim: fenc=utf8:expandtab:ts=8

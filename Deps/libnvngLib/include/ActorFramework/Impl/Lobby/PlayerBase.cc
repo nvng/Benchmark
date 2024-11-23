@@ -37,7 +37,8 @@ void PlayerBase::Online()
 
 bool PlayerBase::Flush2DB(bool isDelete)
 {
-        return DBMgr::GetInstance()->SavePlayer(shared_from_this(), isDelete);
+        DBPlayerInfo dbInfo;
+        return MySqlService::GetInstance()->Save(shared_from_this(), dbInfo, "p", isDelete);
 
         /*
         PauseCostTime();
@@ -126,7 +127,24 @@ bool PlayerBase::LoadFromDB(const std::shared_ptr<MsgClientLogin>& loginMsg)
 {
         // 此时还未添加到 PlayerMgr，actor 也未开始运行，无法接收消息。
 
-        return DBMgr::GetInstance()->LoadPlayer(shared_from_this(), loginMsg);
+        DBPlayerInfo dbInfo;
+        auto status = MySqlService::GetInstance()->Load(shared_from_this(), dbInfo, "p");
+        switch (status)
+        {
+        case MySqlService::E_MySqlS_New :
+                OnCreateAccount(loginMsg);
+                Flush2DB(false);
+                break;
+        case MySqlService::E_MySqlS_Success :
+                InitFromDB(dbInfo);
+                break;
+        default :
+                return false;
+                break;
+        }
+
+        AfterInitFromDB();
+        return true;
 
         /*
         std::string cmd = fmt::format("GET p:{}", GetID());

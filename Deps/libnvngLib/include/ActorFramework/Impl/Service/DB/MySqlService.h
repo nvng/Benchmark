@@ -1,7 +1,6 @@
 #pragma once
 
 #include "msg_db.pb.h"
-#include "DBLobbySession.h"
 
 #ifdef MYSQL_SERVICE_SERVER
 
@@ -186,14 +185,14 @@ SPECIAL_ACTOR_DEFINE_END(MySqlActor);
 
 DECLARE_SERVICE_BASE_BEGIN(MySql, SessionDistributeMod, ServiceSession);
 
-private :
-        MySqlServiceBase() { MySqlMgr::CreateInstance(); }
-        ~MySqlServiceBase() override { MySqlMgr::DestroyInstance(); }
-
 public :
         bool Init();
 
 #ifdef MYSQL_SERVICE_SERVER
+
+private :
+        MySqlServiceBase() { MySqlMgr::CreateInstance(); }
+        ~MySqlServiceBase() override { MySqlMgr::DestroyInstance(); }
 
 public :
         FORCE_INLINE std::shared_ptr<MySqlActor> GetMgrActor(uint64_t id)
@@ -213,17 +212,17 @@ public :
 
 #ifdef MYSQL_SERVICE_CLIENT
 
+public :
         enum EMySqlServiceStatus
         {
                 E_MySqlS_None = 0x0,
                 E_MySqlS_Fail = 0x1,
                 E_MySqlS_Success = 0x2,
-                E_MySqlS_New = 0x2,
+                E_MySqlS_New = 0x3,
         };
 
-public :
         template <typename _Ay, typename _Dy>
-        std::pair<EMySqlServiceStatus, std::shared_ptr<_Dy>> Load(const std::shared_ptr<_Ay>& act, std::string_view prefix)
+        EMySqlServiceStatus Load(const std::shared_ptr<_Ay>& act, _Dy& dbInfo, std::string_view prefix)
         {
                 auto ses = SuperType::DistSession(act->GetID());
                 if (!ses)
@@ -236,12 +235,12 @@ public :
                                 if (ws.lock())
                                         ++cnt;
                         }
-                        PLAYER_LOG_WARN(act->GetID(), "act[{}] Load时，db ses 分配失败!!! sesCnt[{}]", act->GetID(), cnt);
+                        PLAYER_LOG_WARN("act[{}] Load时，db ses 分配失败!!! sesCnt[{}]", act->GetID(), cnt);
                         */
-                        return { E_MySqlS_Fail, nullptr };
+                        return E_MySqlS_Fail;
                 }
 
-                auto agent = std::make_shared<SessionType::ActorAgentType>(GenReqID(), ses);
+                auto agent = std::make_shared<typename SessionType::ActorAgentType>(GenReqID(), ses);
                 agent->BindActor(act);
                 ses->AddAgent(agent);
 
@@ -250,74 +249,73 @@ public :
                 auto versionRet = Call(MsgDBDataVersion, act, agent, E_MIMT_DB, E_MIDBST_DBDataVersion, msg);
                 if (!versionRet)
                 {
-                        LOG_INFO(act->GetID(), "玩家[{}] 请求数据版本超时!!!", act->GetID());
-                        return { E_MySqlS_Fail, nullptr };
+                        LOG_INFO("玩家[{}] 请求数据版本超时!!!", act->GetID());
+                        return E_MySqlS_Fail;
                 }
 
-                auto parseDataFunc = [](std::string_view data) -> std::pair<EMySqlServiceStatus, std::shared_ptr<_Dy>> {
-                        auto dbInfo = std::make_shared<_Dy>();
-                        if (!Compress::UnCompressAndParseAlloc<Compress::E_CT_Zstd>(*dbInfo, data))
-                                return { E_MySqlS_Fail, nullptr };
+                auto parseDataFunc = [&dbInfo](std::string_view data) {
+                        if (Compress::UnCompressAndParseAlloc<Compress::E_CT_Zstd>(dbInfo, data))
+                                return E_MySqlS_Success;
                         else
-                                return { E_MySqlS_Fail, dbInfo };
+                                return E_MySqlS_Fail;
                 };
 
                 // TODO: 不同类型 actor id 重复。
-                auto loadFromMysqlFunc = [act, agent, &parseDataFunc]() -> std::pair<EMySqlServiceStatus, std::shared_ptr<_Dy>> {
+                auto loadFromMysqlFunc = [act, agent, &dbInfo, &versionRet, &parseDataFunc]() {
                         auto loadDBData = std::make_shared<MsgDBData>();
                         loadDBData->set_guid(act->GetID());
                         auto loadMailRet = act->CallInternal(agent, E_MIMT_DB, E_MIDBST_LoadDBData, loadDBData);
                         if (!loadMailRet)
                         {
-                                LOG_WARN(act->GetID(), "玩家[{}] load from mysql 时，超时!!!", act->GetID());
-                                return { E_MySqlS_Fail, nullptr };
+                                LOG_WARN("玩家[{}] load from mysql 时，超时!!!", act->GetID());
+                                return E_MySqlS_Fail;
                         }
 
                         MsgDBData loadRet;
                         auto [bufRef, buf, ret] = loadMailRet->ParseExtra(loadRet);
                         if (!ret)
                         {
-                                LOG_WARN(act->GetID(), "玩家[{}] load from mysql 时，解析出错!!!", act->GetID());
-                                return { E_MySqlS_Fail, nullptr };
+                                LOG_WARN("玩家[{}] load from mysql 时，解析出错!!!", act->GetID());
+                                return E_MySqlS_Fail;
                         }
 
                         if (E_IET_DBDataSIDError != loadRet.error_type())
                         {
                                 if (buf.empty())
                                 {
-                                        return { E_MySqlS_New, nullptr };
+                                        return E_MySqlS_New;
                                 }
                                 else
                                 {
-                                        auto [status, dbInfo] = parseDataFunc(buf);
-                                        LOG_WARN_IF(act->GetID(), versionRet->version() != dbInfo.version(), "玩家[{}] 从 MySql 获取数据 size:{}，版本不匹配!!! v:{} dbv:{}",
+                                        auto status = parseDataFunc(buf);
+                                        LOG_WARN_IF(versionRet->version() != dbInfo.version(), "玩家[{}] 从 MySql 获取数据 size:{}，版本不匹配!!! v:{} dbv:{}",
                                                     act->GetID(), buf.length(), versionRet->version(), dbInfo.version());
-                                        return { status, dbInfo };
+                                        return status;
                                 }
                         }
                         else
                         {
                                 // p->KickOut(E_CET_StateError); // 无效，还没登录成功，_clientActor 为空。
-                                return { E_MySqlS_Fail, nullptr };
+                                return E_MySqlS_Fail;
                         }
 
-                        return { E_MySqlS_Fail, nullptr };
+                        return E_MySqlS_Fail;
                 };
 
                 std::string cmd = fmt::format("{}:{}", prefix, act->GetID());
                 auto loadRet = act->RedisCmd("GET", cmd);
                 if (!loadRet)
-                        return { E_MySqlS_Fail, nullptr };
+                        return E_MySqlS_Fail;
 
                 if (loadRet->IsNil())
                 {
                         if (0 == versionRet->version())
                         {
-                                return { E_MySqlS_New, nullptr };
+                                return E_MySqlS_New;
                         }
                         else
                         {
-                                LOG_WARN(act->GetID(), "玩家[{}] 从 redis 获取数据为空!!! v:{}",
+                                LOG_WARN("玩家[{}] 从 redis 获取数据为空!!! v:{}",
                                          act->GetID(), versionRet->version());
                                 return loadFromMysqlFunc();
                         }
@@ -327,27 +325,28 @@ public :
                         auto [data, err] = loadRet->GetStr();
                         if (!err)
                         {
-                                auto [status, dbInfo] = parseDataFunc(data);
+                                auto status = parseDataFunc(data);
                                 switch (status)
                                 {
                                 case E_MySqlS_Success :
                                         if (versionRet->version() > dbInfo.version())
                                         {
-                                                LOG_WARN(act->GetID(), "玩家[{}] 从 redis 获取数据，版本不匹配!!! v:{} dbv:{}",
+                                                LOG_WARN("玩家[{}] 从 redis 获取数据，版本不匹配!!! v:{} dbv:{}",
                                                          act->GetID(), versionRet->version(), dbInfo.version());
                                                 return loadFromMysqlFunc();
                                         }
                                         else
                                         {
-                                                return { status, dbInfo };
+                                                return status;
                                         }
                                         break;
                                 default :
                                         break;
+                                }
                         }
                 }
 
-                return { E_MySqlS_Fail, nullptr };
+                return E_MySqlS_Fail;
         }
 
         template <typename _Ay, typename _Dy>
@@ -364,12 +363,12 @@ public :
                                 if (ws.lock())
                                         ++cnt;
                         }
-                        LOG_WARN(act->GetID(), "玩家[{}] 存储时，db ses 分配失败!!! sesCnt[{}]", act->GetID(), cnt);
+                        LOG_WARN("玩家[{}] 存储时，db ses 分配失败!!! sesCnt[{}]", act->GetID(), cnt);
                         */
                         return false;
                 }
 
-                auto agent = std::make_shared<SessionType::ActorAgentType>(GenReqID(), ses);
+                auto agent = std::make_shared<typename SessionType::ActorAgentType>(GenReqID(), ses);
                 agent->BindActor(act);
                 ses->AddAgent(agent);
 
@@ -389,7 +388,7 @@ public :
                 auto saveRet = ParseMailData<MsgDBData>(act->CallInternal(agent, E_MIMT_DB, E_MIDBST_SaveDBData, saveDBData, base64DataRef, base64DataRef.get(), base64DataSize).get(), E_MIMT_DB, E_MIDBST_SaveDBData);
                 if (!saveRet)
                 {
-                        LOG_WARN(act->GetID(), "玩家[{}] 存储到 DBServer 超时!!!", act->GetID());
+                        LOG_WARN("玩家[{}] 存储到 DBServer 超时!!!", act->GetID());
                         return false;
                 }
 

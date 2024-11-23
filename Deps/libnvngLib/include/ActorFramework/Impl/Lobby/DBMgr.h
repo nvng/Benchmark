@@ -1,5 +1,7 @@
 #pragma once
 
+#if 0
+
 namespace nl::af::impl {
 
 class PlayerBase;
@@ -30,5 +32,7 @@ private :
 };
 
 }; // end of namespace nl::af::impl;
+
+#endif
 
 // vim: fenc=utf8:expandtab:ts=8

@@ -1,14 +1,14 @@
-#include "MySqlService.h"
+#include "MySqlBenchmarkService.h"
 
-#ifdef MYSQL_SERVICE_CLIENT
+#ifdef MYSQL_BENCHMARK_SERVICE_CLIENT
 
-ACTOR_MAIL_HANDLE(MySqlActor, 0xfff, 0x0)
+ACTOR_MAIL_HANDLE(MySqlBenchmarkActor, 0xfff, 0x0)
 {
         boost::this_fiber::sleep_for(std::chrono::seconds(10));
 
         auto msg = std::make_shared<MsgDBDataVersion>();
         msg->set_guid(GetID());
-        auto agent = MySqlService::GetInstance()->GetActor(shared_from_this(), GetID());
+        auto agent = MySqlBenchmarkService::GetInstance()->GetActor(shared_from_this(), GetID());
         auto versionRet = Call(MsgDBDataVersion, agent, E_MIMT_DB, E_MIDBST_DBDataVersion, msg);
         if (!versionRet)
         {
