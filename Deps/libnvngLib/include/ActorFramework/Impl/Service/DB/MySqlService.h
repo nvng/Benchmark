@@ -191,18 +191,32 @@ public :
 #ifdef MYSQL_SERVICE_SERVER
 
 private :
-        MySqlServiceBase() { MySqlMgr::CreateInstance(); }
+        MySqlServiceBase() : SuperType("MySqlService") { MySqlMgr::CreateInstance(); }
         ~MySqlServiceBase() override { MySqlMgr::DestroyInstance(); }
 
 public :
+        template <typename ... Args>
+        bool StartLocal(int64_t actCnt, Args ... args)
+        {
+                actCnt = scMgrActorCnt + 1;
+                LOG_FATAL_IF(!CHECK_2N(actCnt), "actCnt 必须设置为 2^N !!!", actCnt);
+                for (int64_t i=0; i<actCnt; ++i)
+                {
+                        auto act = std::make_shared<typename SuperType::ActorType>(i);
+                        SuperType::_actorArr.emplace_back(act);
+                        act->Start();
+                }
+
+                return true;
+        }
+
         FORCE_INLINE std::shared_ptr<MySqlActor> GetMgrActor(uint64_t id)
-        { return _dbMgrActorArr[id & scMgrActorCnt]; }
+        { return SuperType::_actorArr[id & scMgrActorCnt].lock(); }
 public :
         constexpr static int64_t scSqlStrInitSize = 1024 * 1024;
 private :
         friend class MySqlActor;
         constexpr static int64_t scMgrActorCnt = (1 << 6) - 1;
-        std::shared_ptr<MySqlActor> _dbMgrActorArr[scMgrActorCnt + 1];
 
 public :
         void Terminate();

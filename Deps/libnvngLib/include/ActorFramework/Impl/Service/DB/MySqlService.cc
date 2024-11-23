@@ -584,13 +584,6 @@ bool MySqlService::Init()
 {
         if (!MySqlMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_mysqlCfg))
                 return false;
-
-        for (int64_t i=0; i<scMgrActorCnt+1; ++i)
-        {
-                _dbMgrActorArr[i] = std::make_shared<MySqlActor>(i);
-                _dbMgrActorArr[i]->Start();
-        }
-
         return true;
 }
 
@@ -599,13 +592,16 @@ void MySqlService::Terminate()
 {
         for (int64_t i=0; i<scMgrActorCnt+1; ++i)
         {
-                auto act = _dbMgrActorArr[i];
-                MySqlActorWeakPtr weakPtr = act;
-                act->SendPush([weakPtr]() {
-                        auto act = weakPtr.lock();
-                        if (act)
-                                act->InitTerminateTimer();
-                });
+                auto act = SuperType::_actorArr[i].lock();
+                if (act)
+                {
+                        MySqlActorWeakPtr weakPtr = act;
+                        act->SendPush([weakPtr]() {
+                                auto act = weakPtr.lock();
+                                if (act)
+                                        act->InitTerminateTimer();
+                        });
+                }
         }
 }
 
@@ -613,7 +609,11 @@ template <>
 void MySqlService::WaitForTerminate()
 {
         for (int64_t i=0; i<scMgrActorCnt+1; ++i)
-                _dbMgrActorArr[i]->WaitForTerminate();
+        {
+                auto act = SuperType::_actorArr[i].lock();
+                if (act)
+                        act->WaitForTerminate();
+        }
 }
 
 SERVICE_NET_HANDLE(MySqlService::SessionType, E_MIMT_DB, E_MIDBST_DBDataVersion, MsgDBDataVersion)
