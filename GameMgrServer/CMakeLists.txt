@@ -5,6 +5,7 @@ set(SRC_DIR
         ../Deps/libnvngLib/include/ActorFramework/Impl/GameMgr
         ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Benchmark
         ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Robot
+        ../Deps/libnvngLib/include/ActorFramework/Impl/Service/Log
         )
 
 include($ENV{HOME}/git/config/cmake/project.cmake)

@@ -21,24 +21,27 @@ App::App(const std::string& appName)
 	  , _gateSesList("App_gateSesList")
 {
 	GlobalSetup_CH::CreateInstance();
-	DBMgr::CreateInstance();
 	RegionMgr::CreateInstance();
         RedisMgr::CreateInstance();
 
 	PlayerMgr::CreateInstance();
         nl::net::NetMgr::CreateInstance();
+
+        GenGuidService::CreateInstance();
 }
 
 App::~App()
 {
 	RegionMgr::DestroyInstance();
-	DBMgr::DestroyInstance();
+	MySqlService::DestroyInstance();
 
 	PlayerMgr::DestroyInstance();
 
 	GlobalSetup_CH::DestroyInstance();
         RedisMgr::DestroyInstance();
         nl::net::NetMgr::DestroyInstance();
+
+        GenGuidService::DestroyInstance();
 }
 
 bool App::Init()
@@ -49,7 +52,8 @@ bool App::Init()
 	LOG_FATAL_IF(!RedisMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_redisCfg), "RedisMgr init error!!!");
 	LOG_FATAL_IF(!RegionMgr::GetInstance()->Init(), "RegionMgr init error!!!");
 	LOG_FATAL_IF(!PlayerMgr::GetInstance()->Init(), "PlayerMgr init error!!!");
-	LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "DBMgr init error!!!");
+	LOG_FATAL_IF(!MySqlService::GetInstance()->Init(), "MySqlService init error!!!");
+	LOG_FATAL_IF(!GenGuidService::GetInstance()->Init(), "GenGuidService init error!!!");
 
 	GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
 		static int64_t oldCnt = 0;
@@ -89,6 +93,10 @@ bool App::Init()
 		// Note: 多线程
 		// TODO: 监听端口
 
+                ServerListCfgMgr::GetInstance()->Foreach<stDBServerInfo>([](const auto& cfg) {
+                        MySqlService::GetInstance()->Start(cfg->_ip, cfg->_lobby_port);
+                });
+
 		auto lobbyInfo = GetServerInfo<stLobbyServerInfo>();
                 NetMgr::GetInstance()->Listen(lobbyInfo->_gate_port, [](auto&& s, auto& sslCtx) {
                         return std::make_shared<LobbyGateSession>(std::move(s));
@@ -110,6 +118,9 @@ bool App::Init()
                         return true;
                 });
                 */
+
+                auto dbInfo = ServerListCfgMgr::GetInstance()->GetFirst<stDBServerInfo>();
+                GenGuidService::GetInstance()->Start(dbInfo->_ip, dbInfo->_gen_guid_service_port);
 
 		LOG_WARN("server start success!!!");
 
@@ -170,6 +181,7 @@ bool App::Init()
                 });
 	});
 
+        /*
 	preTask.clear();
         preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);
         _startPriorityTaskList->AddTask(preTask, LobbyDBSession::scPriorityTaskKey, [](const std::string& key) {
@@ -179,6 +191,7 @@ bool App::Init()
                         });
                 });
         });
+        */
 
 	preTask.clear();
 	preTask.emplace_back(LobbyGameMgrSession::_sPriorityTaskKey);

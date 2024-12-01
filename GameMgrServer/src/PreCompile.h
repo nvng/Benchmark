@@ -5,6 +5,7 @@
 #define ____BENCHMARK____
 
 #define ROBOT_SERVICE_CLIENT
+#define LOG_SERVICE_CLIENT
 #define PING_PONG_SERVICE_SERVER
 #define PING_PONG_BIG_SERVICE_SERVER
 
@@ -53,6 +54,7 @@ using namespace nl::net::server;
 
 #include "App.h"
 #include "RobotService.h"
+#include "LogService.h"
 
 #endif // __PRE_COMPILE_H__
 
