@@ -183,15 +183,29 @@ private :
 
 SPECIAL_ACTOR_DEFINE_END(MySqlActor);
 
-DECLARE_SERVICE_BASE_BEGIN(MySql, SessionDistributeMod, ServiceSession);
+#ifdef MYSQL_SERVICE_SERVER
+DECLARE_SERVICE_BASE_BEGIN(MySql, SessionDistributeNull, ServiceSession);
+#endif
+
+#ifdef MYSQL_SERVICE_CLIENT
+DECLARE_SERVICE_BASE_BEGIN(MySql, SessionDistributeSID, ServiceSession);
+#endif
 
 public :
         bool Init();
 
+private :
+        MySqlServiceBase()
+                : SuperType("MySqlService")
+        {
+#ifdef MYSQL_SERVICE_SERVER
+                MySqlMgr::CreateInstance();
+#endif
+        }
+
 #ifdef MYSQL_SERVICE_SERVER
 
 private :
-        MySqlServiceBase() : SuperType("MySqlService") { MySqlMgr::CreateInstance(); }
         ~MySqlServiceBase() override { MySqlMgr::DestroyInstance(); }
 
 public :
@@ -236,9 +250,9 @@ public :
         };
 
         template <typename _Ay, typename _Dy>
-        EMySqlServiceStatus Load(const std::shared_ptr<_Ay>& act, _Dy& dbInfo, std::string_view prefix)
+        EMySqlServiceStatus Load(const std::shared_ptr<_Ay>& act, uint64_t id, _Dy& dbInfo, std::string_view prefix)
         {
-                auto ses = SuperType::DistSession(act->GetID());
+                auto ses = SuperType::DistSession(id);
                 if (!ses)
                 {
                         /*
@@ -259,11 +273,11 @@ public :
                 ses->AddAgent(agent);
 
                 auto msg = std::make_shared<MsgDBDataVersion>();
-                msg->set_guid(act->GetID());
+                msg->set_guid(id);
                 auto versionRet = Call(MsgDBDataVersion, act, agent, E_MIMT_DB, E_MIDBST_DBDataVersion, msg);
                 if (!versionRet)
                 {
-                        LOG_INFO("玩家[{}] 请求数据版本超时!!!", act->GetID());
+                        LOG_INFO("玩家[{}] 请求数据版本超时!!!", id);
                         return E_MySqlS_Fail;
                 }
 
@@ -275,13 +289,13 @@ public :
                 };
 
                 // TODO: 不同类型 actor id 重复。
-                auto loadFromMysqlFunc = [act, agent, &dbInfo, &versionRet, &parseDataFunc]() {
+                auto loadFromMysqlFunc = [act, id, agent, &dbInfo, &versionRet, &parseDataFunc]() {
                         auto loadDBData = std::make_shared<MsgDBData>();
-                        loadDBData->set_guid(act->GetID());
+                        loadDBData->set_guid(id);
                         auto loadMailRet = act->CallInternal(agent, E_MIMT_DB, E_MIDBST_LoadDBData, loadDBData);
                         if (!loadMailRet)
                         {
-                                LOG_WARN("玩家[{}] load from mysql 时，超时!!!", act->GetID());
+                                LOG_WARN("玩家[{}] load from mysql 时，超时!!!", id);
                                 return E_MySqlS_Fail;
                         }
 
@@ -289,7 +303,7 @@ public :
                         auto [bufRef, buf, ret] = loadMailRet->ParseExtra(loadRet);
                         if (!ret)
                         {
-                                LOG_WARN("玩家[{}] load from mysql 时，解析出错!!!", act->GetID());
+                                LOG_WARN("玩家[{}] load from mysql 时，解析出错!!!", id);
                                 return E_MySqlS_Fail;
                         }
 
@@ -301,9 +315,9 @@ public :
                                 }
                                 else
                                 {
-                                        auto status = parseDataFunc(buf);
+                                        auto status = parseDataFunc(Base64Decode(buf));
                                         LOG_WARN_IF(versionRet->version() != dbInfo.version(), "玩家[{}] 从 MySql 获取数据 size:{}，版本不匹配!!! v:{} dbv:{}",
-                                                    act->GetID(), buf.length(), versionRet->version(), dbInfo.version());
+                                                    id, buf.length(), versionRet->version(), dbInfo.version());
                                         return status;
                                 }
                         }
@@ -316,7 +330,7 @@ public :
                         return E_MySqlS_Fail;
                 };
 
-                std::string cmd = fmt::format("{}:{}", prefix, act->GetID());
+                std::string cmd = fmt::format("{}:{}", prefix, id);
                 auto loadRet = act->RedisCmd("GET", cmd);
                 if (!loadRet)
                         return E_MySqlS_Fail;
@@ -330,7 +344,7 @@ public :
                         else
                         {
                                 LOG_WARN("玩家[{}] 从 redis 获取数据为空!!! v:{}",
-                                         act->GetID(), versionRet->version());
+                                         id, versionRet->version());
                                 return loadFromMysqlFunc();
                         }
                 }
@@ -346,7 +360,7 @@ public :
                                         if (versionRet->version() > dbInfo.version())
                                         {
                                                 LOG_WARN("玩家[{}] 从 redis 获取数据，版本不匹配!!! v:{} dbv:{}",
-                                                         act->GetID(), versionRet->version(), dbInfo.version());
+                                                         id, versionRet->version(), dbInfo.version());
                                                 return loadFromMysqlFunc();
                                         }
                                         else
@@ -364,9 +378,9 @@ public :
         }
 
         template <typename _Ay, typename _Dy>
-        bool Save(const std::shared_ptr<_Ay>& act, _Dy& dbInfo, std::string_view prefix, bool isDelete)
+        bool Save(const std::shared_ptr<_Ay>& act, uint64_t id, _Dy& dbInfo, std::string_view prefix, bool isDelete)
         {
-                auto ses = SuperType::DistSession(act->GetID());
+                auto ses = SuperType::DistSession(id);
                 if (!ses)
                 {
                         /*
@@ -391,7 +405,7 @@ public :
                 auto saveDBData = std::make_shared<MsgDBData>();
                 if (isDelete)
                         saveDBData->set_error_type(E_IET_DBDataDelete);
-                saveDBData->set_guid(act->GetID());
+                saveDBData->set_guid(id);
                 saveDBData->set_version(dbInfo.version());
                 auto [base64DataRef, base64DataSize] = Base64EncodeExtra(bufRef.get(), bufSize);
                 // saveDBData->set_data(base64Data);
@@ -402,11 +416,11 @@ public :
                 auto saveRet = ParseMailData<MsgDBData>(act->CallInternal(agent, E_MIMT_DB, E_MIDBST_SaveDBData, saveDBData, base64DataRef, base64DataRef.get(), base64DataSize).get(), E_MIMT_DB, E_MIDBST_SaveDBData);
                 if (!saveRet)
                 {
-                        LOG_WARN("玩家[{}] 存储到 DBServer 超时!!!", act->GetID());
+                        LOG_WARN("玩家[{}] 存储到 DBServer 超时!!!", id);
                         return false;
                 }
 
-                std::string key = fmt::format("{}:{}", prefix, act->GetID());
+                std::string key = fmt::format("{}:{}", prefix, id);
                 act->RedisCmd("SET", key, std::string_view(bufRef.get(), bufSize));
                 act->RedisCmd("EXPIRE", key, fmt::format_int(7*24*3600).c_str());
 

@@ -143,7 +143,7 @@ bool ReadCompetitionCfg(UnorderedMap<int64_t, stCompetitionCfgInfoPtr>& _list)
                 default : cfgTime = -1; break;
                 }
 
-                auto zoneHour = GetClock().GetDay_Slow(0);
+                auto zoneHour = GetClock().GetHour_Slow(0);
                 auto zoneMin  = GetClock().GetMin_Slow(0);
                 // auto timeDay = GetClock().TimeClear_Slow(now, Clock::E_CTT_DAY);
 

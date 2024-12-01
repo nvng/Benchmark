@@ -102,6 +102,7 @@ public :
                 case MsgHeaderType::MsgTypeMerge<E_MCMT_QueueCommon, E_MCQCST_ReqQueue>() :
                 case MsgHeaderType::MsgTypeMerge<E_MCMT_QueueCommon, E_MCQCST_ExitQueue>() :
                 case MsgHeaderType::MsgTypeMerge<E_MCMT_QueueCommon, E_MCQCST_Opt>() :
+                case MsgHeaderType::MsgTypeMerge<E_MCMT_QueueCommon, E_MCQCST_ReqQueueList>() :
                         SuperType::SuperType::OnRecv(buf, bufRef);
                         break;
                 default:

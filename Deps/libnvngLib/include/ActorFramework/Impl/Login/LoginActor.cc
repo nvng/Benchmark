@@ -16,7 +16,7 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
         auto pb = msg->_msg;
         auto thisPtr = shared_from_this();
         LoginActorWeakPtr weakThis = thisPtr;
-        const auto accountGuid = 100 * 1000 * 1000 * 1000LL + pb->user_id();
+        const auto accountGuid = 1000 * 1000 * 1000 * 1000LL + pb->user_id();
 
         auto dbSes = GetApp()->DistSession(pb->user_id());
         if (!dbSes)
@@ -104,11 +104,9 @@ SPECIAL_ACTOR_MAIL_HANDLE(LoginActor, E_MCLST_Login, stClientLoginCheckMail)
                 uint64_t playerGuid = 0;
                 if (buf.empty())
                 {
-                        auto genGuidRet = Call(MsgDBGenGuid, thisPtr, agent, E_MIMT_DB, E_MIDBST_GenGuid, nullptr);
-                        if (!genGuidRet)
+                        playerGuid = GenGuidService::GetInstance()->GenGuid<LoginActor, E_GGT_PlayerGuid>(thisPtr);
+                        if (GEN_GUID_SERVICE_INVALID_GUID == playerGuid)
                                 return;
-
-                        playerGuid = genGuidRet->id();
 
                         dbInfo.set_app_id(pb->app_id());
                         dbInfo.set_user_id(pb->user_id());

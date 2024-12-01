@@ -92,8 +92,8 @@ public :
                 GetAppBase()->_mainChannel.push([ses]() {
                         boost::fibers::fiber(
                              std::allocator_arg,
-                             boost::fibers::protected_fixedsize_stack{ 32 * 1024 },
-                             // boost::fibers::segmented_stack{},
+                             // boost::fibers::fixedsize_stack{ 32 * 1024 },
+                             boost::fibers::segmented_stack{},
                              [ses]() {
                                 while (!ses->IsTerminate())
                                 {
@@ -129,8 +129,8 @@ public :
 
                         boost::fibers::fiber(
                              std::allocator_arg,
-                             boost::fibers::protected_fixedsize_stack{ 32 * 1024 },
-                             // boost::fibers::segmented_stack{},
+                             // boost::fibers::fixedsize_stack{ 32 * 1024 },
+                             boost::fibers::segmented_stack{},
                              [ses]() {
                                 constexpr std::size_t cSendBufInitSize = 1024 * 1024;
                                 auto sendBufRef = std::make_shared<char[]>(cSendBufInitSize);

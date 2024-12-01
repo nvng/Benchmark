@@ -105,9 +105,10 @@ SPECIAL_ACTOR_MAIL_HANDLE(GenGuidActor, E_MIGGST_Req, GenGuidService::SessionTyp
 
         auto ret = std::make_shared<MsgGenGuid>();
         ret->set_id(GenGuid());
+        ret->set_error_type(E_IET_Success);
         ses->SendPB(ret,
-                    E_MIMT_DB,
-                    E_MIDBST_GenGuid,
+                    E_MIMT_GenGuid,
+                    E_MIGGST_Req,
                     GenGuidService::SessionType::MsgHeaderType::E_RMT_CallRet,
                     msg->_msgHead._guid,
                     msg->_msgHead._to,

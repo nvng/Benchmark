@@ -818,6 +818,29 @@ NET_MSG_HANDLE(GameMgrLobbySession, E_MCMT_QueueCommon, E_MCQCST_Opt, MsgQueueOp
                MsgHeaderType::E_RMT_CallRet, msgHead._guid, msgHead._to, msgHead._from);
 }
 
+NET_MSG_HANDLE(GameMgrLobbySession, E_MCMT_QueueCommon, E_MCQCST_ReqQueueList, MsgReqQueueList)
+{
+        if (ERegionType_GameValid(msg->region_type())
+            && EQueueType_GameValid(msg->queue_type())
+            && GetRegionMgrBase()->_reqList.Add(msg->player_guid()))
+        {
+                auto data = std::make_shared<stMailReqQueue>();
+                data->_agent = std::make_shared<GameMgrLobbySession::ActorAgentType>(msg->player_guid(), shared_from_this());
+                data->_msgHead = msgHead;
+                data->_msg = msg;
+
+                GetRegionMgrBase()->GetQueueMgrActor(msg->region_type(), msg->queue_type())->
+                        CallPushInternal(data->_agent, E_MCMT_QueueCommon, E_MCQCST_ReqQueueList, data, msgHead._guid);
+        }
+        else
+        {
+                LOG_WARN("玩家[{}] 请求排队列表时，已经有别的请求了!!!", msg->player_guid());
+                msg->set_error_type(E_CET_Fail);
+                SendPB(msg, E_MCMT_QueueCommon, E_MCQCST_ReqQueueList,
+                       MsgHeaderType::E_RMT_CallRet, msgHead._guid, msgHead._to, msgHead._from);
+        }
+}
+
 // }}}
 
 // {{{ QueueMgrActor
@@ -905,6 +928,49 @@ SPECIAL_ACTOR_MAIL_HANDLE(QueueMgrActor, E_MCQCST_Opt, MsgQueueOpt)
         return ret;
 }
 
+SPECIAL_ACTOR_MAIL_HANDLE(QueueMgrActor, E_MCQCST_ReqQueueList, stMailReqQueue)
+{
+        auto pb = std::dynamic_pointer_cast<MsgReqQueueList>(msg->_msg);
+        DLOG_INFO("收到玩家[{}] 请求排队列表消息!!!", pb->player_guid());
+
+        if (0 == pb->queue_guid())
+        {
+                for (auto& qInfo : _queueList.get<by_time>())
+                {
+                        if (qInfo->_matched)
+                                continue;
+
+                        auto msgInfo = pb->add_queue_list();
+                        qInfo->PackBaseInfo(*msgInfo->mutable_base_info());
+                        msgInfo->set_param(qInfo->_param);
+                        if (pb->queue_list_size() >= 10)
+                                break;
+                }
+
+                pb->set_error_type(E_CET_Success);
+        }
+        else
+        {
+                auto& seq = _queueList.get<by_guid>();
+                auto it = seq.find(pb->queue_guid());
+                if (seq.end() != it)
+                {
+                        auto qInfo = *it;
+                        pb->set_error_type(E_CET_Success);
+
+                        auto msgInfo = pb->add_queue_list();
+                        qInfo->PackBaseInfo(*msgInfo->mutable_base_info());
+                        msgInfo->set_param(qInfo->_param);
+                }
+                else
+                {
+                        pb->set_error_type(E_CET_Fail);
+                }
+        }
+
+        GetRegionMgrBase()->_reqList.Remove(pb->player_guid());
+        return pb;
+}
 
 // SPECIAL_ACTOR_MAIL_HANDLE(QueueMgrActor, 0x2, MsgExitQueue)
 // {

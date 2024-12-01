@@ -2,7 +2,6 @@
 
 #include "PlayerMgrBase.h"
 #include "RegionMgrBase.h"
-#include "DBMgr.h"
 
 namespace nl::af::impl {
 
@@ -38,7 +37,8 @@ void PlayerBase::Online()
 bool PlayerBase::Flush2DB(bool isDelete)
 {
         DBPlayerInfo dbInfo;
-        return MySqlService::GetInstance()->Save(shared_from_this(), dbInfo, "p", isDelete);
+        Pack2DB(dbInfo);
+        return MySqlService::GetInstance()->Save(shared_from_this(), GetID(), dbInfo, "p", isDelete);
 
         /*
         PauseCostTime();
@@ -128,7 +128,7 @@ bool PlayerBase::LoadFromDB(const std::shared_ptr<MsgClientLogin>& loginMsg)
         // 此时还未添加到 PlayerMgr，actor 也未开始运行，无法接收消息。
 
         DBPlayerInfo dbInfo;
-        auto status = MySqlService::GetInstance()->Load(shared_from_this(), dbInfo, "p");
+        auto status = MySqlService::GetInstance()->Load(shared_from_this(), GetID(), dbInfo, "p");
         switch (status)
         {
         case MySqlService::E_MySqlS_New :
@@ -949,6 +949,48 @@ ACTOR_MAIL_HANDLE(PlayerBase, E_MCMT_QueueCommon, E_MCQCST_Opt, MsgQueueOpt)
         return nullptr;
 }
 
+ACTOR_MAIL_HANDLE(PlayerBase, E_MCMT_QueueCommon, E_MCQCST_ReqQueueList, MsgReqQueueList)
+{
+        do
+        {
+                if (!ERegionType_GameValid(msg->region_type())
+                    || !EQueueType_GameValid(msg->queue_type()))
+                {
+                        PLAYER_LOG_WARN(GetID(), "玩家请求排队列表时，参数错误!!!");
+                        msg->set_error_type(E_CET_Fail);
+                        break;
+                }
+
+                auto gameMgrSes = GetRegionMgrBase()->GetGameMgrSes();
+                if (!gameMgrSes)
+                {
+                        PLAYER_LOG_WARN(GetID(),
+                                        "玩家[{}] 请求排队列表 type[{}] 时，game mgr 断开状态!!!",
+                                        GetID(), msg->region_type());
+                        msg->set_error_type(E_CET_Fail);
+                        break;
+                }
+
+                auto agent = std::make_shared<LobbyGameMgrSession::ActorAgentType>(0, gameMgrSes, msg->region_type());
+                agent->BindActor(shared_from_this());
+                gameMgrSes->AddAgent(agent);
+
+                msg->set_player_guid(GetID());
+                auto callRet = Call(MsgReqQueueList, agent, E_MCMT_QueueCommon, E_MCQCST_ReqQueueList, msg);
+                if (!callRet || E_CET_Success != callRet->error_type())
+                {
+                        PLAYER_LOG_WARN(GetID(),
+                                        "玩家[{}] 请求排队列表 type[{}] 时，error_type[{}]!!!",
+                                        GetID(), msg->region_type(), callRet ? callRet->error_type() : E_CET_CallTimeOut);
+                        msg->set_error_type(E_CET_Fail);
+                        break;
+                }
+
+                return callRet;
+        } while (0);
+
+        return msg;
+}
 
 ACTOR_MAIL_HANDLE(PlayerBase, E_MIMT_QueueCommon, E_MIQCST_ExitQueue)
 {
@@ -961,7 +1003,8 @@ ACTOR_MAIL_HANDLE(PlayerBase, E_MIMT_QueueCommon, E_MIQCST_ExitQueue)
 
         _queue.reset();
         _matchInfo.reset();
-        return sendMsg;
+        Send2Client(E_MCMT_QueueCommon, E_MCQCST_ExitQueue, sendMsg);
+        return nullptr;
 }
 
 ACTOR_MAIL_HANDLE(PlayerBase, E_MIMT_QueueCommon, E_MIQCST_ReqQueue, MailReqQueue)

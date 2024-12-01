@@ -29,13 +29,13 @@ public :
                                 const auto except = *reinterpret_cast<uint64_t*>(buf + sizeof(typename MsgHeaderType::MsgMultiCastHeader) + bodySize);
 
                                 MsgMultiCastInfo idListMsg;
-                                Compress::UnCompressAndParseAlloc(static_cast<Compress::ECompressType>(msgMultiCastHead._ct),
+                                Compress::UnCompressAndParseAlloc(static_cast<Compress::ECompressType>(msgMultiCastHead._sct),
                                                                   idListMsg,
                                                                   buf + sizeof(typename MsgHeaderType::MsgMultiCastHeader) + bodySize + sizeof(uint64_t),
                                                                   msgMultiCastHead._ssize);
 
                                 const uint64_t type = msgMultiCastHead._stype;
-                                const Compress::ECompressType ct = static_cast<Compress::ECompressType>(msgMultiCastHead._sct);
+                                const Compress::ECompressType ct = static_cast<Compress::ECompressType>(msgMultiCastHead._ct);
 
                                 for (auto id : idListMsg.id_list())
                                 {

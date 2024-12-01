@@ -179,8 +179,8 @@ public :
                 GetAppBase()->_mainChannel.push([idx{i}]() {
                 boost::fibers::fiber(
                      std::allocator_arg,
-                     boost::fibers::protected_fixedsize_stack{ 32 * 1024 },
-                     // boost::fibers::segmented_stack{},
+                     // boost::fibers::fixedsize_stack{ 32 * 1024 },
+                     boost::fibers::segmented_stack{},
                      [idx]() {
                         std::vector<stReplayMailInfoPtr> mailList;
                         mailList.reserve(1024);

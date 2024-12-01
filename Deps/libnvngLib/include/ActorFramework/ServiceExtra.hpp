@@ -85,18 +85,18 @@ template <typename ServiceType, typename SessionType, typename ServerInfoType>
 class SessionDistributeNull
 {
 public :
-        FORCE_INLINE bool Init(std::string_view taskKey) { return true; }
-        FORCE_INLINE std::shared_ptr<SessionType> DistSession(uint64_t id) { assert(false); }
-        FORCE_INLINE bool AddSession(const std::shared_ptr<SessionType>& ses) { assert(false); return false; }
-        FORCE_INLINE void RemoveSession(const std::shared_ptr<SessionType>& ses) { assert(false); }
-        FORCE_INLINE void ForeachSession(const auto& cb) { assert(false); }
+        FORCE_INLINE bool Init() { return true; }
+        FORCE_INLINE std::shared_ptr<SessionType> DistSession(uint64_t id) { }
+        FORCE_INLINE bool AddSession(const std::shared_ptr<SessionType>& ses) { return false; }
+        FORCE_INLINE void RemoveSession(const std::shared_ptr<SessionType>& ses) { }
+        FORCE_INLINE void ForeachSession(const auto& cb) { }
 };
 
 template <typename ServiceType, typename SessionType, typename ServerInfoType>
 class SessionDistributeMod
 {
 public :
-        FORCE_INLINE bool Init(std::string_view taskKey) { return true; }
+        FORCE_INLINE bool Init() { return true; }
         FORCE_INLINE std::shared_ptr<SessionType> DistSession(uint64_t id)
         {
                 {
@@ -148,36 +148,41 @@ template <typename ServiceType, typename SessionType, typename ServerInfoType>
 class SessionDistributeSID
 {
 public :
-        bool Init(std::string_view taskKey)
+        bool Init()
         {
                 _sesArr.resize(ServerListCfgMgr::GetInstance()->GetSize<ServerInfoType>());
 
                 if constexpr (!SessionType::IsServer)
                 {
-                        ::nl::util::SteadyTimer::StartForever(10, 1, [taskKey{ std::string(taskKey) }]() {
-                                int64_t cnt = 0;
-                                for (auto& ws : ServiceType::GetInstance()->_sesDistribute._sesArr)
-                                {
-                                        auto s = ws.lock();
-                                        if (s)
-                                                ++cnt;
-                                }
-
-                                if (cnt >= ServerListCfgMgr::GetInstance()->GetSize<ServerInfoType>())
-                                {
-                                        GetAppBase()->_startPriorityTaskList->Finish(taskKey);
-                                        return false;
-                                }
-                                else
-                                {
-                                        LOG_WARN("SessionDistributeSID need all session connected!!! need[{}] cur[{}] taskKey[{}]"
-                                                 , ServiceType::GetInstance()->_sesDistribute._sesArr.size(), cnt, taskKey);
-                                        return true;
-                                }
+                        ::nl::util::SteadyTimer::StartForever(10, 1, []() {
+                                return !CheckFinish();
                         });
                 }
 
                 return true;
+        }
+
+        static bool CheckFinish()
+        {
+                int64_t cnt = 0;
+                for (auto& ws : ServiceType::GetInstance()->_sesDistribute._sesArr)
+                {
+                        auto s = ws.lock();
+                        if (s)
+                                ++cnt;
+                }
+
+                if (cnt >= ServerListCfgMgr::GetInstance()->GetSize<ServerInfoType>())
+                {
+                        GetAppBase()->_startPriorityTaskList->Finish(ServiceType::GetInstance()->GetServiceName());
+                        return true;
+                }
+                else
+                {
+                        LOG_WARN("SessionDistributeSID need all session connected!!! need[{}] cur[{}] taskKey[{}]"
+                                 , ServiceType::GetInstance()->_sesDistribute._sesArr.size(), cnt, ServiceType::GetInstance()->GetServiceName());
+                        return false;
+                }
         }
 
         FORCE_INLINE std::shared_ptr<SessionType> DistSession(uint64_t id)
@@ -196,7 +201,9 @@ public :
 
                 // lock 只是防止新 ses 被删除。
                 std::lock_guard l(_sesArrMutex);
+                LOG_INFO("size[{}]", _sesArr.size());
                 _sesArr[idx] = ses;
+                CheckFinish();
                 return true;
         }
 
@@ -264,7 +271,7 @@ public :
                 if (!SuperType::Init())
                         return false;
 
-                return _sesDistribute.Init(GetServiceName());
+                return _sesDistribute.Init();
         }
 
         template <typename ... Args>

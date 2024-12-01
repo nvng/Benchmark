@@ -17,11 +17,11 @@ public :
         PriorityTaskFinishList();
         ~PriorityTaskFinishList();
 
-        bool AddTask(const std::vector<std::string>& preTaskList, const std::string& key, const TaskFuncType& cb);
+        bool AddTask(const std::vector<std::string>& preTaskList, std::string_view key, const TaskFuncType& cb);
         void Clear();
         bool IsEmpty();
-        bool IsFinish(const std::string& key);
-        void Finish(const std::string& key);
+        bool IsFinish(std::string_view key);
+        void Finish(std::string_view key);
         void AddFinalTaskCallback(const FinallyTaskFuncType& finalTaskCallback);
         std::vector<std::string> GetRunButNotFinishedTask();
         void CheckAndExecute();

@@ -78,6 +78,8 @@ public :
         { struct tm lt; LOCAL_TIME_SAFE(&now, &lt); return lt.tm_mon+1; }
         FORCE_INLINE static int32_t GetDay_Slow(time_t now)
         { struct tm lt; LOCAL_TIME_SAFE(&now, &lt); return lt.tm_mday; }
+        FORCE_INLINE static int32_t GetHour_Slow(time_t now)
+        { struct tm lt; LOCAL_TIME_SAFE(&now, &lt); return lt.tm_hour; }
         FORCE_INLINE static int32_t GetMin_Slow(time_t now)
         { struct tm lt; LOCAL_TIME_SAFE(&now, &lt); return lt.tm_min; }
 

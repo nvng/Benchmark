@@ -2,6 +2,7 @@
 
 #include "pre_compile.h"
 
+#include "Tools/md5.h"
 #include "Tools/FmtFormatter.hpp"
 #include "Tools/ArrayIndexPool.hpp"
 #include "Tools/IProcMgr.hpp"

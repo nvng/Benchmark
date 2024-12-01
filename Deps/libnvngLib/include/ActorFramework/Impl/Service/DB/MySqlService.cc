@@ -577,14 +577,6 @@ void MySqlActor::WaitForTerminate()
 // {{{ MySqlService
 
 template <>
-bool MySqlService::Init()
-{
-        if (!MySqlMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_mysqlCfg))
-                return false;
-        return true;
-}
-
-template <>
 void MySqlService::Terminate()
 {
         for (int64_t i=0; i<scMgrActorCnt+1; ++i)
@@ -689,6 +681,19 @@ SERVICE_NET_HANDLE(MySqlService::SessionType, E_MIMT_DB, E_MIDBST_LoadDBData, Ms
 }
 
 #endif
+
+template <>
+bool MySqlService::Init()
+{
+        if (!SuperType::Init())
+                return false;
+
+#ifdef MYSQL_SERVICE_SERVER
+        if (!MySqlMgr::GetInstance()->Init(ServerCfgMgr::GetInstance()->_mysqlCfg))
+                return false;
+#endif
+        return true;
+}
 
 // }}}
 

@@ -206,7 +206,7 @@ inline _Sy& operator>>(_Sy& ss, std::vector<_Ty>& dst)
         std::string str;
         ss >> str;
         dst = Tokenizer<_Ty>(str, "|");
-        if (0 == dst[0])
+        if (_Ty() == dst[0])
                 dst.clear();
         return ss;
 }
@@ -226,9 +226,6 @@ inline _Sy& operator>>(_Sy& ss, std::vector<std::vector<_Ty>>& dst)
 }
 
 // }}}
-
-std::string MD5(const char* const buffer, std::size_t buffer_size);
-std::string MD5(std::string_view data);
 
 double ConvertDoubleFromE(std::string str); // 科学计数法
 

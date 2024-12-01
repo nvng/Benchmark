@@ -46,6 +46,8 @@ public :
         { return _gameSesList.Get(sid).lock(); }
         virtual void PackPlayerInfo2RegionExtra(const PlayerBasePtr& p, ERegionType regionType, MailSyncPlayerInfo2Region& msg);
 
+        FORCE_INLINE std::shared_ptr<LobbyGameMgrSession> GetGameMgrSes() const { return _gameMgrSes.lock(); }
+
 	void Terminate() override;
 	void WaitForTerminate() override;
 

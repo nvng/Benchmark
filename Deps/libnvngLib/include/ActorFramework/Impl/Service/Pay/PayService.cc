@@ -16,92 +16,15 @@ SERVICE_NET_HANDLE(PayService::SessionType, E_MCMT_Pay, E_MCPST_ReqOrderGuid)
                msgHead._from);
 }
 
-SPECIAL_ACTOR_MAIL_HANDLE(PayActor, E_MCPST_ReqShip, stMailHttpReq)
+SPECIAL_ACTOR_MAIL_HANDLE(PayActor, 0xf, stMailHttpReq)
 {
-        LOG_INFO("target[{}]", msg->_httpReq->_req.target());
-        LOG_INFO("body[{}]", msg->_httpReq->_req.body());
-
-        int64_t code = 200;
-        std::string httpMsg;
-
-        do
+        auto targetList = Tokenizer(msg->_httpReq->_req.target(), "?");
+        if (!targetList.empty())
         {
-                auto reqShipMsg = std::make_shared<MsgPayReqShip>();
-                boost::urls::url_view u(msg->_httpReq->_req.target());
-                for (auto p : u.params())
-                {
-                        if (p.key == "orderno")
-                                reqShipMsg->set_orderno(p.value);
-                        if (p.key == "orderno_cp")
-                                reqShipMsg->set_orderno_cp(p.value);
-                        if (p.key == "userid")
-                                reqShipMsg->set_userid(atoll(p.value.c_str()));
-                        if (p.key == "game_id")
-                                reqShipMsg->set_game_id(atoll(p.value.c_str()));
-                        if (p.key == "order_amt")
-                                reqShipMsg->set_order_amt(atoll(p.value.c_str()));
-                        if (p.key == "pay_amt")
-                                reqShipMsg->set_pay_amt(atoll(p.value.c_str()));
-                        if (p.key == "pay_time")
-                                reqShipMsg->set_pay_time(atoll(p.value.c_str()));
-                        if (p.key == "extra")
-                        {
-                                auto extraArr = Tokenizer<uint64_t>(p.value, "_");
-                                if (2 != extraArr.size())
-                                {
-                                        code = 202;
-                                        break;
-                                }
-
-                                reqShipMsg->set_player_guid(extraArr[0]);
-                                reqShipMsg->set_cfg_id(extraArr[1]);
-                        }
-                        if (p.key == "reward")
-                                reqShipMsg->set_reward(atoll(p.value.c_str()));
-                        if (p.key == "sign")
-                                reqShipMsg->set_sign(p.value);
-                }
-
-                /*
-                auto paramList = u.params();
-                auto it = paramList.find("order_amt");
-                if (paramList.end() != it)
-                        LOG_INFO("2222222 {}", (*it).value);
-                */
-
-                if (200 != code)
-                        break;
-
-                LOG_INFO("5555555");
-                auto thisPtr = shared_from_this();
-                auto agent = PayService::GetInstance()->GetActor(thisPtr, reqShipMsg->player_guid());
-                if (!agent)
-                {
-                        code = 202;
-                        break;
-                }
-
-                LOG_INFO("6666666");
-                auto reqShipRet = Call(MsgPayReqShip, agent, E_MCMT_Pay, E_MCPST_ReqShip, reqShipMsg);
-                if (!reqShipRet)
-                {
-                        code = 202;
-                        break;
-                }
-
-                LOG_INFO("7777777");
-                if (E_CET_Success != reqShipRet->error_type())
-                {
-                        code = reqShipRet->code();
-                        httpMsg = reqShipRet->msg();
-                }
-        } while (0);
-
-        LOG_INFO("8888888");
-        std::string replyStr = "{";
-        replyStr += fmt::format("\"code\":{}, \"msg\":\"{}\", \"data\":[]", code, httpMsg);
-        replyStr += "}";
-        msg->_httpReq->Reply(replyStr);
+                auto it = PayService::GetInstance()->_callbackFuncTypeList.find(targetList[0]);
+                if (PayService::GetInstance()->_callbackFuncTypeList.end() != it)
+                        it->second(shared_from_this(), msg);
+        }
         return nullptr;
 }
 
@@ -129,7 +52,7 @@ bool PayService::ReadPayConfig()
                         >> tmpStr
                         >> tmpStr
                         >> cfg->_goodsType
-                        >> tmpStr
+                        >> cfg->_pay
                         >> cfg->_goodsID
                         >> cfg->_firstBuy
                         >> cfg->_extraReward
@@ -143,6 +66,10 @@ bool PayService::ReadPayConfig()
                 LOG_FATAL_IF(!_payCfgList.Add(cfg->_id, cfg),
                              "文件[{}] 唯一标识 id[{}] 重复!!!",
                              fileName, cfg->_id);
+
+                LOG_FATAL_IF(!_payCfgListByPay.Add(cfg->_pay, cfg),
+                             "文件[{}] 唯一标识 pay[{}] 重复!!!",
+                             fileName, cfg->_pay);
         }
 
         return true;
@@ -165,11 +92,208 @@ bool PayService::Init()
                 payServerInfo = GetApp()->GetServerInfo<stPayServerInfo>();
 
         ::nl::net::NetMgr::GetInstance()->HttpListen(payServerInfo->_web_port, [](auto&& req) {
-                auto m = std::make_shared<stMailHttpReq>();
-                m->_httpReq = std::move(req);
-                auto act = PayService::GetInstance()->GetServiceActor();
-                if (act)
-                        act->SendPush(E_MCPST_ReqShip, m);
+                boost::system::error_code ec;
+                boost::asio::ip::tcp::endpoint remoteEndPoint = req->_socket->remote_endpoint(ec);
+
+                auto it = GlobalSetup_CH::GetInstance()->_payIPLimitList.find(remoteEndPoint.address().to_string());
+                if (GlobalSetup_CH::GetInstance()->_payIPLimitList.end() != it)
+                {
+                        auto m = std::make_shared<stMailHttpReq>();
+                        m->_httpReq = std::move(req);
+                        auto act = PayService::GetInstance()->GetServiceActor();
+                        if (act)
+                                act->SendPush(0xf, m);
+                }
+                else
+                {
+                        LOG_WARN("支付回调 remote[{}:{}] IP 未在允许列表中!!!"
+                                 , remoteEndPoint.address().to_string(), remoteEndPoint.port());
+                }
+        });
+
+        _callbackFuncTypeList.emplace("/pay", [](const PayActorPtr& act, const std::shared_ptr<stMailHttpReq>& msg) {
+
+                LOG_INFO("target[{}]", msg->_httpReq->_req.target());
+                LOG_INFO("body[{}]", msg->_httpReq->_req.body());
+
+                int64_t code = 200;
+                std::string httpMsg;
+
+                do
+                {
+                        auto reqShipMsg = std::make_shared<MsgPayReqShip>();
+                        boost::urls::url_view u(msg->_httpReq->_req.target());
+                        for (auto p : u.params())
+                        {
+                                if (p.key == "orderno")
+                                        reqShipMsg->set_orderno(p.value);
+                                if (p.key == "orderno_cp")
+                                        reqShipMsg->set_orderno_cp(p.value);
+                                if (p.key == "userid")
+                                        reqShipMsg->set_userid(atoll(p.value.c_str()));
+                                if (p.key == "game_id")
+                                        reqShipMsg->set_game_id(atoll(p.value.c_str()));
+                                if (p.key == "order_amt")
+                                        reqShipMsg->set_order_amt(atoll(p.value.c_str()));
+                                if (p.key == "pay_amt")
+                                        reqShipMsg->set_pay_amt(atoll(p.value.c_str()));
+                                if (p.key == "pay_time")
+                                        reqShipMsg->set_pay_time(atoll(p.value.c_str()));
+                                if (p.key == "extra")
+                                {
+                                        auto extraArr = Tokenizer<uint64_t>(p.value, "_");
+                                        if (2 != extraArr.size())
+                                        {
+                                                code = 202;
+                                                break;
+                                        }
+
+                                        reqShipMsg->set_player_guid(extraArr[0]);
+                                        reqShipMsg->set_cfg_id(extraArr[1]);
+                                }
+                                if (p.key == "reward")
+                                        reqShipMsg->set_reward(atoll(p.value.c_str()));
+                                if (p.key == "sign")
+                                        reqShipMsg->set_sign(p.value);
+                        }
+
+                        /*
+                           auto paramList = u.params();
+                           auto it = paramList.find("order_amt");
+                           if (paramList.end() != it)
+                           LOG_INFO("2222222 {}", (*it).value);
+                           */
+
+                        if (200 != code)
+                                break;
+
+                        LOG_INFO("5555555");
+                        auto agent = PayService::GetInstance()->GetActor(act, reqShipMsg->player_guid());
+                        if (!agent)
+                        {
+                                code = 202;
+                                break;
+                        }
+
+                        LOG_INFO("6666666");
+                        auto reqShipRet = Call(MsgPayReqShip, act, agent, E_MCMT_Pay, E_MCPST_ReqShip, reqShipMsg);
+                        if (!reqShipRet)
+                        {
+                                code = 202;
+                                break;
+                        }
+
+                        LOG_INFO("7777777");
+                        if (E_CET_Success != reqShipRet->error_type())
+                        {
+                                code = reqShipRet->code();
+                                httpMsg = reqShipRet->msg();
+                        }
+                } while (0);
+
+                LOG_INFO("8888888");
+                std::string replyStr = fmt::format("{}\"code\":{}, \"msg\":\"{}\", \"data\":[]{}", "{", code, httpMsg, "}");
+                msg->_httpReq->Reply(replyStr);
+                return nullptr;
+        });
+
+        _callbackFuncTypeList.emplace("/gift", [](const PayActorPtr& act, const std::shared_ptr<stMailHttpReq>& msg) {
+
+                LOG_INFO("target[{}]", msg->_httpReq->_req.target());
+                LOG_INFO("body[{}]", msg->_httpReq->_req.body());
+
+                int64_t code = 200;
+                std::string httpMsg;
+
+                do
+                {
+                        auto reqMsg = std::make_shared<MsgSDKGift>();
+                        boost::urls::url_view u(msg->_httpReq->_req.target());
+
+                        auto it = u.params().find("userid");
+                        if (u.params().end() == it)
+                        {
+                                code = 201;
+                                break;
+                        }
+                        reqMsg->set_userid(std::stoll((*it).value));
+
+                        it = u.params().find("game_id");
+                        if (u.params().end() == it)
+                        {
+                                code = 201;
+                                break;
+                        }
+                        reqMsg->set_game_id(std::stoll((*it).value));
+
+                        it = u.params().find("server_id");
+                        if (u.params().end() == it)
+                        {
+                                code = 201;
+                                break;
+                        }
+                        reqMsg->set_server_id((*it).value);
+
+                        it = u.params().find("cp_role_id");
+                        if (u.params().end() == it)
+                        {
+                                code = 201;
+                                break;
+                        }
+                        reqMsg->set_player_guid(std::stoll((*it).value));
+
+                        it = u.params().find("product_id");
+                        if (u.params().end() == it)
+                        {
+                                code = 201;
+                                break;
+                        }
+                        reqMsg->set_product_id((*it).value);
+
+                        it = u.params().find("timestamp");
+                        if (u.params().end() == it)
+                        {
+                                code = 201;
+                                break;
+                        }
+                        reqMsg->set_timestamp(std::stoll((*it).value));
+
+                        it = u.params().find("sign");
+                        if (u.params().end() == it)
+                        {
+                                code = 201;
+                                break;
+                        }
+                        reqMsg->set_sign((*it).value);
+
+                        LOG_INFO("5555555");
+                        auto agent = PayService::GetInstance()->GetActor(act, reqMsg->player_guid());
+                        if (!agent)
+                        {
+                                code = 202;
+                                break;
+                        }
+
+                        LOG_INFO("6666666");
+                        auto reqRet = Call(MsgSDKGift, act, agent, E_MCMT_Pay, E_MCPST_Gift, reqMsg);
+                        if (!reqRet)
+                        {
+                                code = 202;
+                                break;
+                        }
+
+                        LOG_INFO("7777777");
+                        if (E_IET_Success != reqRet->error_type())
+                        {
+                                code = reqRet->code();
+                                httpMsg = reqRet->msg();
+                        }
+                } while (0);
+
+                LOG_INFO("8888888");
+                std::string replyStr = fmt::format("{}\"code\":{}, \"msg\":\"{}\", \"data\":[]{}", "{", code, httpMsg, "}");
+                msg->_httpReq->Reply(replyStr);
+                return nullptr;
         });
 #endif
 
@@ -213,7 +337,7 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqOrderGuid, MsgPayOrderGuid)
 
                 auto logGuid = LogService::GetInstance()->GenGuid();
                 std::string str = fmt::format("{}\"guid\":{},\"cfg_id\":{}{}", "{", ret->guid(), msg->cfg_id(), "}");
-                LogService::GetInstance()->Log<E_LSLMT_Content>(GetID(), str, E_LSLST_Pay, 0, E_LSOT_PayReqOrderGuid, logGuid);
+                LogService::GetInstance()->Log<E_LSLMT_Content>(GetID(), str, E_LSLST_Pay, E_MCPST_ReqOrderGuid, E_LSOT_PayReqOrderGuid, logGuid);
         }
         return ret;
 }
@@ -278,9 +402,9 @@ ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_ReqShip, PayService::SessionType::
                 sendMsg->set_error_type(E_CET_Success);
                 Send2Client(E_MCMT_Pay, E_MCPST_ClientShip, sendMsg);
 
-                std::string str = fmt::format("{}\"orderno\":\"{}\",\"orderno_cp\":\"{}\",\"userid\":{},\"game_id\":{},\"order_amt\":{},\"pay_amt\":{},\"pay_time\":{},\"player_guid\":{},\"cfg_id\":{},\"reward\":{},\"sign\":\"{}\",{}"
+                std::string str = fmt::format("{}\"orderno\":\"{}\",\"orderno_cp\":\"{}\",\"userid\":{},\"game_id\":{},\"order_amt\":{},\"pay_amt\":{},\"pay_time\":{},\"player_guid\":{},\"cfg_id\":{},\"reward\":{},\"sign\":\"{}\"{}"
                                               , "{", pb->orderno(), pb->orderno_cp(), pb->userid(), pb->game_id(), pb->order_amt(), pb->pay_amt(), pb->pay_time(), pb->player_guid(), pb->cfg_id(), pb->reward(), pb->sign(), "}");
-                LogService::GetInstance()->Log<E_LSLMT_Content>(GetID(), str, E_LSLST_Pay, 1, E_LSOT_PayReqShip, logGuid);
+                LogService::GetInstance()->Log<E_LSLMT_Content>(GetID(), str, E_LSLST_Pay, E_MCPST_ReqShip, E_LSOT_PayReqShip, logGuid);
         } while (0);
 
         return pb;
@@ -298,6 +422,71 @@ SERVICE_NET_HANDLE(PayService::SessionType, E_MCMT_Pay, E_MCPST_ReqShip, MsgPayR
 
                 m->_pb = msg;
                 p->CallPushInternal(m->_agent, E_MCMT_Pay, E_MCPST_ReqShip, m, msgHead._guid);
+        }
+}
+
+ACTOR_MAIL_HANDLE(Player, E_MCMT_Pay, E_MCPST_Gift, PayService::SessionType::stServiceMessageWapper)
+{
+        auto pb = std::dynamic_pointer_cast<MsgSDKGift>(msg->_pb);
+        if (!pb)
+                return nullptr;
+
+        do
+        {
+                auto payCfg = PayService::GetInstance()->_payCfgListByPay.Get(pb->product_id());
+                if (!payCfg)
+                {
+                        pb->set_error_type(E_IET_Fail);
+                        break;
+                }
+
+                auto mailCfg = MailSys::GetInstance()->_cfgList.Get(1216000001);
+                if (!mailCfg)
+                {
+                        pb->set_error_type(E_IET_Fail);
+                        break;
+                }
+
+                std::map<int64_t, std::pair<int64_t, int64_t>> rewardList;
+                auto errorType = BagMgr::GetInstance()->DoDropInternal({{ payCfg->_goodsID, 1 }}, rewardList, 0);
+                if (E_CET_Success != errorType)
+                {
+                        pb->set_error_type(E_IET_Fail);
+                        break;
+                }
+
+                std::vector<stMailGoodsInfoPtr> goodsList;
+                goodsList.reserve(rewardList.size());
+                for (auto& val : rewardList)
+                {
+                        LOG_INFO("Payyyyyyyyyyyyyyyyyyyyyy type[{}] id[{}] cnt[{}]", val.second.second, val.first, val.second.first);
+                        goodsList.emplace_back(std::make_shared<stMailGoodsInfo>(val.second.second, val.first, val.second.first));
+                }
+
+                _mailSys.AddMail(mailCfg->_title, mailCfg->_from, mailCfg->_content, goodsList);
+
+                pb->set_error_type(E_IET_Success);
+                auto logGuid = LogService::GetInstance()->GenGuid();
+                std::string str = fmt::format("{}\"userid\":{},\"game_id\":{},\"server_id\":{},\"cp_role_id\":{},\"product_id\":{},\"timestamp\":{},\"sign\":{}{}"
+                                              , "{", pb->userid(), pb->game_id(), pb->server_id(), pb->player_guid(), pb->product_id(), pb->timestamp(), pb->sign(), "}");
+                LogService::GetInstance()->Log<E_LSLMT_Content>(GetID(), str, E_LSLST_Pay, E_MCPST_Gift, E_LSOT_PayGift, logGuid);
+        } while (0);
+
+        return pb;
+}
+
+SERVICE_NET_HANDLE(PayService::SessionType, E_MCMT_Pay, E_MCPST_Gift, MsgSDKGift)
+{
+        auto p = std::dynamic_pointer_cast<Player>(PlayerMgr::GetInstance()->GetActor(msg->player_guid()));
+        if (p)
+        {
+                auto m = std::make_shared<PayService::SessionType::stServiceMessageWapper>();
+                m->_agent = std::make_shared<typename PayService::SessionType::ActorAgentType>(msgHead._from, shared_from_this());
+                m->_agent->BindActor(p);
+                AddAgent(m->_agent);
+
+                m->_pb = msg;
+                p->CallPushInternal(m->_agent, E_MCMT_Pay, E_MCPST_Gift, m, msgHead._guid);
         }
 }
 

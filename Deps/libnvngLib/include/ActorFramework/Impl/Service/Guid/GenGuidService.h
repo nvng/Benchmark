@@ -95,7 +95,7 @@ public :
 
 SPECIAL_ACTOR_DEFINE_END(GenGuidActor);
 
-DECLARE_SERVICE_BASE_BEGIN(GenGuid, SessionDistributeNull, ServiceSession);
+DECLARE_SERVICE_BASE_BEGIN(GenGuid, SessionDistributeMod, ServiceSession);
 
 private :
         GenGuidServiceBase() : SuperType("GenGuidService") { }
@@ -127,8 +127,8 @@ public :
 
 #ifdef GEN_GUID_SERVICE_CLIENT
 
-        template <EGenGuidType _Type>
-        FORCE_INLINE uint64_t GenGuid(const IActorPtr& act)
+        template <typename _Ay, EGenGuidType _Type>
+        FORCE_INLINE uint64_t GenGuid(const std::shared_ptr<_Ay>& act)
         {
                 auto ses = SuperType::DistSession(0);
                 if (!ses)
@@ -140,7 +140,7 @@ public :
 
                 auto msg = std::make_shared<MsgGenGuid>();
                 msg->set_type(_Type);
-                auto callRet = Call(MsgGenGuid, agent, E_MIMT_GenGuid, E_MIGGST_Req, msg);
+                auto callRet = Call(MsgGenGuid, act, agent, E_MIMT_GenGuid, E_MIGGST_Req, msg);
                 if (!callRet || E_IET_Success != callRet->error_type())
                 {
                         LOG_WARN("actor[{}] 请求 GenGuid 失败，err[{}]"

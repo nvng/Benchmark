@@ -24,6 +24,7 @@ struct stPayCfgInfo
         int64_t _firstBuy = 0;
         int64_t _extraReward = 0;
         int64_t _price = 0;
+        std::string _pay;
 };
 typedef std::shared_ptr<stPayCfgInfo> stPayCfgInfoPtr;
 
@@ -40,6 +41,7 @@ public :
         bool Init() override;
         bool ReadPayConfig();
         UnorderedMap<uint64_t, stPayCfgInfoPtr> _payCfgList;
+        UnorderedMap<std::string, stPayCfgInfoPtr> _payCfgListByPay;
 
 #if defined (PAY_SERVICE_LOCAL) || defined (PAY_SERVICE_CLIENT)
 
@@ -50,6 +52,9 @@ public :
         FORCE_INLINE auto GetServiceActor()
         { return SuperType::_actorArr[_idx++ % SuperType::_actorArr.size()].lock(); }
         int64_t _idx = 0;
+
+        typedef std::function<void(const PayActorPtr&, const std::shared_ptr<stMailHttpReq>&)> PayCallBackFuncType;
+        std::unordered_map<std::string, PayCallBackFuncType> _callbackFuncTypeList;
 
 #endif
 
