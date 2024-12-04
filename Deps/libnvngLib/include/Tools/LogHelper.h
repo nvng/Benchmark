@@ -6,6 +6,8 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include <spdlog/spdlog.h>
 
+#if 0
+
 #define BACKWARD_HAS_BFD 1
 #include "Tools/backward.hpp"
 
@@ -14,6 +16,17 @@
         backward::StackTrace __internalStackTrace__; \
         __internalStackTrace__.load_here(128); \
         backward::Printer().print(__internalStackTrace__, __internalStringStream__)
+
+#else
+
+#define BOOST_STACKTRACE_USE_BACKTRACE
+#include <boost/stacktrace.hpp>
+
+#define STACK_TRACE_LOAD() \
+        std::stringstream __internalStringStream__; \
+        __internalStringStream__ << boost::stacktrace::stacktrace()
+
+#endif
 
 #include "Tools/Singleton.hpp"
 
