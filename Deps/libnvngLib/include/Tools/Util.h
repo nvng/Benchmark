@@ -311,12 +311,16 @@ private :
 #define DECLARE_SHARED_FROM_THIS(ct) \
         protected : \
         FORCE_INLINE std::shared_ptr<ct> shared_from_this() \
-        { return std::reinterpret_pointer_cast<ct>(SuperType::shared_from_this()); }
+        { return std::reinterpret_pointer_cast<ct>(SuperType::shared_from_this()); } \
+        FORCE_INLINE std::weak_ptr<ct> weak_from_this() \
+        { return shared_from_this(); }
 
 #define DECLARE_BOOST_SHARED_FROM_THIS(ct) \
         protected : \
         FORCE_INLINE boost::shared_ptr<ct> shared_from_this() \
-        { return boost::reinterpret_pointer_cast<ct>(SuperType::shared_from_this()); }
+        { return boost::reinterpret_pointer_cast<ct>(SuperType::shared_from_this()); } \
+        FORCE_INLINE boost::weak_ptr<ct> weak_from_this() \
+        { return shared_from_this(); }
 
 // {{{ base64
 
