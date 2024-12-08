@@ -226,6 +226,9 @@ void ActivityActor::PackActivity(MsgActivityFestivalCfg& msg)
                         msgReward->set_name(tmp["name"].GetString());
                         if (tmp.HasMember("event_type"))
                                 msgReward->set_event_type(tmp["event_type"].GetUint64());
+                        auto& paramArr = tmp["param_list"];
+                        for (int64_t j=0; j<paramArr.Size(); ++j)
+                                msgReward->add_param_list(paramArr[i].GetInt64());
                         parseGoodsListFromJson(*msgReward->mutable_goods_list(), tmp["goods_list"]);
                 }
 

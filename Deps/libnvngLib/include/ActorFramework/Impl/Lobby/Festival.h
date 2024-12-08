@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Tools/Clock.h"
 #include "msg_activity.pb.h"
 
 #define FESTIVAL_REGISTER(t, g, f, fs) \
@@ -247,6 +248,8 @@ public :
 
         FORCE_INLINE static UnorderedMap<int64_t, stFestivalOptPtr>& GetOptList()
         { static UnorderedMap<int64_t, stFestivalOptPtr> _l; return _l; }
+
+        static const std::pair<std::shared_ptr<MsgActivityFestivalGroupCfg>, const MsgActivityFestivalActivityCfg&> GetCfg(int64_t groupID, int64_t fesID);
 
         virtual bool Init(const PlayerPtr& p, const MsgActivityFestivalGroupCfg& msg)
         {

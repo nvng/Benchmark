@@ -23,6 +23,7 @@ App::App(const std::string& appName)
 	GlobalSetup_CH::CreateInstance();
 	RegionMgr::CreateInstance();
         RedisMgr::CreateInstance();
+        MySqlService::CreateInstance();
 
 	PlayerMgr::CreateInstance();
         nl::net::NetMgr::CreateInstance();
@@ -39,6 +40,7 @@ App::~App()
 
 	GlobalSetup_CH::DestroyInstance();
         RedisMgr::DestroyInstance();
+        MySqlService::DestroyInstance();
         nl::net::NetMgr::DestroyInstance();
 
         GenGuidService::DestroyInstance();
@@ -217,6 +219,9 @@ bool App::Init()
 
 		RegionMgr::GetInstance()->Terminate();
 		RegionMgr::GetInstance()->WaitForTerminate();
+
+                MySqlService::GetInstance()->Terminate();
+                MySqlService::GetInstance()->WaitForTerminate();
         });
 	// }}}
 

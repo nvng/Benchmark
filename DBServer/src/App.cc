@@ -26,7 +26,7 @@ App::~App()
 bool App::Init()
 {
 	LOG_FATAL_IF(!SuperType::Init(), "super init fail!!!");
-	// LOG_FATAL_IF(!DBMgr::GetInstance()->Init(), "dbmgr proc mgr init fail!!!");
+	LOG_FATAL_IF(!MySqlService::GetInstance()->Init(), "MySqlService proc mgr init fail!!!");
 	LOG_FATAL_IF(!GenGuidService::GetInstance()->Init(), "GenGuidService init fail!!!");
 
         GetSteadyTimer().StartWithRelativeTimeForever(1.0, [](TimedEventItem& eventData) {
@@ -76,15 +76,8 @@ bool App::Init()
                 GenGuidService::GetInstance()->Terminate();
                 GenGuidService::GetInstance()->WaitForTerminate();
 
-                LOG_INFO("111111111111111111");
                 MySqlService::GetInstance()->Terminate();
-                LOG_INFO("111111111111111111");
                 MySqlService::GetInstance()->WaitForTerminate();
-                LOG_INFO("111111111111111111");
-        });
-
-        ::nl::util::SteadyTimer::StaticStart(10.0, []() {
-                GetApp()->PostTask([]() { GetApp()->Stop(); });
         });
 
 	return true;

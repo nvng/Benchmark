@@ -19,12 +19,14 @@ option optimize_for = LITE_RUNTIME;
 // package PokerProto;
 
 import "msg_client_common.proto";
+import "msg_internal_common.proto";
 
 enum EMsgClientPaySubType
 {
         E_MCPST_ReqOrderGuid = 0x0;
         E_MCPST_ReqShip = 0x1;
         E_MCPST_ClientShip = 0x2;
+        E_MCPST_Gift = 0x3;
 }
 
 message MsgPayOrderGuid
@@ -59,6 +61,22 @@ message MsgPayClientShip
         EClientErrorType error_type = 1;
         sint64 cfg_id = 2;
         MsgPlayerChange player_change = 10;
+}
+
+message MsgSDKGift
+{
+        EInternalErrorType error_type = 1;
+
+        sint64 userid = 10;
+        sint64 game_id = 11;
+        string server_id = 12;
+        sint64 player_guid = 13;
+        string product_id = 14;
+        sint64 timestamp = 15;
+        string sign = 16;
+
+        sint64 code = 20;
+        string msg = 21;
 }
 
 // vim: fenc=utf8:expandtab:ts=8

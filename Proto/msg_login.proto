@@ -57,6 +57,7 @@ message DBLoginInfo
         sint64 user_id = 2;
         string token = 4;
         string sign = 5;
+        sint64 time_out = 6;
 
         sint64 player_guid = 10;
 }

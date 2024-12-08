@@ -117,7 +117,9 @@ template <typename _Ty>
 struct stRandomInfo
 {
         stRandomInfo() = default;
-        explicit stRandomInfo(int64_t w, _Ty& v)
+
+        template <typename _Vy>
+        explicit stRandomInfo(int64_t w, _Vy v)
                 : _w(w), _v(v)
         {
         }

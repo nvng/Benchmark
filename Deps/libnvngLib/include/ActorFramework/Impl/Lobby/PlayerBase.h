@@ -184,6 +184,7 @@ public :
                              int64_t type,
                              int64_t param,
                              int64_t cnt,
+                             ERegionType rt,
                              ELogServiceOrigType logType,
                              uint64_t logParam)
         {

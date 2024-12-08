@@ -91,6 +91,7 @@ enum EMsgClientQueueCommonSubType
   E_MCQCST_ExitQueue = 0x1; // 退出排队!!!
   E_MCQCST_SyncQueueInfo = 0x2;
   E_MCQCST_Opt = 0x3;
+  E_MCQCST_ReqQueueList = 0x4;
 }
 
 enum EMsgClientGameCommonSubType

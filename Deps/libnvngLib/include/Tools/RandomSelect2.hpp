@@ -19,17 +19,16 @@ public :
 	}
 
 	template <typename... Args>
-	inline bool Add(_Ty r, const Args&... args)
+	inline bool Add(_Ty r, const Args& ... args)
 	{
 		std::lock_guard<_My> l(mMutex);
-		auto obj = std::make_shared<const _Sy>(std::forward<const Args&>(args)...);
+		auto obj = std::make_shared<_Sy>(r, std::forward<const Args&>(args)...);
 		bool ret = mRandomList.emplace(mSum+r, obj).second;
 		if (ret)
 			mSum += r;
 		return ret;
 	}
 
-	template <typename... Args>
 	inline bool Add(_Ty r, const std::shared_ptr<const _Sy>& obj)
 	{
 		std::lock_guard<_My> l(mMutex);

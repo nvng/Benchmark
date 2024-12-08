@@ -200,6 +200,17 @@ message MsgQueueOpt
   sint64 player_guid = 5;
 }
 
+message MsgReqQueueList
+{
+        EClientErrorType error_type = 1;
+        ERegionType region_type = 2;
+        EQueueType queue_type = 3;
+        sint64 queue_guid = 4;
+        sint64 player_guid = 5;
+
+        repeated MsgQueueInfo queue_list = 10;
+}
+
 // }}}
 
 message MsgResult

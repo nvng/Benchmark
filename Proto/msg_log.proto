@@ -48,6 +48,7 @@ enum ELogServiceOrigType
         E_LSOT_PayReqShip = 0x24;
         E_LSOT_PiFuSet = 0x25;
         E_LSOT_MailReward = 0x26;
+        E_LSOT_Gift = 0x27;
 
         E_LSOT_Pay = 0x10;
         E_LSOT_ShopBuy = 0x11;
@@ -57,6 +58,7 @@ enum ELogServiceOrigType
         E_LSOT_ShopChouKa = 0x15;
         E_LSOT_ShopBuyOther = 0x16;
         E_LSOT_ShopSell = 0x17;
+        E_LSOT_PayGift = 0x18;
 
         E_LSOT_GameConclude = 0x20;
 

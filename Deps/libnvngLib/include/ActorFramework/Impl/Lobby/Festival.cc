@@ -477,6 +477,32 @@ bool stFestivalTime::Init(const PlayerPtr& p, const MsgActivityTime& msg)
 }
 
 // {{{ FestivalGroup
+
+const std::pair<std::shared_ptr<MsgActivityFestivalGroupCfg>, const MsgActivityFestivalActivityCfg&> FestivalGroup::GetCfg(int64_t groupID, int64_t fesID)
+{
+        static MsgActivityFestivalActivityCfg emptyRet;
+        auto fesSyncData = ActivityMgr::_festivalSyncData;
+        if (!fesSyncData)
+                return { nullptr, emptyRet };
+
+        auto groupCfg = fesSyncData->_groupCfgList.Get(groupID);
+        if (!groupCfg)
+                return { nullptr, emptyRet };
+
+        if (groupCfg->has_activity() && groupCfg->activity().cfg_id() % (10 * 1000) == fesID)
+        {
+                return { groupCfg, groupCfg->activity() };
+        }
+        else
+        {
+
+                auto it = groupCfg->activity_list().find(76000000 + fesID);
+                if (groupCfg->activity_list().end() != it)
+                        return { groupCfg, it->second };
+        }
+        return { groupCfg, emptyRet };
+}
+
 void FestivalGroup::OnDataReset(const PlayerPtr& p, MsgPlayerChange& msg)
 {
         auto fesSyncData = ActivityMgrBase::_festivalSyncData;
@@ -728,7 +754,7 @@ bool FestivalTaskImpl::Reward(const PlayerPtr& p,
         for (auto& reward : rewardItem->goods_list())
         {
                 auto& item = reward.goods_item();
-                p->AddDrop(msg, item.type(), item.id(), item.num(), logType, logParam);
+                p->AddDrop(msg, item.type(), item.id(), item.num(), E_RT_MainCity, logType, logParam);
         }
 
         FLAG_ADD(_flag, 1);

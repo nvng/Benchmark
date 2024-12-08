@@ -24,14 +24,12 @@ import "msg_mail.proto";
 import "msg_shop.proto";
 import "msg_achievement.proto";
 import "msg_activity.proto";
-import "google/protobuf/any.proto";
 
 enum EMsgInternalDBSubType
 {
   E_MIDBST_DBDataVersion = 0x0;
   E_MIDBST_SaveDBData = 0x1;
   E_MIDBST_LoadDBData = 0x3;
-  E_MIDBST_GenGuid = 0x4;
 }
 
 // 约定：凡是DB结构，每个字段初始序号间隔10，方便后面插入。
@@ -92,12 +90,6 @@ message MsgDBData
   bytes data = 5;
 }
 
-message DBDataWapper
-{
-        sint64 version = 1;
-        google.protobuf.Any data = 2;
-}
-
 enum EMsgInternalGenGuidSubType
 {
         E_MIGGST_Req = 0x0;
@@ -107,9 +99,8 @@ message DBGenGuid
 {
         message DBGenGuidItem
         {
-                sint64 idx = 10;
-                sint64 cur = 20;
-                sint64 max = 30;
+                sint64 cur = 10;
+                sint64 max = 20;
         }
         repeated DBGenGuidItem item_list = 10;
 }
